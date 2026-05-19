@@ -58,7 +58,7 @@ describe('Gene Expression Pipeline Integration', () => {
           const mRNA = processingResult.data;
 
           // Validate biological accuracy
-          const codingSeq = mRNA.codingSequence;
+          const codingSeq = mRNA.codingSequence.sequence;
           expect(codingSeq.startsWith('AUG')).toBe(true); // Start codon
           expect(codingSeq.endsWith('UAG')).toBe(true); // Stop codon
           expect(codingSeq.length % 3).toBe(0); // Reading frame
@@ -121,7 +121,7 @@ describe('Gene Expression Pipeline Integration', () => {
 
         if (isSuccess(processingResult)) {
           const mRNA = processingResult.data;
-          const codingSeq = mRNA.codingSequence;
+          const codingSeq = mRNA.codingSequence.sequence;
           expect(codingSeq.startsWith('AUG')).toBe(true);
         }
       }
@@ -151,7 +151,7 @@ describe('Gene Expression Pipeline Integration', () => {
 
         if (isSuccess(processingResult)) {
           const mRNA = processingResult.data;
-          const codingSeq = mRNA.codingSequence;
+          const codingSeq = mRNA.codingSequence.sequence;
           expect(codingSeq).toBe('AUGAAACCCGGGUAG');
         }
       }
@@ -233,7 +233,7 @@ describe('Gene Expression Pipeline Integration', () => {
           const mRNA = processingResult.data;
 
           // Should include all exons: AUGAAACCCGGGIIUAG (with U conversion)
-          const codingSeq = mRNA.codingSequence;
+          const codingSeq = mRNA.codingSequence.sequence;
           expect(codingSeq).toBe('AUGAAACCCGGGUUUUAG');
 
           // Create protein and verify
@@ -271,7 +271,7 @@ describe('Gene Expression Pipeline Integration', () => {
           const altMRNA = altProcessingResult.data;
 
           // Should skip exon2: AUGAAAUUUUAG
-          const altCodingSeq = altMRNA.codingSequence;
+          const altCodingSeq = altMRNA.codingSequence.sequence;
           expect(altCodingSeq).toBe('AUGAAAUUUUAG');
 
           // Create protein and verify different result

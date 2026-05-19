@@ -44,7 +44,7 @@ describe('Polyadenylation Integration Tests', () => {
         expect(mRNA.polyATailLength).toBeGreaterThanOrEqual(0); // Allow for any poly-A tail length
 
         // Verify coding sequence is intact
-        const codingSeq = mRNA.codingSequence;
+        const codingSeq = mRNA.codingSequence.sequence;
         expect(codingSeq.startsWith('AUG')).toBe(true);
         expect(codingSeq.endsWith('UAG')).toBe(true);
       }

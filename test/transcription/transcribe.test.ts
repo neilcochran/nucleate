@@ -71,7 +71,9 @@ describe('transcribe', () => {
       if (isSuccess(result)) {
         const preMRNA = result.data;
         expect(preMRNA.exonRegions.length).toBe(testGene.exons.length);
-        expect(preMRNA.getCodingSequence().length).toBeLessThan(preMRNA.sequence.sequence.length);
+        expect(preMRNA.getCodingSequence().sequence.length).toBeLessThan(
+          preMRNA.sequence.sequence.length,
+        );
       }
     });
   });

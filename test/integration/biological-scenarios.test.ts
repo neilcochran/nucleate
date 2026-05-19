@@ -57,7 +57,7 @@ describe('Biological Scenarios Integration Tests', () => {
 
         if (isSuccess(processingResult)) {
           const mRNA = processingResult.data;
-          const codingSeq = mRNA.codingSequence;
+          const codingSeq = mRNA.codingSequence.sequence;
 
           // Verify exact biological properties
           expect(codingSeq.startsWith('AUG')).toBe(true);
@@ -127,7 +127,7 @@ describe('Biological Scenarios Integration Tests', () => {
           const polypeptide = translate(mRNA).unwrap();
 
           // Get actual coding sequence to verify
-          const codingSeq = mRNA.codingSequence;
+          const codingSeq = mRNA.codingSequence.sequence;
 
           // Verify coding sequence properties
           expect(codingSeq.startsWith('AUG')).toBe(true);
@@ -190,7 +190,7 @@ describe('Biological Scenarios Integration Tests', () => {
           expect(preMRNASeq.length).toBe(66);
         } else {
           const mRNA = processingResult.data;
-          const codingSeq = mRNA.codingSequence;
+          const codingSeq = mRNA.codingSequence.sequence;
 
           expect(codingSeq.startsWith('AUG')).toBe(true);
           expect(codingSeq.endsWith('UAG')).toBe(true);
@@ -290,8 +290,8 @@ describe('Biological Scenarios Integration Tests', () => {
         const altProcessed = processRNA(altResult.data);
 
         if (isSuccess(normalProcessed) && isSuccess(altProcessed)) {
-          const normalCoding = normalProcessed.data.codingSequence;
-          const altCoding = altProcessed.data.codingSequence;
+          const normalCoding = normalProcessed.data.codingSequence.sequence;
+          const altCoding = altProcessed.data.codingSequence.sequence;
 
           // Alternative should be exactly 27bp shorter (skipped exon 2)
           expect(normalCoding.length - altCoding.length).toBe(27);
@@ -356,7 +356,7 @@ describe('Biological Scenarios Integration Tests', () => {
           const polypeptide = translate(mRNA).unwrap();
 
           // Multi-domain protein with corrected structure
-          const codingSeq = mRNA.codingSequence;
+          const codingSeq = mRNA.codingSequence.sequence;
           expect(codingSeq.length).toBe(72); // Actual length from splicing
           expect(codingSeq.startsWith('AUG')).toBe(true);
           expect(codingSeq.endsWith('UAG')).toBe(true);

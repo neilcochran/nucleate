@@ -1,4 +1,5 @@
 import type { RNA } from '../sequence/index.js';
+import { unsafeRNA } from '../sequence/RNA.js';
 import type { Gene } from '../gene/index.js';
 import {
   transcriptCoord,
@@ -98,21 +99,22 @@ export class PreMRNA {
    * Returns the coding-portion (exons only) of the transcript by concatenating the substrings
    * named by `exonRegions`.
    *
-   * The returned string is the spliced RNA that downstream RNA processing produces; if the
+   * The returned RNA is the spliced sequence that downstream processing produces; if the
    * transcript starts inside the first exon (TSS downstream of the exon start) the partial
    * exon is included.
    *
-   * @returns Joined exon RNA sequence
+   * @returns Joined exon sequence as RNA
    */
-  getCodingSequence(): string {
+  getCodingSequence(): RNA {
     const sequence = this.sequence.sequence;
-    return this.exonRegions
+    const joined = this.exonRegions
       .map(exon => {
         const start = Math.max(0, exon.start);
         const end = Math.min(sequence.length, exon.end);
         return sequence.substring(start, end);
       })
       .join('');
+    return unsafeRNA(joined);
   }
 
   /**

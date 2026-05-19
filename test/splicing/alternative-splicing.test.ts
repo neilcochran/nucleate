@@ -120,25 +120,25 @@ describe('validateSpliceVariant', () => {
 });
 
 describe('spliceRNAWithVariant', () => {
-  test('produces the spliced sequence with exons concatenated in gene order', () => {
+  test('produces the spliced RNA with exons concatenated in gene order', () => {
     const gene = parseGene(testSequence, testExons, 'TEST_GENE').unwrap();
     const preMRNA = parsePreMRNA(testSequence.replace(/T/g, 'U'), gene, 0).unwrap();
     const variant: SpliceVariant = { name: 'skip-2', includedExons: [0, 2, 3] };
     const result = spliceRNAWithVariant(preMRNA, variant);
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
-      expect(result.data.sequence.sequence).toBe('AUGAAAGGGUUUUAG');
+      expect(result.data.sequence).toBe('AUGAAAGGGUUUUAG');
     }
   });
 
-  test('processes a full-length variant', () => {
+  test('returns the spliced RNA for a full-length variant', () => {
     const gene = parseGene(testSequence, testExons, 'TEST_GENE').unwrap();
     const preMRNA = parsePreMRNA(testSequence.replace(/T/g, 'U'), gene, 0).unwrap();
     const variant: SpliceVariant = { name: 'full', includedExons: [0, 1, 2, 3] };
     const result = spliceRNAWithVariant(preMRNA, variant);
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
-      expect(result.data.sequence.sequence).toBe('AUGAAACCCGGGGGGUUUUAG');
+      expect(result.data.sequence).toBe('AUGAAACCCGGGGGGUUUUAG');
     }
   });
 
@@ -210,7 +210,7 @@ describe('processAllSplicingVariants', () => {
 });
 
 describe('processDefaultSpliceVariant', () => {
-  test("processes the profile's default variant", () => {
+  test("processes the profile's default variant into a mature mRNA", () => {
     const profile: AlternativeSplicingProfile = {
       geneId: 'TEST_GENE',
       defaultVariant: 'full',
@@ -221,7 +221,12 @@ describe('processDefaultSpliceVariant', () => {
     const result = processDefaultSpliceVariant(preMRNA);
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
-      expect(result.data.sequence.sequence).toBe('AUGAAACCCGGGGGGUUUUAG');
+      const mRNA = result.data;
+      // The mature mRNA's coding sequence is the variant's spliced exons (AUG...UAG)
+      expect(mRNA.codingSequence.sequence).toBe('AUGAAACCCGGGGGGUUUUAG');
+      // A real mature mRNA: cap present, poly-A tail appended
+      expect(mRNA.fivePrimeCap).toBe(true);
+      expect(mRNA.polyATailLength).toBeGreaterThan(0);
     }
   });
 

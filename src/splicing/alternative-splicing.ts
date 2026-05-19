@@ -1,11 +1,11 @@
 import { Result, success, failure, isFailure } from '../result/index.js';
-import { CODON_LENGTH, transcribeSequence } from '../sequence/index.js';
-import { unsafeDNA } from '../sequence/DNA.js';
-import { mRNACoord } from '../coordinates/index.js';
+import { transcribeSequence, type RNA } from '../sequence/index.js';
 import type { Gene } from '../gene/index.js';
 import type { PreMRNA } from '../transcription/index.js';
-import { unsafeMRNA } from '../modifications/MRNA.js';
 import type { MRNA } from '../modifications/MRNA.js';
+import { processSpliced, type RNAProcessingOptions } from '../modifications/process-rna.js';
+import type { ProcessingError } from '../modifications/errors.js';
+import { translate } from '../translation/translate.js';
 import { SplicingOutcome } from './splicing-outcome.js';
 import {
   validateSpliceVariant,
@@ -16,51 +16,89 @@ import {
 import type { SplicingError } from './errors.js';
 
 /**
- * Processes a pre-mRNA against a specific splice variant, producing the mature
- * {@link MRNA} that variant codes for.
+ * Combined option shape for variant-aware processing: governs both the variant-validation
+ * rules (start/stop codon checks, reading-frame, structural constraints) and the
+ * post-splicing processing pipeline (cap, polyadenylation, codon-boundary search).
  *
- * The variant's mature sequence is taken from the source gene's DNA, transcribed to RNA, and
- * wrapped in an `MRNA` with the entire transcript treated as coding sequence (no 5'/3' UTR
- * carve-out, no poly-A tail). Callers needing UTR boundaries or a poly-A tail should run the
- * variant through `processRNA` instead.
+ * The two underlying interfaces share `validateCodons` with identical semantics; setting it
+ * once governs both validation steps.
+ */
+export type SpliceVariantProcessingOptions = AlternativeSplicingOptions & RNAProcessingOptions;
+
+/**
+ * Splices a pre-mRNA according to a specific splice variant, returning the spliced
+ * {@link RNA} (introns removed, variant-included exons concatenated, U bases).
+ *
+ * This performs only the splicing step. The result is a spliced transcript, not a mature
+ * mRNA - no 5'-cap is added, no polyadenylation site is located, no poly-A tail is appended,
+ * and no coding-sequence boundaries are identified. Callers needing a fully-processed
+ * mature mRNA should use {@link processSpliceVariant} instead.
  *
  * @param preMRNA - The pre-mRNA whose source gene the variant references
  * @param variant - The splice variant to apply
- * @param options - Validation options
- * @returns `Result<MRNA, SplicingError>` carrying the mature mRNA on success
+ * @param options - Variant validation options (defaults applied where omitted)
+ * @returns `Result<RNA, SplicingError>` carrying the spliced RNA on success
  */
 export function spliceRNAWithVariant(
   preMRNA: PreMRNA,
   variant: SpliceVariant,
   options: AlternativeSplicingOptions = DEFAULT_ALTERNATIVE_SPLICING_OPTIONS,
-): Result<MRNA, SplicingError> {
+): Result<RNA, SplicingError> {
   const sourceGene = preMRNA.sourceGene;
   const validation = validateSpliceVariant(variant, sourceGene, options);
   if (isFailure(validation)) {
     return failure(validation.error);
   }
-
-  const variantSequence = sourceGene.getVariantSequence(variant);
-  const rnaSequence = transcribeSequence(unsafeDNA(variantSequence));
-  const length = rnaSequence.sequence.length;
-  return success(unsafeMRNA(rnaSequence, mRNACoord(0), mRNACoord(length), true, 0));
+  const variantDNA = sourceGene.getVariantSequence(variant);
+  return success(transcribeSequence(variantDNA));
 }
 
 /**
- * Processes every splice variant in a gene's splicing profile, producing a
- * {@link SplicingOutcome} per variant.
+ * Processes a pre-mRNA against a specific splice variant through the full
+ * splicing-plus-processing pipeline, producing a mature {@link MRNA}.
  *
- * Variants that fail processing are skipped silently in the output; if every variant fails
- * (and at least one was tried), the function still returns success with an empty array.
+ * Routes the variant's spliced RNA through the same post-splicing logic as `processRNA`
+ * (5'-cap metadata, polyadenylation site detection, poly-A tail append, coding-sequence
+ * boundary identification when codon validation is enabled), so the resulting `MRNA` is a
+ * genuine mature mRNA rather than a transcript-treated-as-coding shortcut.
+ *
+ * @param preMRNA - The pre-mRNA whose source gene the variant references
+ * @param variant - The splice variant to apply
+ * @param options - Combined validation and processing options (defaults applied where
+ * omitted)
+ * @returns `Result<MRNA, ProcessingError>` carrying the mature mRNA on success
+ */
+export function processSpliceVariant(
+  preMRNA: PreMRNA,
+  variant: SpliceVariant,
+  options: SpliceVariantProcessingOptions = {},
+): Result<MRNA, ProcessingError> {
+  const spliceResult = spliceRNAWithVariant(preMRNA, variant, options);
+  if (isFailure(spliceResult)) {
+    return failure({ kind: 'splicing-failed', cause: spliceResult.error });
+  }
+  return processSpliced(spliceResult.data, options);
+}
+
+/**
+ * Processes every splice variant in a gene's splicing profile through the full
+ * splicing-plus-processing-plus-translation pipeline, producing a {@link SplicingOutcome}
+ * per variant.
+ *
+ * Variants that fail validation, processing, or translation are skipped silently in the
+ * output; if every variant fails (and at least one was tried), the function still returns
+ * success with an empty array. The `polypeptideLength` carried on each outcome is the real
+ * post-translation length (terminating at the first in-frame stop codon), not a
+ * codingLength/3 estimate.
  *
  * @param preMRNA - The pre-mRNA whose source gene supplies the splicing profile
- * @param options - Validation options for each variant
+ * @param options - Combined validation and processing options
  * @returns `Result<SplicingOutcome[], SplicingError>` listing every successfully-processed
  * variant, or `no-splicing-profile` on failure
  */
 export function processAllSplicingVariants(
   preMRNA: PreMRNA,
-  options: AlternativeSplicingOptions = DEFAULT_ALTERNATIVE_SPLICING_OPTIONS,
+  options: SpliceVariantProcessingOptions = {},
 ): Result<SplicingOutcome[], SplicingError> {
   const sourceGene = preMRNA.sourceGene;
   const profile = sourceGene.splicingProfile;
@@ -70,34 +108,46 @@ export function processAllSplicingVariants(
 
   const outcomes: SplicingOutcome[] = [];
   for (const variant of profile.variants) {
-    const splicingResult = spliceRNAWithVariant(preMRNA, variant, options);
-    if (splicingResult.success) {
-      const matureRNA = splicingResult.data;
-      const codingSequence = matureRNA.sequence.sequence;
-      const polypeptideLength = Math.floor(codingSequence.length / CODON_LENGTH);
-      outcomes.push(new SplicingOutcome(variant, matureRNA, codingSequence, polypeptideLength));
+    const processResult = processSpliceVariant(preMRNA, variant, options);
+    if (!processResult.success) {
+      continue;
     }
+    const matureMRNA = processResult.data;
+    const translateResult = translate(matureMRNA);
+    if (!translateResult.success) {
+      continue;
+    }
+    outcomes.push(
+      new SplicingOutcome(
+        variant,
+        matureMRNA,
+        matureMRNA.codingSequence,
+        translateResult.data.aminoAcids.length,
+      ),
+    );
   }
   return success(outcomes);
 }
 
 /**
- * Resolves a gene's default splice variant and processes the pre-mRNA against it.
+ * Resolves a gene's default splice variant and processes the pre-mRNA against it through
+ * the full splicing-plus-processing pipeline.
  *
  * @param preMRNA - The pre-mRNA whose source gene supplies the default variant
- * @param options - Validation options applied to the default variant
- * @returns `Result<MRNA, SplicingError>` carrying the mature mRNA on success
+ * @param options - Combined validation and processing options applied to the default variant
+ * @returns `Result<MRNA, ProcessingError | SplicingError>` carrying the mature mRNA on
+ * success; `no-default-variant` when the source gene has no default
  */
 export function processDefaultSpliceVariant(
   preMRNA: PreMRNA,
-  options: AlternativeSplicingOptions = DEFAULT_ALTERNATIVE_SPLICING_OPTIONS,
-): Result<MRNA, SplicingError> {
+  options: SpliceVariantProcessingOptions = {},
+): Result<MRNA, ProcessingError | SplicingError> {
   const sourceGene = preMRNA.sourceGene;
   const defaultVariant = sourceGene.getDefaultSplicingVariant();
   if (!defaultVariant) {
     return failure({ kind: 'no-default-variant' });
   }
-  return spliceRNAWithVariant(preMRNA, defaultVariant, options);
+  return processSpliceVariant(preMRNA, defaultVariant, options);
 }
 
 /**

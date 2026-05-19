@@ -125,11 +125,16 @@ export function get3PrimePolyATailLength(rna: RNA): number {
  *
  * Sequence-level operation: useful for callers analyzing the coding-plus-UTR region of a
  * mature mRNA without poly-A noise. The non-A region is returned verbatim; no cleavage-site
- * inference is attempted.
+ * inference is attempted. A pure poly-A input has no core, so the return type encodes that
+ * possibility.
  *
  * @param rna - The RNA to strip
- * @returns The tail-free sequence string
+ * @returns The tail-free sequence as RNA, or `undefined` when the input is entirely poly-A
  */
-export function getCoreSequence(rna: RNA): string {
-  return rna.sequence.replace(POLY_A_TAIL_PATTERN, '');
+export function getCoreSequence(rna: RNA): RNA | undefined {
+  const trimmed = rna.sequence.replace(POLY_A_TAIL_PATTERN, '');
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+  return unsafeRNA(trimmed);
 }

@@ -166,11 +166,15 @@ describe('get3PrimePolyATailLength', () => {
 
 describe('getCoreSequence', () => {
   test('strips the trailing A run', () => {
-    expect(getCoreSequence(rna('AUGAAACCCGGGAAAAAAAAAA'))).toBe('AUGAAACCCGGG');
+    expect(getCoreSequence(rna('AUGAAACCCGGGAAAAAAAAAA'))?.sequence).toBe('AUGAAACCCGGG');
   });
 
   test('returns the input unchanged when no trailing A run is present', () => {
-    expect(getCoreSequence(rna('AUGAAACCCGGGCCC'))).toBe('AUGAAACCCGGGCCC');
+    expect(getCoreSequence(rna('AUGAAACCCGGGCCC'))?.sequence).toBe('AUGAAACCCGGGCCC');
+  });
+
+  test('returns undefined when the input is entirely poly-A', () => {
+    expect(getCoreSequence(rna('AAAAAAAAAA'))).toBeUndefined();
   });
 });
 

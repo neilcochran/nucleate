@@ -22,7 +22,7 @@ describe('processRNA', () => {
       const mRNA = result.data;
       expect(mRNA.fivePrimeCap).toBe(true);
       expect(mRNA.polyATailLength).toBe(DEFAULT_POLY_A_TAIL_LENGTH);
-      expect(mRNA.codingSequence).toContain('AUG');
+      expect(mRNA.codingSequence.sequence).toContain('AUG');
     }
   });
 
@@ -32,7 +32,7 @@ describe('processRNA', () => {
     const result = processRNA(preMRNA);
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
-      expect(result.data.codingSequence).toBe('AUGAAACCCGGGUAG');
+      expect(result.data.codingSequence.sequence).toBe('AUGAAACCCGGGUAG');
     }
   });
 

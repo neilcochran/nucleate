@@ -1,4 +1,5 @@
 import type { RNA } from '../sequence/index.js';
+import { unsafeRNA } from '../sequence/RNA.js';
 import type { MatureMRNACoord } from '../coordinates/index.js';
 import { MIN_POLY_A_DETECTION_LENGTH } from '../polyadenylation/biology.js';
 
@@ -42,11 +43,12 @@ export class MRNA {
   public readonly codingEnd: MatureMRNACoord;
 
   /**
-   * The substring `[codingStart, codingEnd)` of {@link sequence}. Computed once at
-   * construction time, so downstream consumers (translation, splice-variant analysis) can
-   * read it as a plain field.
+   * The subsequence `[codingStart, codingEnd)` of {@link sequence}, wrapped as a typed
+   * {@link RNA}. Computed once at construction time, so downstream consumers (translation,
+   * splice-variant analysis) can read it as a plain field. `parseMRNA` enforces
+   * `codingStart < codingEnd`, so the coding region is guaranteed non-empty.
    */
-  public readonly codingSequence: string;
+  public readonly codingSequence: RNA;
 
   /** Whether the mRNA carries the 5' methylguanosine cap. */
   public readonly fivePrimeCap: boolean;
@@ -83,29 +85,36 @@ export class MRNA {
     this.codingEnd = codingEnd;
     this.fivePrimeCap = fivePrimeCap;
     this.polyATailLength = polyATailLength;
-    this.codingSequence = sequence.sequence.substring(codingStart, codingEnd);
+    this.codingSequence = unsafeRNA(sequence.sequence.substring(codingStart, codingEnd));
   }
 
   /**
-   * Returns the 5' untranslated region: the substring before {@link codingStart}.
+   * Returns the 5' untranslated region: the {@link RNA} subsequence before {@link codingStart}.
    *
-   * @returns The 5'-UTR string (empty when coding starts at position 0)
+   * @returns The 5'-UTR as RNA, or `undefined` when the coding sequence starts at position 0
+   * (the mRNA has no 5'-UTR)
    */
-  getFivePrimeUTR(): string {
-    return this.sequence.sequence.substring(0, this.codingStart);
+  getFivePrimeUTR(): RNA | undefined {
+    if (this.codingStart === 0) {
+      return undefined;
+    }
+    return unsafeRNA(this.sequence.sequence.substring(0, this.codingStart));
   }
 
   /**
-   * Returns the 3' untranslated region: the substring between {@link codingEnd} and the
-   * start of the poly-A tail.
+   * Returns the 3' untranslated region: the {@link RNA} subsequence between {@link codingEnd}
+   * and the start of the poly-A tail.
    *
-   * @returns The 3'-UTR string (empty when the coding sequence ends right before the tail or
-   * at the end of the sequence)
+   * @returns The 3'-UTR as RNA, or `undefined` when the coding sequence ends right before the
+   * tail (or at the end of the sequence) - the mRNA has no 3'-UTR
    */
-  getThreePrimeUTR(): string {
+  getThreePrimeUTR(): RNA | undefined {
     const length = this.sequence.sequence.length;
     const tailStart = length - this.polyATailLength;
-    return this.sequence.sequence.substring(this.codingEnd, tailStart);
+    if (this.codingEnd >= tailStart) {
+      return undefined;
+    }
+    return unsafeRNA(this.sequence.sequence.substring(this.codingEnd, tailStart));
   }
 
   /**

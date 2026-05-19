@@ -120,8 +120,8 @@ describe('Cross-System Integration Tests', () => {
 
         if (isSuccess(processingResult)) {
           const mRNA = processingResult.data;
-          expect(mRNA.codingSequence.length).toBe(66); // Should preserve exact coding sequence length
-          expect(mRNA.codingSequence.startsWith('AUG')).toBe(true);
+          expect(mRNA.codingSequence.sequence.length).toBe(66); // Should preserve exact coding sequence length
+          expect(mRNA.codingSequence.sequence.startsWith('AUG')).toBe(true);
         }
       }
     });

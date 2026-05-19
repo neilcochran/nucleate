@@ -136,7 +136,7 @@ describe('PreMRNA', () => {
   describe('getCodingSequence', () => {
     test('joins full exons when TSS = 0', () => {
       const preMRNA = parsePreMRNA(SIMPLE_TWO_EXON_GENE.rnaSequence, testGene, 0).unwrap();
-      expect(preMRNA.getCodingSequence()).toBe(SIMPLE_TWO_EXON_GENE.splicedRNA);
+      expect(preMRNA.getCodingSequence().sequence).toBe(SIMPLE_TWO_EXON_GENE.splicedRNA);
     });
 
     test('handles partial first exon', () => {
@@ -145,7 +145,7 @@ describe('PreMRNA', () => {
         testGene,
         3,
       ).unwrap();
-      expect(preMRNA.getCodingSequence()).toBe('AAAUUCUAGGG');
+      expect(preMRNA.getCodingSequence().sequence).toBe('AAAUUCUAGGG');
     });
   });
 

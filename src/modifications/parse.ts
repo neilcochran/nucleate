@@ -29,7 +29,7 @@ import type { MRNAError } from './errors.js';
  * ```typescript
  * const result = parseMRNA('AUGAAACCCGGGUAAAAAAAAAA', 0, 15, true, 10);
  * if (result.success) {
- *   console.log(result.data.codingSequence); // 'AUGAAACCCGGGUAA'
+ *   console.log(result.data.codingSequence.sequence); // 'AUGAAACCCGGGUAA'
  * }
  * ```
  */

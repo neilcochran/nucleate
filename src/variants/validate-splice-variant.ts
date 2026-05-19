@@ -1,6 +1,5 @@
 import { Result, success, failure } from '../result/index.js';
 import { CODON_LENGTH, START_CODON, isStopCodon, transcribeSequence } from '../sequence/index.js';
-import { unsafeDNA } from '../sequence/DNA.js';
 import type { Gene } from '../gene/Gene.js';
 import type { SpliceVariant, AlternativeSplicingOptions } from './splice-variant.js';
 import { DEFAULT_ALTERNATIVE_SPLICING_OPTIONS } from './splice-variant.js';
@@ -86,16 +85,17 @@ export function validateSpliceVariant(
   }
 
   if (opts.validateReadingFrames === true || opts.validateCodons === true) {
-    const variantSequence = gene.getVariantSequence(variant);
-    if (opts.validateReadingFrames === true && variantSequence.length % CODON_LENGTH !== 0) {
+    const variantDNA = gene.getVariantSequence(variant);
+    const variantLength = variantDNA.sequence.length;
+    if (opts.validateReadingFrames === true && variantLength % CODON_LENGTH !== 0) {
       return failure({
         kind: 'variant-not-in-frame',
         variantName: variant.name,
-        length: variantSequence.length,
+        length: variantLength,
       });
     }
-    if (opts.validateCodons && variantSequence.length >= CODON_LENGTH) {
-      const variantRNA = transcribeSequence(unsafeDNA(variantSequence)).sequence;
+    if (opts.validateCodons && variantLength >= CODON_LENGTH) {
+      const variantRNA = transcribeSequence(variantDNA).sequence;
       const startCodon = variantRNA.substring(0, CODON_LENGTH);
       if (startCodon !== START_CODON) {
         return failure({

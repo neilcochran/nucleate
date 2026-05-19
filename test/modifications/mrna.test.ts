@@ -10,7 +10,7 @@ describe('MRNA', () => {
         const mRNA = result.data;
         expect(mRNA).toBeInstanceOf(MRNA);
         expect(mRNA.sequence.sequence).toBe('AUGAAACCCGGGUAA');
-        expect(mRNA.codingSequence).toBe('AUGAAACCCGGGUAA');
+        expect(mRNA.codingSequence.sequence).toBe('AUGAAACCCGGGUAA');
         expect(mRNA.codingStart).toBe(0);
         expect(mRNA.codingEnd).toBe(15);
         expect(mRNA.fivePrimeCap).toBe(true);
@@ -31,7 +31,7 @@ describe('MRNA', () => {
       const result = parseMRNA('GGGAUGAAACCCGGGUAA', 3, 18);
       expect(isSuccess(result)).toBe(true);
       if (isSuccess(result)) {
-        expect(result.data.codingSequence).toBe('AUGAAACCCGGGUAA');
+        expect(result.data.codingSequence.sequence).toBe('AUGAAACCCGGGUAA');
       }
     });
 
@@ -105,24 +105,24 @@ describe('MRNA', () => {
   });
 
   describe('MRNA fields and helpers', () => {
-    test('getFivePrimeUTR returns the substring before codingStart', () => {
+    test('getFivePrimeUTR returns the subsequence before codingStart as RNA', () => {
       const mRNA = parseMRNA('GGGCCCAUGAAACCCGGG', 6, 18, true, 0).unwrap();
-      expect(mRNA.getFivePrimeUTR()).toBe('GGGCCC');
+      expect(mRNA.getFivePrimeUTR()?.sequence).toBe('GGGCCC');
     });
 
-    test('getFivePrimeUTR is empty when codingStart is 0', () => {
+    test('getFivePrimeUTR is undefined when codingStart is 0', () => {
       const mRNA = parseMRNA('AUGAAACCCGGG', 0, 12, true, 0).unwrap();
-      expect(mRNA.getFivePrimeUTR()).toBe('');
+      expect(mRNA.getFivePrimeUTR()).toBeUndefined();
     });
 
-    test('getThreePrimeUTR returns the substring between codingEnd and the poly-A tail', () => {
+    test('getThreePrimeUTR returns the subsequence between codingEnd and the poly-A tail as RNA', () => {
       const mRNA = parseMRNA('AUGAAACCCGGGUAAGGGAAAAAAA', 0, 15, true, 7).unwrap();
-      expect(mRNA.getThreePrimeUTR()).toBe('GGG');
+      expect(mRNA.getThreePrimeUTR()?.sequence).toBe('GGG');
     });
 
-    test('getThreePrimeUTR is empty when coding ends right before the tail', () => {
+    test('getThreePrimeUTR is undefined when coding ends right before the tail', () => {
       const mRNA = parseMRNA('AUGAAACCCGGGAAAAAAA', 0, 12, true, 7).unwrap();
-      expect(mRNA.getThreePrimeUTR()).toBe('');
+      expect(mRNA.getThreePrimeUTR()).toBeUndefined();
     });
 
     test('toString summarizes length, coding boundaries, tail length, and cap', () => {

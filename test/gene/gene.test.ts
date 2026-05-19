@@ -28,7 +28,7 @@ describe('Gene', () => {
       expect(gene.sequence.getSequence()).toBe(sequence);
       expect(gene.exons).toHaveLength(1);
       expect(gene.introns).toHaveLength(0);
-      expect(gene.getMatureSequence()).toBe(sequence);
+      expect(gene.getMatureSequence().sequence).toBe(sequence);
     });
 
     test('creates valid gene with multiple exons and derived intron', () => {
@@ -52,7 +52,7 @@ describe('Gene', () => {
       ];
       const gene = unwrapGene(sequence, exons);
 
-      expect(gene.getIntronSequence(0)).toBe('GTCCCCCCCCCCCCCCCCCCCCAG');
+      expect(gene.getIntronSequence(0).sequence).toBe('GTCCCCCCCCCCCCCCCCCCCCAG');
     });
 
     test('handles multiple non-adjacent exons correctly', () => {
@@ -60,7 +60,7 @@ describe('Gene', () => {
 
       expect(gene.exons).toHaveLength(3);
       expect(gene.introns).toHaveLength(2);
-      expect(gene.getMatureSequence()).toBe('ATGAAACCCGGGTAGAAA');
+      expect(gene.getMatureSequence().sequence).toBe('ATGAAACCCGGGTAGAAA');
       expect(gene.introns[0]).toEqual({ start: 6, end: 27, name: 'intron1' });
       expect(gene.introns[1]).toEqual({ start: 33, end: 54, name: 'intron2' });
     });
@@ -70,7 +70,7 @@ describe('Gene', () => {
 
       expect(gene.exons).toHaveLength(1);
       expect(gene.introns).toHaveLength(0);
-      expect(gene.getMatureSequence()).toBe('ATGAAACCCGGGTAG');
+      expect(gene.getMatureSequence().sequence).toBe('ATGAAACCCGGGTAG');
     });
 
     test('exons can be provided in any order; introns derive from sorted positions', () => {
@@ -81,7 +81,7 @@ describe('Gene', () => {
       const gene = unwrapGene(SIMPLE_TWO_EXON_GENE.dnaSequence, exons);
 
       expect(gene.introns[0]).toEqual({ start: 6, end: 26, name: 'intron1' });
-      expect(gene.getMatureSequence()).toBe('ATGAAATTCTAGGG');
+      expect(gene.getMatureSequence().sequence).toBe('ATGAAATTCTAGGG');
     });
   });
 
@@ -167,8 +167,8 @@ describe('Gene', () => {
     });
 
     test('getExonSequence returns the correct substring', () => {
-      expect(gene.getExonSequence(0)).toBe('ATGGTCCCAGTT');
-      expect(gene.getExonSequence(1)).toBe('CCCCCCCC');
+      expect(gene.getExonSequence(0).sequence).toBe('ATGGTCCCAGTT');
+      expect(gene.getExonSequence(1).sequence).toBe('CCCCCCCC');
     });
 
     test('getExonSequence throws RangeError for out-of-bounds index', () => {
@@ -177,7 +177,7 @@ describe('Gene', () => {
     });
 
     test('getMatureSequence concatenates exons in gene-position order', () => {
-      expect(gene.getMatureSequence()).toBe('ATGGTCCCAGTTCCCCCCCC');
+      expect(gene.getMatureSequence().sequence).toBe('ATGGTCCCAGTTCCCCCCCC');
     });
   });
 
@@ -195,8 +195,8 @@ describe('Gene', () => {
     });
 
     test('getIntronSequence returns the correct substring', () => {
-      expect(gene.getIntronSequence(0)).toBe('GTAAGGGGGGGGGGGGGGGAG');
-      expect(gene.getIntronSequence(1)).toBe('GTAAGGGGGGGGGGGGGGGAG');
+      expect(gene.getIntronSequence(0).sequence).toBe('GTAAGGGGGGGGGGGGGGGAG');
+      expect(gene.getIntronSequence(1).sequence).toBe('GTAAGGGGGGGGGGGGGGGAG');
     });
 
     test('getIntronSequence throws RangeError for out-of-bounds index', () => {
@@ -358,7 +358,7 @@ describe('Gene', () => {
     test('returns concatenation of included exons in gene-position order', () => {
       const gene = unwrapGene(SIMPLE_TWO_EXON_GENE.dnaSequence, [...SIMPLE_TWO_EXON_GENE.exons]);
       const sequence = gene.getVariantSequence({ name: 'v', includedExons: [1, 0] });
-      expect(sequence).toBe(gene.getMatureSequence());
+      expect(sequence.sequence).toBe(gene.getMatureSequence().sequence);
     });
 
     test('throws RangeError when the variant references an invalid exon index', () => {

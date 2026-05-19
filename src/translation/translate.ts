@@ -31,7 +31,7 @@ import type { TranslationError } from './errors.js';
  * ```
  */
 export function translate(mRNA: MRNA): Result<Polypeptide, TranslationError> {
-  const codingSequence = mRNA.codingSequence;
+  const codingSequence = mRNA.codingSequence.sequence;
   if (codingSequence.length % CODON_LENGTH !== 0) {
     return failure({
       kind: 'invalid-reading-frame',

@@ -1,4 +1,5 @@
 import { Result, success, failure, isFailure } from '../result/index.js';
+import type { RNA } from '../sequence/index.js';
 import { unsafeRNA } from '../sequence/RNA.js';
 import type { PreMRNA } from '../transcription/index.js';
 import { START_CODON, CODON_LENGTH, isStopCodon } from '../sequence/index.js';
@@ -78,7 +79,7 @@ export const DEFAULT_RNA_PROCESSING_OPTIONS: Required<RNAProcessingOptions> = {
  * const gene = parseGene(seq, exons).unwrap();
  * const preMRNA = transcribe(gene).unwrap();
  * const mRNA = processRNA(preMRNA).unwrap();
- * console.log(mRNA.codingSequence);
+ * console.log(mRNA.codingSequence.sequence);
  * ```
  */
 export function processRNA(
@@ -93,7 +94,28 @@ export function processRNA(
   if (isFailure(splicingResult)) {
     return failure({ kind: 'splicing-failed', cause: splicingResult.error });
   }
-  const splicedRNA = splicingResult.data;
+  return processSpliced(splicingResult.data, opts);
+}
+
+/**
+ * Runs the post-splicing portion of the {@link processRNA} pipeline on an already-spliced
+ * RNA. Adds the 5' cap (metadata), locates the polyadenylation site (when enabled), appends
+ * the poly-A tail, identifies coding-sequence boundaries (when codon validation is enabled),
+ * and wraps the result in a mature {@link MRNA}.
+ *
+ * Use this directly when the splicing step happened elsewhere (e.g. variant-driven splicing
+ * via `spliceRNAWithVariant`). For the full pre-mRNA -\> mature mRNA pipeline, use
+ * {@link processRNA}.
+ *
+ * @param splicedRNA - The spliced RNA produced by splicing (introns removed, exons joined)
+ * @param options - Optional processing configuration (defaults applied where omitted)
+ * @returns `Result<MRNA, ProcessingError>` carrying the mature mRNA on success
+ */
+export function processSpliced(
+  splicedRNA: RNA,
+  options: RNAProcessingOptions = {},
+): Result<MRNA, ProcessingError> {
+  const opts = { ...DEFAULT_RNA_PROCESSING_OPTIONS, ...options };
   const splicedSequence = splicedRNA.sequence;
 
   let cleavageSite = splicedSequence.length;

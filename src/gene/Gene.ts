@@ -1,4 +1,6 @@
+import { at } from '../result/index.js';
 import type { DNA } from '../sequence/index.js';
+import { unsafeDNA } from '../sequence/DNA.js';
 import type { GeneCoord, GenomicRegion } from '../coordinates/index.js';
 import type { AlternativeSplicingProfile, SpliceVariant } from '../variants/index.js';
 
@@ -73,61 +75,52 @@ export class Gene {
   /**
    * Returns the mature-mRNA sequence assembled by concatenating exons in gene-position order.
    *
-   * Note: this is a DNA-level concatenation (T, not U). Use the `transcription/` pipeline for
-   * U-bearing pre-mRNA / mature mRNA.
+   * DNA-level concatenation (T, not U); the result is wrapped as a {@link DNA} so downstream
+   * consumers stay in the typed lane. Use the `transcription/` pipeline for U-bearing
+   * pre-mRNA / mature mRNA.
    *
-   * @returns Concatenated exon sequence
+   * @returns Concatenated exon sequence as DNA
    */
-  getMatureSequence(): string {
-    const sequence = this.sequence.getSequence();
+  getMatureSequence(): DNA {
+    const sequence = this.sequence.sequence;
     const sortedExons = [...this.exons].sort((a, b) => a.start - b.start);
-    return sortedExons.map(exon => sequence.substring(exon.start, exon.end)).join('');
+    return unsafeDNA(sortedExons.map(exon => sequence.substring(exon.start, exon.end)).join(''));
   }
 
   /**
-   * Returns the substring of the gene sequence corresponding to the exon at `exonIndex`.
+   * Returns the DNA substring corresponding to the exon at `exonIndex`.
    *
    * @param exonIndex - 0-based index into `exons`
-   * @returns The exon DNA substring
+   * @returns The exon DNA subsequence
    *
    * @throws {@link RangeError} if `exonIndex` is out of bounds
    */
-  getExonSequence(exonIndex: number): string {
+  getExonSequence(exonIndex: number): DNA {
     if (exonIndex < 0 || exonIndex >= this.exons.length) {
       throw new RangeError(
         `Exon index ${exonIndex} out of bounds. Gene has ${this.exons.length} exons.`,
       );
     }
-    const exon = this.exons[exonIndex];
-    if (exon === undefined) {
-      throw new RangeError(
-        `Exon index ${exonIndex} out of bounds. Gene has ${this.exons.length} exons.`,
-      );
-    }
-    return this.sequence.getSequence().substring(exon.start, exon.end);
+    const exon = at(this.exons, exonIndex);
+    return unsafeDNA(this.sequence.sequence.substring(exon.start, exon.end));
   }
 
   /**
-   * Returns the substring of the gene sequence corresponding to the intron at `intronIndex`.
+   * Returns the DNA substring corresponding to the intron at `intronIndex`.
    *
    * @param intronIndex - 0-based index into `introns`
-   * @returns The intron DNA substring
+   * @returns The intron DNA subsequence
    *
    * @throws {@link RangeError} if `intronIndex` is out of bounds
    */
-  getIntronSequence(intronIndex: number): string {
+  getIntronSequence(intronIndex: number): DNA {
     if (intronIndex < 0 || intronIndex >= this.introns.length) {
       throw new RangeError(
         `Intron index ${intronIndex} out of bounds. Gene has ${this.introns.length} introns.`,
       );
     }
-    const intron = this.introns[intronIndex];
-    if (intron === undefined) {
-      throw new RangeError(
-        `Intron index ${intronIndex} out of bounds. Gene has ${this.introns.length} introns.`,
-      );
-    }
-    return this.sequence.getSequence().substring(intron.start, intron.end);
+    const intron = at(this.introns, intronIndex);
+    return unsafeDNA(this.sequence.sequence.substring(intron.start, intron.end));
   }
 
   /**
@@ -168,11 +161,11 @@ export class Gene {
    * variant's included exons in gene-position order.
    *
    * @param variant - The splice variant whose mature sequence to assemble
-   * @returns The variant's concatenated exon sequence
+   * @returns The variant's concatenated exon sequence as DNA
    *
    * @throws {@link RangeError} if the variant references an exon index outside this gene
    */
-  getVariantSequence(variant: SpliceVariant): string {
+  getVariantSequence(variant: SpliceVariant): DNA {
     const selectedExons: GenomicRegion<GeneCoord>[] = [];
     for (const exonIndex of variant.includedExons) {
       const exon = this.exons[exonIndex];
@@ -184,8 +177,8 @@ export class Gene {
       selectedExons.push(exon);
     }
     selectedExons.sort((a, b) => a.start - b.start);
-    const sequence = this.sequence.getSequence();
-    return selectedExons.map(exon => sequence.substring(exon.start, exon.end)).join('');
+    const sequence = this.sequence.sequence;
+    return unsafeDNA(selectedExons.map(exon => sequence.substring(exon.start, exon.end)).join(''));
   }
 
   /**
