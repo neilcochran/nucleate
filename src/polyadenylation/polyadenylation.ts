@@ -112,9 +112,7 @@ export function findPolyadenylationSites(
   rna: RNA,
   options: CleavageSiteOptions = DEFAULT_CLEAVAGE_OPTIONS,
 ): PolyadenylationSite[] {
-  const sequence = rna.getSequence();
-
-  if (sequence.length < MIN_RNA_SEQUENCE_FOR_POLYA_SEARCH) {
+  if (rna.length() < MIN_RNA_SEQUENCE_FOR_POLYA_SEARCH) {
     return [];
   }
 
@@ -128,7 +126,7 @@ export function findPolyadenylationSites(
     }
     const matches = pattern.findAll(rna);
     for (const match of matches) {
-      const site = analyzePolyadenylationSite(sequence, match.start, signal, opts);
+      const site = analyzePolyadenylationSite(rna, match.start, signal, opts);
       if (site) {
         sites.push(site);
       }
@@ -180,7 +178,7 @@ export function filterPolyadenylationSites(
  * falls below {@link MIN_POLYA_SITE_STRENGTH}.
  */
 function analyzePolyadenylationSite(
-  sequence: string,
+  rna: RNA,
   position: number,
   signal: string,
   options: Required<CleavageSiteOptions>,
@@ -188,26 +186,26 @@ function analyzePolyadenylationSite(
   const baseStrength = getSignalStrength(signal);
   let totalStrength = baseStrength;
 
-  const upstreamUSE = findUpstreamUSE(sequence, position);
+  const upstreamUSE = findUpstreamUSE(rna, position);
   if (upstreamUSE) {
-    const useQuality = analyzeUSEQuality(sequence, upstreamUSE);
+    const useQuality = analyzeUSEQuality(rna, upstreamUSE);
     totalStrength += Math.round(useQuality * USE_ELEMENT_MAX_BOOST);
   }
 
-  const downstreamDSE = findDownstreamDSE(sequence, position + signal.length);
+  const downstreamDSE = findDownstreamDSE(rna, position + signal.length);
   if (downstreamDSE) {
-    const dseQuality = analyzeDSEQuality(sequence, downstreamDSE);
+    const dseQuality = analyzeDSEQuality(rna, downstreamDSE);
     totalStrength += Math.round(dseQuality * DSE_ELEMENT_MAX_BOOST);
   }
 
   const cleavageSite = predictCleavageSite(
-    sequence,
+    rna,
     position + signal.length,
     options.distanceRange,
     options.cleavagePreference,
   );
 
-  if (!validateCleavageSiteConstraints(sequence, position, signal.length, cleavageSite, options)) {
+  if (!validateCleavageSiteConstraints(rna, position, signal.length, cleavageSite, options)) {
     return undefined;
   }
 
@@ -245,20 +243,17 @@ function getSignalStrength(signal: string): number {
  * highest-priority USE motif and returns the matching region, or `undefined` when no motif
  * matches.
  */
-function findUpstreamUSE(sequence: string, position: number): GenomicRegion | undefined {
+function findUpstreamUSE(rna: RNA, position: number): GenomicRegion | undefined {
   const searchStart = Math.max(0, position - USE_SEARCH_UPSTREAM_BP);
   const searchEnd = position;
   if (searchEnd <= searchStart) {
     return undefined;
   }
-  const rnaRegion = sequence.substring(searchStart, searchEnd).replace(/T/g, 'U');
-  if (rnaRegion === '') {
-    return undefined;
-  }
+  const window = rna.getSubsequence(searchStart, searchEnd);
 
   let bestMatch: { start: number; end: number; priority: number } | undefined;
   for (const { pattern, priority } of USE_PATTERNS) {
-    for (const match of pattern.findAll(rnaRegion)) {
+    for (const match of pattern.findAll(window)) {
       if (!bestMatch || priority > bestMatch.priority) {
         bestMatch = {
           start: searchStart + match.start,
@@ -276,20 +271,17 @@ function findUpstreamUSE(sequence: string, position: number): GenomicRegion | un
  * highest-priority DSE motif and returns the matching region, or `undefined` when no motif
  * matches.
  */
-function findDownstreamDSE(sequence: string, position: number): GenomicRegion | undefined {
+function findDownstreamDSE(rna: RNA, position: number): GenomicRegion | undefined {
   const searchStart = position;
-  const searchEnd = Math.min(sequence.length, position + DSE_SEARCH_DOWNSTREAM_BP);
+  const searchEnd = Math.min(rna.length(), position + DSE_SEARCH_DOWNSTREAM_BP);
   if (searchEnd <= searchStart) {
     return undefined;
   }
-  const rnaRegion = sequence.substring(searchStart, searchEnd).replace(/T/g, 'U');
-  if (rnaRegion === '') {
-    return undefined;
-  }
+  const window = rna.getSubsequence(searchStart, searchEnd);
 
   let bestMatch: { start: number; end: number; priority: number } | undefined;
   for (const { pattern, priority } of DSE_PATTERNS) {
-    for (const match of pattern.findAll(rnaRegion)) {
+    for (const match of pattern.findAll(window)) {
       if (!bestMatch || priority > bestMatch.priority) {
         bestMatch = {
           start: searchStart + match.start,
@@ -306,20 +298,15 @@ function findDownstreamDSE(sequence: string, position: number): GenomicRegion | 
  * Scores a USE region: top score for a UGUA motif, high score for a UYU motif, moderate for
  * generally U-rich, baseline otherwise.
  */
-function analyzeUSEQuality(sequence: string, useRegion: GenomicRegion): number {
-  const useSequence = sequence.substring(useRegion.start, useRegion.end).replace(/T/g, 'U');
-  if (useSequence === '') {
-    return BASE_POLYA_SCORE;
-  }
+function analyzeUSEQuality(rna: RNA, useRegion: GenomicRegion): number {
+  const useSequence = rna.getSubsequence(useRegion.start, useRegion.end);
+  const useString = useSequence.sequence;
   let score = BASE_POLYA_SCORE;
-  if (useSequence.includes('UGUA')) {
+  if (useString.includes('UGUA')) {
     score = PERFECT_USE_SCORE;
   } else if (USE_QUALITY_UYU_PATTERN.matches(useSequence)) {
     score = HIGH_USE_SCORE;
-  } else if (
-    (useSequence.match(/U/g) ?? []).length / useSequence.length >
-    HIGH_U_CONTENT_THRESHOLD
-  ) {
+  } else if ((useString.match(/U/g) ?? []).length / useString.length > HIGH_U_CONTENT_THRESHOLD) {
     score = MODERATE_USE_SCORE;
   }
   return Math.min(score, PERFECT_USE_SCORE);
@@ -329,18 +316,16 @@ function analyzeUSEQuality(sequence: string, useRegion: GenomicRegion): number {
  * Scores a DSE region: top score for GU-rich with U clusters, high for plain GU-rich,
  * moderate for generally U-rich, baseline otherwise.
  */
-function analyzeDSEQuality(sequence: string, dseRegion: GenomicRegion): number {
-  const dseSequence = sequence.substring(dseRegion.start, dseRegion.end).replace(/T/g, 'U');
-  if (dseSequence === '') {
-    return BASE_POLYA_SCORE;
-  }
+function analyzeDSEQuality(rna: RNA, dseRegion: GenomicRegion): number {
+  const dseSequence = rna.getSubsequence(dseRegion.start, dseRegion.end);
+  const dseString = dseSequence.sequence;
   let score = BASE_POLYA_SCORE;
   if (DSE_QUALITY_GU_U_PATTERN.matches(dseSequence)) {
     score = PERFECT_DSE_SCORE;
   } else if (DSE_QUALITY_GU3_PATTERN.matches(dseSequence)) {
     score = HIGH_DSE_SCORE;
   } else if (
-    (dseSequence.match(/U/g) ?? []).length / dseSequence.length >
+    (dseString.match(/U/g) ?? []).length / dseString.length >
     MODERATE_U_CONTENT_THRESHOLD
   ) {
     score = MODERATE_USE_SCORE;
@@ -355,39 +340,31 @@ function analyzeDSEQuality(sequence: string, dseRegion: GenomicRegion): number {
  * neighborhoods).
  */
 function predictCleavageSite(
-  sequence: string,
+  rna: RNA,
   startPosition: number,
   distanceRange: readonly [number, number],
   preferences: readonly string[],
 ): number | undefined {
   const [minDistance, maxDistance] = distanceRange;
+  const sequenceLength = rna.length();
   const searchStart = startPosition + minDistance;
-  const searchEnd = Math.min(sequence.length, startPosition + maxDistance);
+  const searchEnd = Math.min(sequenceLength, startPosition + maxDistance);
 
   let bestPosition: number | undefined;
   let bestScore = -1;
 
   for (let pos = searchStart; pos < searchEnd; pos++) {
-    const rawNucleotide = sequence[pos];
-    if (rawNucleotide === undefined) {
-      break;
-    }
-    const nucleotide = rawNucleotide.toUpperCase().replace('T', 'U');
+    const nucleotide = rna.sequence.charAt(pos);
     const preferenceIndex = preferences.indexOf(nucleotide);
     if (preferenceIndex === -1) {
       continue;
     }
     let score = preferences.length - preferenceIndex;
-    const context = sequence.substring(Math.max(0, pos - 2), Math.min(sequence.length, pos + 3));
-    if (context !== '') {
-      if (POLY_G3_CONTEXT_PATTERN.matches(context)) {
-        score *= INHIBITORY_G_RUN_PENALTY;
-      } else {
-        const auContext = context.replace(/T/g, 'U');
-        if (auContext !== '' && AU_RICH_CONTEXT_PATTERN.matches(auContext)) {
-          score *= AU_RICH_CONTEXT_BOOST;
-        }
-      }
+    const context = rna.getSubsequence(Math.max(0, pos - 2), Math.min(sequenceLength, pos + 3));
+    if (POLY_G3_CONTEXT_PATTERN.matches(context)) {
+      score *= INHIBITORY_G_RUN_PENALTY;
+    } else if (AU_RICH_CONTEXT_PATTERN.matches(context)) {
+      score *= AU_RICH_CONTEXT_BOOST;
     }
     if (score > bestScore) {
       bestScore = score;
@@ -405,7 +382,7 @@ function predictCleavageSite(
  * first entry of `options.polyASignal`.
  */
 function validateCleavageSiteConstraints(
-  sequence: string,
+  rna: RNA,
   signalPosition: number,
   signalLength: number,
   cleavagePosition: number | undefined,
@@ -419,15 +396,9 @@ function validateCleavageSiteConstraints(
   if (distance < minDist || distance > maxDist) {
     return false;
   }
-  const context = sequence.substring(
+  const context = rna.getSubsequence(
     Math.max(0, cleavagePosition - 3),
-    Math.min(sequence.length, cleavagePosition + 3),
+    Math.min(rna.length(), cleavagePosition + 3),
   );
-  if (context === '') {
-    return true;
-  }
-  if (POLY_G4_CONTEXT_PATTERN.matches(context)) {
-    return false;
-  }
-  return true;
+  return !POLY_G4_CONTEXT_PATTERN.matches(context);
 }
