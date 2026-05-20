@@ -1,4 +1,4 @@
-import { HUMAN, replicateSteps } from '../../src/replication';
+import { HUMAN, isComplete, replicateSteps } from '../../src/replication';
 import { doubleStrandedDNA, parseDNA } from '../../src/sequence';
 import { isFailure } from '../../src/result';
 import { at } from '../utils/test-utils';
@@ -125,7 +125,7 @@ describe('replicateSteps', () => {
       expect(primerSnap).toBeDefined();
       if (primerSnap) {
         const newest = at(primerSnap.fragments, primerSnap.fragments.length - 1);
-        expect(newest.sequence).toBeUndefined();
+        expect(newest.phase).toBe('primer-only');
       }
     });
 
@@ -138,7 +138,10 @@ describe('replicateSteps', () => {
       expect(synthSnap).toBeDefined();
       if (synthSnap) {
         const newest = at(synthSnap.fragments, synthSnap.fragments.length - 1);
-        expect(newest.sequence).toBeDefined();
+        expect(newest.phase).toBe('synthesized');
+        if (newest.phase === 'synthesized') {
+          expect(newest.sequence).toBeDefined();
+        }
       }
     });
 
@@ -153,7 +156,7 @@ describe('replicateSteps', () => {
         const targeted = removalSnap.fragments.find(
           f => f.id === removalSnap.lastEvent?.fragmentId,
         );
-        expect(targeted?.isPrimerRemoved).toBe(true);
+        expect(targeted?.phase).toBe('primer-removed');
       }
     });
 
@@ -164,7 +167,7 @@ describe('replicateSteps', () => {
       ];
       const last = at(snapshots, snapshots.length - 1);
       last.fragments.forEach(fragment => {
-        expect(fragment.isComplete()).toBe(true);
+        expect(isComplete(fragment)).toBe(true);
       });
     });
   });

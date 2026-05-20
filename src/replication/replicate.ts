@@ -8,7 +8,17 @@ import type {
   ReplicationSnapshot,
   ReplicationStatistics,
 } from './events.js';
-import { OkazakiFragment, unsafeOkazakiFragment } from './OkazakiFragment.js';
+import {
+  fragmentLength,
+  ligate,
+  removePrimer,
+  synthesize,
+  unsafePrimerOnlyFragment,
+  unsafeSynthesizedFragment,
+  type LigatedFragment,
+  type OkazakiFragment,
+  type SynthesizedFragment,
+} from './OkazakiFragment.js';
 import { unsafeRNAPrimerFromString } from './RNAPrimer.js';
 import type { ReplicationError } from './errors.js';
 import { E_COLI, type OrganismProfile } from './organism-profiles.js';
@@ -78,7 +88,7 @@ export function replicate(
   }
   const plan = planResult.data;
   const events: ReplicationEvent[] = [];
-  const fragments: OkazakiFragment[] = [];
+  const synthesizedFragments: SynthesizedFragment[] = [];
   let leadingStrandSynthesized = 0;
 
   for (const fragmentPlan of plan.fragmentPlans) {
@@ -112,15 +122,13 @@ export function replicate(
     });
 
     const fragmentSequence = unsafeDNA(fragmentPlan.synthesizedDNA);
-    fragments.push(
-      unsafeOkazakiFragment(
+    synthesizedFragments.push(
+      unsafeSynthesizedFragment(
         fragmentPlan.id,
         fragmentPlan.startPosition,
         fragmentPlan.endPosition,
         primer,
         fragmentSequence,
-        false,
-        false,
       ),
     );
     events.push({
@@ -132,8 +140,7 @@ export function replicate(
     });
   }
 
-  for (let i = 0; i < fragments.length; i++) {
-    const fragment = at(fragments, i);
+  const primerRemovedFragments = synthesizedFragments.map(fragment => {
     events.push({
       kind: 'primer-removal',
       position: fragment.startPosition,
@@ -141,11 +148,10 @@ export function replicate(
       basePairs: fragment.primer.length(),
       fragmentId: fragment.id,
     });
-    fragments[i] = fragment.withPrimerRemoved();
-  }
+    return removePrimer(fragment);
+  });
 
-  for (let i = 0; i < fragments.length; i++) {
-    const fragment = at(fragments, i);
+  const ligatedFragments: readonly LigatedFragment[] = primerRemovedFragments.map(fragment => {
     events.push({
       kind: 'ligation',
       position: fragment.startPosition,
@@ -153,15 +159,15 @@ export function replicate(
       basePairs: 0,
       fragmentId: fragment.id,
     });
-    fragments[i] = fragment.withLigated();
-  }
+    return ligate(fragment);
+  });
 
   const daughters = buildDaughters(template);
   const statistics = computeStatistics({
     totalSteps: events.length,
     templateLength: plan.templateLength,
     leadingStrandLength: leadingStrandSynthesized,
-    fragments,
+    fragments: ligatedFragments,
     organism: plan.organism,
   });
 
@@ -259,14 +265,11 @@ function* yieldSnapshots(plan: ReplicationPlan): Generator<ReplicationSnapshot, 
       fragmentPlan.startPosition,
     );
     fragments.push(
-      unsafeOkazakiFragment(
+      unsafePrimerOnlyFragment(
         fragmentPlan.id,
         fragmentPlan.startPosition,
         fragmentPlan.endPosition,
         primer,
-        undefined,
-        false,
-        false,
       ),
     );
     yield freezeSnapshot({
@@ -285,10 +288,13 @@ function* yieldSnapshots(plan: ReplicationPlan): Generator<ReplicationSnapshot, 
 
     const fragmentSequence = unsafeDNA(fragmentPlan.synthesizedDNA);
     const lastIndex = fragments.length - 1;
-    const lastFragment = fragments[lastIndex];
-    if (lastFragment !== undefined) {
-      fragments[lastIndex] = lastFragment.withSequence(fragmentSequence);
+    const lastFragment = at(fragments, lastIndex);
+    if (lastFragment.phase !== 'primer-only') {
+      throw new Error(
+        `Expected primer-only fragment at index ${lastIndex} during lagging-synthesis step, got phase ${lastFragment.phase}`,
+      );
     }
+    fragments[lastIndex] = synthesize(lastFragment, fragmentSequence);
     yield freezeSnapshot({
       step: step++,
       forkPosition,
@@ -306,7 +312,12 @@ function* yieldSnapshots(plan: ReplicationPlan): Generator<ReplicationSnapshot, 
 
   for (let i = 0; i < fragments.length; i++) {
     const fragment = at(fragments, i);
-    fragments[i] = fragment.withPrimerRemoved();
+    if (fragment.phase !== 'synthesized') {
+      throw new Error(
+        `Expected synthesized fragment at index ${i} during primer-removal pass, got phase ${fragment.phase}`,
+      );
+    }
+    fragments[i] = removePrimer(fragment);
     yield freezeSnapshot({
       step: step++,
       forkPosition,
@@ -324,7 +335,12 @@ function* yieldSnapshots(plan: ReplicationPlan): Generator<ReplicationSnapshot, 
 
   for (let i = 0; i < fragments.length; i++) {
     const fragment = at(fragments, i);
-    fragments[i] = fragment.withLigated();
+    if (fragment.phase !== 'primer-removed') {
+      throw new Error(
+        `Expected primer-removed fragment at index ${i} during ligation pass, got phase ${fragment.phase}`,
+      );
+    }
+    fragments[i] = ligate(fragment);
     yield freezeSnapshot({
       step: step++,
       forkPosition,
@@ -416,7 +432,7 @@ function computeStatistics(input: {
   fragments: readonly OkazakiFragment[];
   organism: OrganismProfile;
 }): ReplicationStatistics {
-  const fragmentLengths = input.fragments.map(f => f.length());
+  const fragmentLengths = input.fragments.map(f => fragmentLength(f));
   const totalFragmentSize = fragmentLengths.reduce((sum, length) => sum + length, 0);
   const averageOkazakiFragmentSize =
     fragmentLengths.length === 0 ? 0 : totalFragmentSize / fragmentLengths.length;

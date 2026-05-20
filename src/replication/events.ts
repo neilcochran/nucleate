@@ -63,9 +63,9 @@ export interface ReplicationEvent {
  *
  * Yielded by {@link replicateSteps}. Each snapshot is immutable; consumers visualizing the
  * simulation can render snapshots without worrying about mutation invalidating prior frames.
- * The {@link fragments} list reflects the lifecycle stages reached by the various Okazaki
- * fragments at this point in the run (some may have `sequence === undefined`, some may be
- * un-ligated, etc.).
+ * The {@link fragments} list reflects the lifecycle phases reached by the various Okazaki
+ * fragments at this point in the run; individual fragments may be in any of the four
+ * `phase` values (`'primer-only'`, `'synthesized'`, `'primer-removed'`, `'ligated'`).
  */
 export interface ReplicationSnapshot {
   /** 0-based step index within the iterator's stream. */
@@ -78,8 +78,9 @@ export interface ReplicationSnapshot {
   readonly leadingStrandSynthesized: number;
 
   /**
-   * Okazaki fragments seen so far. Each fragment carries its current lifecycle flags
-   * (`sequence`, `isPrimerRemoved`, `isLigated`).
+   * Okazaki fragments seen so far. Each fragment carries its current lifecycle `phase`
+   * discriminator and the phase-specific fields (notably `sequence`, present on every phase
+   * except `'primer-only'`).
    */
   readonly fragments: readonly OkazakiFragment[];
 

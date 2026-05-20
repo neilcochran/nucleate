@@ -23,8 +23,8 @@ const UNSAFE_PRIMER_KEY: unique symbol = Symbol('unsafe-rna-primer');
  * Instances are immutable. Construction goes through {@link parseRNAPrimer}, which validates
  * the sequence against the RNA alphabet and the biological length range. There is no public
  * mutator for the "removed" lifecycle state - the fragment-level event log narrates removal,
- * and a removed primer is represented by a fresh {@link RNAPrimer} value (or by the fragment
- * carrying `isPrimerRemoved: true`).
+ * and primer excision is represented at the fragment level by the `'primer-removed'` /
+ * `'ligated'` phase discriminators.
  */
 export class RNAPrimer {
   /** The validated RNA sequence of this primer. */
