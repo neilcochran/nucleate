@@ -1,6 +1,6 @@
 import { Result, success, failure, isFailure, at } from '../result/index.js';
 import { unsafeDNA } from '../sequence/DNA.js';
-import { unsafeRNA } from '../sequence/RNA.js';
+import { type RNA, unsafeRNA } from '../sequence/RNA.js';
 import type { Gene } from '../gene/index.js';
 import {
   geneCoord,
@@ -9,7 +9,6 @@ import {
   type GenomicRegion,
   type TranscriptCoord,
 } from '../coordinates/index.js';
-import { NucleotidePattern, compileLiteralPattern } from '../pattern/index.js';
 import type { TranscriptionError } from './errors.js';
 import { type PreMRNA, unsafePreMRNA } from './PreMRNA.js';
 import { findPromoters, identifyTSS, type PromoterSearchOptions } from './promoter-recognition.js';
@@ -18,7 +17,11 @@ import {
   DEFAULT_DOWNSTREAM_SEARCH_DISTANCE,
   DEFAULT_MIN_PROMOTER_STRENGTH,
 } from './biological-constants.js';
-import { POLYA_SIGNAL_OFFSET, CANONICAL_POLYA_SIGNAL_DNA } from '../polyadenylation/biology.js';
+import {
+  findPolyadenylationSites,
+  getStrongestPolyadenylationSite,
+} from '../polyadenylation/polyadenylation.js';
+import { DEFAULT_CLEAVAGE_OFFSET } from '../polyadenylation/scoring.js';
 
 /**
  * Configuration options for {@link transcribe}.
@@ -40,15 +43,6 @@ export interface TranscriptionOptions {
 }
 
 /**
- * Compiled at module load: pattern matching the canonical DNA polyadenylation signal
- * (`AATAAA`, which becomes `AAUAAA` in RNA). Hoisted out of the per-call hot path so the
- * regex is not rebuilt on every transcription.
- */
-const CANONICAL_POLYA_PATTERN: NucleotidePattern = compileLiteralPattern(
-  CANONICAL_POLYA_SIGNAL_DNA,
-);
-
-/**
  * Transcribes a {@link Gene} into a {@link PreMRNA}.
  *
  * Steps:
@@ -57,11 +51,12 @@ const CANONICAL_POLYA_PATTERN: NucleotidePattern = compileLiteralPattern(
  *    locate the strongest promoter upstream of the first exon and predict the TSS.
  * 2. Validate that the TSS is in-bounds and does not lie downstream of any exon start (which
  *    would produce negative transcript coordinates after translation).
- * 3. Search for the canonical polyadenylation signal downstream of the TSS to bracket the
- *    transcript; if no signal is found, the transcript extends to the gene end.
- * 4. Convert the gene-DNA slice into RNA (replacing T with U) and construct the
- *    {@link PreMRNA} (which
- *    eagerly computes transcript-coordinate exon and intron regions).
+ * 3. Convert the downstream gene DNA into RNA (replacing T with U) and route it through
+ *    {@link findPolyadenylationSites} to locate the strongest polyadenylation site. The
+ *    transcript ends at that site's predicted cleavage position (or at the gene end when
+ *    no qualifying site is found).
+ * 4. Construct the {@link PreMRNA} (which eagerly computes transcript-coordinate exon and
+ *    intron regions).
  *
  * @param gene - The gene to transcribe
  * @param options - Optional transcription configuration
@@ -121,14 +116,22 @@ export function transcribe(
     return failure({ kind: 'tss-conflicts-with-exons', tss, conflictingExons });
   }
 
-  const polyAGeneSite = findPolyadenylationSite(geneSequence, tssValue);
-  const transcriptEnd = polyAGeneSite ?? geneSequence.length;
+  const downstreamRNA = unsafeRNA(geneSequence.substring(tssValue).replaceAll('T', 'U'));
+  const strongest = getStrongestPolyadenylationSite(findPolyadenylationSites(downstreamRNA));
 
-  const transcriptDNAString = geneSequence.substring(tssValue, transcriptEnd);
-  const transcriptRNA = unsafeRNA(transcriptDNAString.replaceAll('T', 'U'));
-
-  const polyA: TranscriptCoord | undefined =
-    polyAGeneSite === undefined ? undefined : transcriptCoord(polyAGeneSite - tssValue);
+  let transcriptRNA: RNA;
+  let polyA: TranscriptCoord | undefined;
+  if (strongest === undefined) {
+    transcriptRNA = downstreamRNA;
+    polyA = undefined;
+  } else {
+    const cleavage =
+      strongest.cleavageSite ??
+      strongest.position + strongest.signal.length + DEFAULT_CLEAVAGE_OFFSET;
+    const transcriptEnd = Math.min(cleavage, downstreamRNA.length());
+    transcriptRNA = downstreamRNA.getSubsequence(0, transcriptEnd);
+    polyA = transcriptCoord(transcriptEnd);
+  }
 
   return success(unsafePreMRNA(transcriptRNA, gene, tss, polyA));
 }
@@ -188,22 +191,4 @@ function findTranscriptionStartSite(
   }
 
   return success(searchStart + firstTss);
-}
-
-/**
- * Locates the closest canonical polyadenylation signal downstream of the TSS.
- *
- * @param geneSequence - The full gene DNA sequence
- * @param tss - Gene-relative TSS position
- * @returns Gene-relative cleavage site (signal start + {@link POLYA_SIGNAL_OFFSET}), or
- * `undefined` when no signal was found
- */
-function findPolyadenylationSite(geneSequence: string, tss: number): number | undefined {
-  const searchRegion = unsafeDNA(geneSequence.substring(tss));
-  const matches = CANONICAL_POLYA_PATTERN.findAll(searchRegion);
-  const firstMatch = matches[0];
-  if (firstMatch === undefined) {
-    return undefined;
-  }
-  return tss + firstMatch.start + POLYA_SIGNAL_OFFSET;
 }

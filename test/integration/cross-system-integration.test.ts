@@ -35,8 +35,10 @@ describe('Cross-System Integration Tests', () => {
 
       if (isSuccess(transcriptionResult)) {
         const preMRNA = transcriptionResult.data;
-        // Transcript should contain the exact expected length (exon + 3'UTR)
-        expect(preMRNA.sequence.sequence.length).toBe(72);
+        // Transcript runs from TSS through the predicted cleavage site (11-23bp past
+        // the AAUAAA signal at gene position 95, so transcript-relative cleavage lands
+        // in the AU-rich 3'UTR window starting at position 86).
+        expect(preMRNA.sequence.sequence.length).toBe(86);
         expect(preMRNA.sequence.sequence.startsWith('AUG')).toBe(true);
         // Should contain stop codon but might not end with it due to 3'UTR
         expect(preMRNA.sequence.sequence).toContain('UAG');

@@ -70,10 +70,13 @@ export const INVALID_SPLICE_GENE = {
   // This should fail splice site validation due to AC...AA instead of GT...AG
 };
 
-// Larger gene for complex testing
+// Larger gene for complex testing. Trailing 16bp 3'UTR-style tail past the AATAAA
+// signal provides the analyzer's 11-23bp cleavage window with biologically reasonable
+// A/U-rich context; without it the signal sits at the gene end and is rejected for
+// having no cleavage-site room.
 export const COMPLEX_GENE = buildGeneFixture({
-  dnaSequence: 'GGGCCCATGAAAGTACGCCCAAGAGAGGGTAGATAAAAATAAA',
-  rnaSequence: 'GGGCCCAUGAAAGUACGCCCAAGAGAGGGUAGAUAAAAAAUAAA',
+  dnaSequence: 'GGGCCCATGAAAGTACGCCCAAGAGAGGGTAGATAAAAATAAACGCAGGCCATTCAAGC',
+  rnaSequence: 'GGGCCCAUGAAAGUACGCCCAAGAGAGGGUAGAUAAAAAUAAACGCAGGCCAUUCAAGC',
   exons: [
     { start: 6, end: 12, name: 'exon1' }, // ATGAAA
     { start: 32, end: 41, name: 'exon2' }, // ATAAAAAAT -> AUAAAAAAU
