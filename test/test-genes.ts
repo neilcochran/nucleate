@@ -1,7 +1,7 @@
 /**
  * Realistic gene sequences for testing that meet biological constraints:
- * - Introns ≥ 20 bp with proper GT...AG splice sites
- * - Exons ≥ 3 bp and ≤ 50,000 bp
+ * - Introns at least 20 bp with proper GT...AG splice sites
+ * - Exons between 3 and 50,000 bp inclusive
  * - Proper start codons (ATG) and biological sequences
  *
  * Each fixture's `splicedRNA` is derived from its `rnaSequence` + `exons` at module load

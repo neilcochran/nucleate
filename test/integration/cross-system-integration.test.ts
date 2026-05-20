@@ -2,8 +2,8 @@
  * Simplified cross-system integration tests
  *
  * These tests validate basic data flow between major systems:
- * - Gene expression → Translation → Polypeptide analysis
- * - Replication → Transcription coordination
+ * - Gene-expression pipeline: transcription, translation, polypeptide analysis
+ * - Coordination between replication and transcription
  * - Error propagation across system boundaries
  */
 

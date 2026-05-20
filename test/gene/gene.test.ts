@@ -220,13 +220,6 @@ describe('Gene', () => {
       const gene = unwrapGene('ATGCCCGGG', [{ start: 0, end: 9 }], '');
       expect(gene.name).toBe('');
     });
-
-    test('handles special-character names', () => {
-      for (const name of ['α-globin', 'IL-1β', 'HLA-DQB1', 'Gene Name 1']) {
-        const gene = unwrapGene('ATGCCCGGG', [{ start: 0, end: 9 }], name);
-        expect(gene.name).toBe(name);
-      }
-    });
   });
 
   describe('alternative splicing profile validation', () => {

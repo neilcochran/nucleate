@@ -18,16 +18,16 @@ import { doubleStrandedDNA } from '../../src/sequence';
 import { isSuccess, isFailure } from '../../src/result/Result';
 
 describe('Comprehensive Pipeline Integration Tests', () => {
-  describe('DNA → RNA → Protein Pipeline', () => {
+  describe('DNA -> RNA -> Protein Pipeline', () => {
     test('complete conversion pipeline maintains biological accuracy', () => {
-      // Test the full conversion chain: DNA → RNA → back to DNA
+      // Test the full conversion chain: DNA -> RNA -> back to DNA
       const originalDNA = parseDNA('ATGAAAGCCTTTGTGAACCAACACCTTGTAAGTAG').unwrap();
 
-      // Step 1: DNA → RNA
+      // Step 1: DNA -> RNA
       const rna = parseRNA(originalDNA.getSequence().replace(/T/g, 'U')).unwrap();
       expect(rna.getSequence()).toBe('AUGAAAGCCUUUGUGAACCAACACCUUGUAAGUAG');
 
-      // Step 2: RNA → DNA
+      // Step 2: RNA -> DNA
       const backToDNA = parseDNA(rna.getSequence().replace(/U/g, 'T')).unwrap();
       expect(backToDNA.getSequence()).toBe(originalDNA.getSequence());
 
@@ -195,11 +195,11 @@ describe('Comprehensive Pipeline Integration Tests', () => {
         const transcriptExons = preMRNA.exonRegions;
         expect(transcriptExons).toHaveLength(2);
 
-        // Exon 1: 29-56 in gene → 0-27 in transcript
+        // Exon 1: 29-56 in gene -> 0-27 in transcript
         expect(transcriptExons[0]?.start).toBe(0);
         expect(transcriptExons[0]?.end).toBe(27);
 
-        // Exon 2: 83-110 in gene → 54-81 in transcript
+        // Exon 2: 83-110 in gene -> 54-81 in transcript
         expect(transcriptExons[1]?.start).toBe(54);
         expect(transcriptExons[1]?.end).toBe(81);
 
@@ -222,7 +222,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
     });
 
     test('polypeptide creation integrates correctly with mRNA processing', () => {
-      // Test complete gene → protein pipeline
+      // Test complete gene -> protein pipeline
       const geneSequence =
         'GCGCTATAAAAGGCGC' + // Promoter
         'GGGGGGGGGGGG' + // Spacer

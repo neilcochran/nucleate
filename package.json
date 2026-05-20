@@ -75,7 +75,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "doc": "rimraf doc/ && typedoc --includeVersion --readme none --out docs src/",
-    "build": "node scripts/build.js",
+    "build": "npm run lint && rimraf dist/ && tsc",
     "clean": "rimraf dist/ doc/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\""

@@ -2,7 +2,7 @@
  * Integration tests for the complete gene expression pipeline.
  *
  * These tests validate the entire workflow:
- * Gene → transcription → PreMRNA → RNA processing → mature mRNA
+ * Pipeline stages: Gene, transcription, PreMRNA, RNA processing, mature mRNA
  *
  * This catches integration issues that unit tests miss, particularly
  * coordinate transformation bugs between transcription and RNA processing.
@@ -15,7 +15,7 @@ import { processRNA } from '../../src/modifications';
 import { isSuccess, isFailure } from '../../src/result/Result';
 
 describe('Gene Expression Pipeline Integration', () => {
-  describe('complete pipeline: Gene → transcription → RNA processing', () => {
+  describe('complete pipeline: Gene -> transcription -> RNA processing', () => {
     test('simple gene with TATA box processes correctly', () => {
       // Create a gene with biologically correct promoter structure
       // TATA box will be detected at position ~4, TSS will be at position ~29 (25bp downstream)
