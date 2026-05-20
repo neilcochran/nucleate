@@ -51,12 +51,7 @@ export type PatternError =
       readonly cause: string;
     };
 
-/**
- * Renders a {@link PatternError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link PatternError} as a human-readable message. */
 export function describePatternError(error: PatternError): string {
   switch (error.kind) {
     case 'empty-pattern':

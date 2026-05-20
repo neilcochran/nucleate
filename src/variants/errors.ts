@@ -87,12 +87,7 @@ export type VariantValidationError =
       readonly found: string;
     };
 
-/**
- * Renders a {@link VariantValidationError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link VariantValidationError} as a human-readable message. */
 export function describeVariantValidationError(error: VariantValidationError): string {
   switch (error.kind) {
     case 'variant-no-included-exons':

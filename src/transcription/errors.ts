@@ -67,12 +67,7 @@ export type TranscriptionError =
       readonly conflictingExons: readonly number[];
     };
 
-/**
- * Renders a {@link TranscriptionError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link TranscriptionError} as a human-readable message. */
 export function describeTranscriptionError(error: TranscriptionError): string {
   switch (error.kind) {
     case 'invalid-rna-sequence':

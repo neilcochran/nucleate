@@ -117,14 +117,7 @@ export function processAllSplicingVariants(
     if (!translateResult.success) {
       continue;
     }
-    outcomes.push(
-      new SplicingOutcome(
-        variant,
-        matureMRNA,
-        matureMRNA.codingSequence,
-        translateResult.data.aminoAcids.length,
-      ),
-    );
+    outcomes.push(new SplicingOutcome(variant, matureMRNA, translateResult.data.aminoAcids.length));
   }
   return success(outcomes);
 }

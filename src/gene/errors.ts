@@ -155,12 +155,7 @@ export type PromoterElementError =
       readonly scoreWeight: number;
     };
 
-/**
- * Renders a {@link GeneError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link GeneError} as a human-readable message. */
 export function describeGeneError(error: GeneError): string {
   switch (error.kind) {
     case 'invalid-sequence':
@@ -190,12 +185,7 @@ export function describeGeneError(error: GeneError): string {
   }
 }
 
-/**
- * Renders a {@link PromoterError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link PromoterError} as a human-readable message. */
 export function describePromoterError(error: PromoterError): string {
   switch (error.kind) {
     case 'invalid-tss':
@@ -203,12 +193,7 @@ export function describePromoterError(error: PromoterError): string {
   }
 }
 
-/**
- * Renders a {@link PromoterElementError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link PromoterElementError} as a human-readable message. */
 export function describePromoterElementError(error: PromoterElementError): string {
   switch (error.kind) {
     case 'empty-name':

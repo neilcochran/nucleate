@@ -60,12 +60,7 @@ export type TranslationError =
       readonly codonLength: number;
     };
 
-/**
- * Renders a {@link TranslationError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link TranslationError} as a human-readable message. */
 export function describeTranslationError(error: TranslationError): string {
   switch (error.kind) {
     case 'invalid-codon-sequence':

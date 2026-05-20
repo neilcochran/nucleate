@@ -30,12 +30,7 @@ export type PolyadenylationError =
       readonly max: number;
     };
 
-/**
- * Renders a {@link PolyadenylationError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link PolyadenylationError} as a human-readable message. */
 export function describePolyadenylationError(error: PolyadenylationError): string {
   switch (error.kind) {
     case 'invalid-cleavage-site':

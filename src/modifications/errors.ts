@@ -81,12 +81,7 @@ type ProcessingPipelineError =
  */
 export type ProcessingError = MRNAError | ProcessingPipelineError;
 
-/**
- * Renders an {@link MRNAError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders an {@link MRNAError} as a human-readable message. */
 export function describeMRNAError(error: MRNAError): string {
   switch (error.kind) {
     case 'invalid-sequence':
@@ -102,11 +97,7 @@ export function describeMRNAError(error: MRNAError): string {
 
 /**
  * Renders a {@link ProcessingError} as a human-readable message. Delegates the
- * {@link MRNAError} subset to {@link describeMRNAError}; handles the pipeline-specific
- * kinds inline.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
+ * {@link MRNAError} subset to {@link describeMRNAError}; handles pipeline-specific kinds inline.
  */
 export function describeProcessingError(error: ProcessingError): string {
   switch (error.kind) {

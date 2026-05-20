@@ -88,12 +88,7 @@ export function validateGenomicRegion<C extends number>(
   return success(undefined);
 }
 
-/**
- * Renders a {@link RegionError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description
- */
+/** Renders a {@link RegionError} as a human-readable message. */
 export function describeRegionError(error: RegionError): string {
   switch (error.kind) {
     case 'negative-start':

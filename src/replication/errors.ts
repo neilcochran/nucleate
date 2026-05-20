@@ -99,12 +99,7 @@ export type ReplicationError = {
   readonly minimum: number;
 };
 
-/**
- * Renders an {@link RNAPrimerError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders an {@link RNAPrimerError} as a human-readable message. */
 export function describeRNAPrimerError(error: RNAPrimerError): string {
   switch (error.kind) {
     case 'invalid-position':
@@ -118,12 +113,7 @@ export function describeRNAPrimerError(error: RNAPrimerError): string {
   }
 }
 
-/**
- * Renders an {@link OkazakiFragmentError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders an {@link OkazakiFragmentError} as a human-readable message. */
 export function describeOkazakiFragmentError(error: OkazakiFragmentError): string {
   switch (error.kind) {
     case 'empty-id':
@@ -141,12 +131,7 @@ export function describeOkazakiFragmentError(error: OkazakiFragmentError): strin
   }
 }
 
-/**
- * Renders a {@link ReplicationError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link ReplicationError} as a human-readable message. */
 export function describeReplicationError(error: ReplicationError): string {
   switch (error.kind) {
     case 'template-too-short':

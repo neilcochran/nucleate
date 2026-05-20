@@ -83,12 +83,7 @@ export type SplicingError =
     }
   | VariantValidationError;
 
-/**
- * Renders a {@link SplicingError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link SplicingError} as a human-readable message. */
 export function describeSplicingError(error: SplicingError): string {
   switch (error.kind) {
     case 'no-exons':

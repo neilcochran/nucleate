@@ -60,12 +60,7 @@ export type CodonError = {
   readonly expected: number;
 };
 
-/**
- * Renders a {@link CodonError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link CodonError} as a human-readable message. */
 export function describeCodonError(error: CodonError): string {
   switch (error.kind) {
     case 'wrong-codon-length':
@@ -100,12 +95,7 @@ export type ReadingFrameError =
       readonly position: number;
     };
 
-/**
- * Renders a {@link DNAError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link DNAError} as a human-readable message. */
 export function describeDNAError(error: DNAError): string {
   switch (error.kind) {
     case 'empty-sequence':
@@ -117,12 +107,7 @@ export function describeDNAError(error: DNAError): string {
   }
 }
 
-/**
- * Renders an {@link RNAError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders an {@link RNAError} as a human-readable message. */
 export function describeRNAError(error: RNAError): string {
   switch (error.kind) {
     case 'empty-sequence':
@@ -134,12 +119,7 @@ export function describeRNAError(error: RNAError): string {
   }
 }
 
-/**
- * Renders a {@link ReadingFrameError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link ReadingFrameError} as a human-readable message. */
 export function describeReadingFrameError(error: ReadingFrameError): string {
   switch (error.kind) {
     case 'frame-misaligned':
@@ -177,12 +157,7 @@ export type DoubleStrandedError =
       readonly actual: string;
     };
 
-/**
- * Renders a {@link DoubleStrandedError} as a human-readable message.
- *
- * @param error - The structured error payload
- * @returns A short human-readable description, suitable for logs or developer-facing messages
- */
+/** Renders a {@link DoubleStrandedError} as a human-readable message. */
 export function describeDoubleStrandedError(error: DoubleStrandedError): string {
   switch (error.kind) {
     case 'length-mismatch':
