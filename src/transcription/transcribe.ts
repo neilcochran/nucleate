@@ -1,14 +1,8 @@
 import { Result, success, failure, isFailure, at } from '../result/index.js';
 import { unsafeDNA } from '../sequence/DNA.js';
-import { type RNA, unsafeRNA } from '../sequence/RNA.js';
+import { unsafeRNA } from '../sequence/RNA.js';
 import type { Gene } from '../gene/index.js';
-import {
-  geneCoord,
-  transcriptCoord,
-  type GeneCoord,
-  type GenomicRegion,
-  type TranscriptCoord,
-} from '../coordinates/index.js';
+import { geneCoord, type GeneCoord, type GenomicRegion } from '../coordinates/index.js';
 import type { TranscriptionError } from './errors.js';
 import { type PreMRNA, unsafePreMRNA } from './PreMRNA.js';
 import { findPromoters, identifyTSS, type PromoterSearchOptions } from './promoter-recognition.js';
@@ -17,11 +11,6 @@ import {
   DEFAULT_DOWNSTREAM_SEARCH_DISTANCE,
   DEFAULT_MIN_PROMOTER_STRENGTH,
 } from './biological-constants.js';
-import {
-  findPolyadenylationSites,
-  getStrongestPolyadenylationSite,
-} from '../polyadenylation/polyadenylation.js';
-import { DEFAULT_CLEAVAGE_OFFSET } from '../polyadenylation/scoring.js';
 
 /**
  * Configuration options for {@link transcribe}.
@@ -51,10 +40,9 @@ export interface TranscriptionOptions {
  *    locate the strongest promoter upstream of the first exon and predict the TSS.
  * 2. Validate that the TSS is in-bounds and does not lie downstream of any exon start (which
  *    would produce negative transcript coordinates after translation).
- * 3. Convert the downstream gene DNA into RNA (replacing T with U) and route it through
- *    {@link findPolyadenylationSites} to locate the strongest polyadenylation site. The
- *    transcript ends at that site's predicted cleavage position (or at the gene end when
- *    no qualifying site is found).
+ * 3. Convert the downstream gene DNA into RNA (replacing T with U). The transcript spans the
+ *    TSS through the gene end; polyadenylation cleavage is modeled at processing time
+ *    (`processSpliced` / `processRNA`), not here.
  * 4. Construct the {@link PreMRNA} (which eagerly computes transcript-coordinate exon and
  *    intron regions).
  *
@@ -116,24 +104,9 @@ export function transcribe(
     return failure({ kind: 'tss-conflicts-with-exons', tss, conflictingExons });
   }
 
-  const downstreamRNA = unsafeRNA(geneSequence.substring(tssValue).replaceAll('T', 'U'));
-  const strongest = getStrongestPolyadenylationSite(findPolyadenylationSites(downstreamRNA));
+  const transcriptRNA = unsafeRNA(geneSequence.substring(tssValue).replaceAll('T', 'U'));
 
-  let transcriptRNA: RNA;
-  let polyA: TranscriptCoord | undefined;
-  if (strongest === undefined) {
-    transcriptRNA = downstreamRNA;
-    polyA = undefined;
-  } else {
-    const cleavage =
-      strongest.cleavageSite ??
-      strongest.position + strongest.signal.length + DEFAULT_CLEAVAGE_OFFSET;
-    const transcriptEnd = Math.min(cleavage, downstreamRNA.length());
-    transcriptRNA = downstreamRNA.getSubsequence(0, transcriptEnd);
-    polyA = transcriptCoord(transcriptEnd);
-  }
-
-  return success(unsafePreMRNA(transcriptRNA, gene, tss, polyA));
+  return success(unsafePreMRNA(transcriptRNA, gene, tss));
 }
 
 /**

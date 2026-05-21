@@ -24,14 +24,6 @@ describe('transcribe', () => {
         expect(preMRNA.sequence.sequence).toContain('AUAAAAAUA'); // exon2 in RNA
         expect(preMRNA.sourceGene).toBe(testGene);
         expect(preMRNA.hasIntrons()).toBe(true);
-
-        // COMPLEX_GENE has AATAAA downstream; cleavage site should be transcript-relative,
-        // beyond position 0.
-        const polyA = preMRNA.polyadenylationSite;
-        expect(polyA).toBeDefined();
-        if (polyA !== undefined) {
-          expect(polyA).toBeGreaterThan(0);
-        }
       }
     });
 
@@ -46,7 +38,7 @@ describe('transcribe', () => {
       }
     });
 
-    test('transcribes when no polyadenylation signal is present', () => {
+    test('transcript runs to the gene end (no cleavage at transcription time)', () => {
       const simpleGene = parseGene(
         'A'.repeat(100) + 'TATAAAAG' + 'A'.repeat(MIN_INTRON_SIZE) + 'ATGAAATTTGGG',
         [{ start: 128, end: 140 }],
@@ -55,8 +47,9 @@ describe('transcribe', () => {
       expect(isSuccess(result)).toBe(true);
       if (isSuccess(result)) {
         const preMRNA = result.data;
-        expect(preMRNA.polyadenylationSite).toBeUndefined();
         expect(preMRNA.sequence.sequence).toContain('AUGAAAUUUGGG');
+        const tss = preMRNA.transcriptionStartSite;
+        expect(preMRNA.sequence.sequence.length).toBe(simpleGene.sequence.sequence.length - tss);
       }
     });
 
@@ -87,21 +80,6 @@ describe('transcribe', () => {
         expect(seq).not.toContain('T');
         expect(seq).toContain('U');
         expect(seq).toMatch(/[AUGC]+/);
-      }
-    });
-
-    test('polyadenylation site sits downstream of the last exon (when found)', () => {
-      const result = transcribe(testGene);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        const preMRNA = result.data;
-        const polyA = preMRNA.polyadenylationSite;
-        if (polyA !== undefined) {
-          const lastExon = preMRNA.exonRegions.slice(-1)[0];
-          if (lastExon) {
-            expect(polyA).toBeGreaterThanOrEqual(lastExon.end);
-          }
-        }
       }
     });
   });

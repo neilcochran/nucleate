@@ -1,6 +1,6 @@
 import { Result, success, failure, isFailure } from '../result/index.js';
 import { parseRNA } from '../sequence/index.js';
-import { geneCoord, transcriptCoord } from '../coordinates/index.js';
+import { geneCoord } from '../coordinates/index.js';
 import type { Gene } from '../gene/index.js';
 import { type PreMRNA, unsafePreMRNA } from './PreMRNA.js';
 import type { TranscriptionError } from './errors.js';
@@ -24,7 +24,6 @@ import type { TranscriptionError } from './errors.js';
  * @param sequence - The RNA transcript string (will be parsed)
  * @param sourceGene - The gene that was transcribed
  * @param transcriptionStartSite - Gene-relative TSS (will be branded)
- * @param polyadenylationSite - Optional transcript-relative cleavage site (will be branded)
  * @returns `Result<PreMRNA, TranscriptionError>`
  *
  * @example
@@ -37,7 +36,6 @@ export function parsePreMRNA(
   sequence: string,
   sourceGene: Gene,
   transcriptionStartSite: number,
-  polyadenylationSite?: number,
 ): Result<PreMRNA, TranscriptionError> {
   const rnaResult = parseRNA(sequence);
   if (isFailure(rnaResult)) {
@@ -54,7 +52,5 @@ export function parsePreMRNA(
   }
 
   const tss = geneCoord(transcriptionStartSite);
-  const polyA =
-    polyadenylationSite === undefined ? undefined : transcriptCoord(polyadenylationSite);
-  return success(unsafePreMRNA(rna, sourceGene, tss, polyA));
+  return success(unsafePreMRNA(rna, sourceGene, tss));
 }

@@ -13,7 +13,7 @@ describe('PreMRNA', () => {
   });
 
   describe('parsePreMRNA', () => {
-    test('parses pre-mRNA with default polyadenylation site', () => {
+    test('parses pre-mRNA with TSS at the gene start', () => {
       const result = parsePreMRNA(SIMPLE_TWO_EXON_GENE.rnaSequence, testGene, 0);
       expect(isSuccess(result)).toBe(true);
       if (isSuccess(result)) {
@@ -21,15 +21,6 @@ describe('PreMRNA', () => {
         expect(preMRNA.sequence.sequence).toBe(SIMPLE_TWO_EXON_GENE.rnaSequence);
         expect(preMRNA.sourceGene).toBe(testGene);
         expect(preMRNA.transcriptionStartSite).toBe(0);
-        expect(preMRNA.polyadenylationSite).toBeUndefined();
-      }
-    });
-
-    test('parses pre-mRNA with polyadenylation site', () => {
-      const result = parsePreMRNA(SIMPLE_TWO_EXON_GENE.rnaSequence, testGene, 0, 30);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.data.polyadenylationSite).toBe(30);
       }
     });
 

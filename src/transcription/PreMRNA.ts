@@ -20,8 +20,11 @@ const UNSAFE_PREMRNA_KEY: unique symbol = Symbol('unsafe-premrna');
 /**
  * Pre-mRNA: the unprocessed RNA transcript produced by transcription, before splicing,
  * capping, or polyadenylation. Carries the transcript {@link RNA}, the source {@link Gene},
- * the gene-relative TSS, the optional transcript-relative polyadenylation site, and the
- * exon/intron regions translated into transcript coordinates.
+ * the gene-relative TSS, and the exon/intron regions translated into transcript coordinates.
+ *
+ * Transcription does not cleave: the transcript spans the TSS through the gene end.
+ * Polyadenylation cleavage is modeled at processing time (`processSpliced` / `processRNA`),
+ * which scans the spliced RNA for a polyadenylation signal and truncates accordingly.
  *
  * Composition over inheritance: a `PreMRNA` *has* an {@link RNA} sequence; it does not extend
  * `RNA`. Coordinate translation is computed once at construction time and exposed via the
@@ -40,12 +43,6 @@ export class PreMRNA {
 
   /** Gene-relative position of the transcription start site. */
   public readonly transcriptionStartSite: GeneCoord;
-
-  /**
-   * Transcript-relative position of the polyadenylation cleavage site, when one was located
-   * during transcription. `undefined` when no polyadenylation signal was found.
-   */
-  public readonly polyadenylationSite?: TranscriptCoord;
 
   /**
    * Exon regions translated into transcript-relative coordinates. Computed once at
@@ -68,7 +65,6 @@ export class PreMRNA {
    * @param sequence - The validated RNA transcript
    * @param sourceGene - The gene that was transcribed
    * @param transcriptionStartSite - Gene-relative TSS (branded)
-   * @param polyadenylationSite - Optional transcript-relative cleavage site (branded)
    * @param exonRegions - Pre-computed, branded exon regions in transcript coordinates
    * @param intronRegions - Pre-computed, branded intron regions in transcript coordinates
    * @param trustedKey - Sentinel proving the caller is `transcription/`-internal
@@ -79,7 +75,6 @@ export class PreMRNA {
     sequence: RNA,
     sourceGene: Gene,
     transcriptionStartSite: GeneCoord,
-    polyadenylationSite: TranscriptCoord | undefined,
     exonRegions: readonly GenomicRegion<TranscriptCoord>[],
     intronRegions: readonly GenomicRegion<TranscriptCoord>[],
     trustedKey: typeof UNSAFE_PREMRNA_KEY,
@@ -90,7 +85,6 @@ export class PreMRNA {
     this.sequence = sequence;
     this.sourceGene = sourceGene;
     this.transcriptionStartSite = transcriptionStartSite;
-    this.polyadenylationSite = polyadenylationSite;
     this.exonRegions = Object.freeze([...exonRegions]);
     this.intronRegions = Object.freeze([...intronRegions]);
   }
@@ -168,7 +162,6 @@ export class PreMRNA {
  * @param sequence - Validated RNA transcript
  * @param sourceGene - The gene that was transcribed
  * @param transcriptionStartSite - Gene-relative TSS (branded)
- * @param polyadenylationSite - Optional transcript-relative cleavage site (branded)
  * @returns A new `PreMRNA`
  *
  * @internal
@@ -177,7 +170,6 @@ export function unsafePreMRNA(
   sequence: RNA,
   sourceGene: Gene,
   transcriptionStartSite: GeneCoord,
-  polyadenylationSite: TranscriptCoord | undefined,
 ): PreMRNA {
   const transcriptLength = sequence.sequence.length;
   const exonRegions = translateExonsToTranscript(
@@ -190,7 +182,6 @@ export function unsafePreMRNA(
     sequence,
     sourceGene,
     transcriptionStartSite,
-    polyadenylationSite,
     exonRegions,
     intronRegions,
     UNSAFE_PREMRNA_KEY,

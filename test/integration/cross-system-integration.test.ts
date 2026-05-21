@@ -35,10 +35,10 @@ describe('Cross-System Integration Tests', () => {
 
       if (isSuccess(transcriptionResult)) {
         const preMRNA = transcriptionResult.data;
-        // Transcript runs from TSS through the predicted cleavage site (11-23bp past
-        // the AAUAAA signal at gene position 95, so transcript-relative cleavage lands
-        // in the AU-rich 3'UTR window starting at position 86).
-        expect(preMRNA.sequence.sequence.length).toBe(86);
+        // Transcript runs from TSS (gene position 29) through the gene end (124),
+        // length 95. Polyadenylation cleavage is modeled at processing time, not
+        // here; transcription itself does not truncate.
+        expect(preMRNA.sequence.sequence.length).toBe(95);
         expect(preMRNA.sequence.sequence.startsWith('AUG')).toBe(true);
         // Should contain stop codon but might not end with it due to 3'UTR
         expect(preMRNA.sequence.sequence).toContain('UAG');
