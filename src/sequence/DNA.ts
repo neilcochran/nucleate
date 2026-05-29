@@ -1,13 +1,5 @@
 import { NucleicAcidImpl } from './internal-nucleic-acid-impl.js';
 
-/**
- * Module-private construction key gating the {@link DNA} constructor. Not re-exported from
- * the package barrel; only files inside `src/` reach it via {@link unsafeDNA}.
- *
- * @internal
- */
-const UNSAFE_DNA_KEY: unique symbol = Symbol('unsafe-dna');
-
 const DNA_COMPLEMENT_MAP: Readonly<Record<string, string>> = Object.freeze({
   A: 'T',
   T: 'A',
@@ -21,25 +13,20 @@ const DNA_COMPLEMENT_MAP: Readonly<Record<string, string>> = Object.freeze({
  * Instances are immutable: the `sequence` field is `readonly` and every transformation
  * (`getSubsequence`, `getComplement`, `getReverseComplement`) returns a new `DNA`. All the
  * methods (substring / complement / containment / equality) come from the shared
- * {@link NucleicAcidImpl} base; `DNA` only contributes the alphabet-specific complement table
- * and a sentinel-gated constructor.
+ * {@link NucleicAcidImpl} base; `DNA` only contributes the alphabet-specific complement table.
  *
- * Public callers construct instances via {@link parseDNA}; the constructor is gated by a
- * module-private sentinel.
+ * Public callers construct instances via {@link parseDNA}; the constructor is module-private
+ * and is not part of the package's public surface.
  */
 export class DNA extends NucleicAcidImpl<DNA> {
   /**
    * Constructs a `DNA`. Module-private; public callers must go through {@link parseDNA}.
    *
    * @param sequence - A pre-validated, normalized (upper-case) DNA sequence
-   * @param trustedKey - Sentinel proving the caller is `sequence/`-internal
    *
    * @internal
    */
-  constructor(sequence: string, trustedKey: typeof UNSAFE_DNA_KEY) {
-    if (trustedKey !== UNSAFE_DNA_KEY) {
-      throw new Error('DNA must be constructed via parseDNA');
-    }
+  constructor(sequence: string) {
     super(sequence, DNA_COMPLEMENT_MAP);
   }
 
@@ -54,7 +41,7 @@ export class DNA extends NucleicAcidImpl<DNA> {
    * @internal
    */
   protected clone(sequence: string): DNA {
-    return new DNA(sequence, UNSAFE_DNA_KEY);
+    return new DNA(sequence);
   }
 }
 
@@ -69,5 +56,5 @@ export class DNA extends NucleicAcidImpl<DNA> {
  * @internal
  */
 export function unsafeDNA(sequence: string): DNA {
-  return new DNA(sequence, UNSAFE_DNA_KEY);
+  return new DNA(sequence);
 }

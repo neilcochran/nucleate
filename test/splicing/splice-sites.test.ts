@@ -3,7 +3,6 @@ import {
   findPotentialSpliceSites,
   SPLICE_CONSENSUS,
 } from '../../src/splicing';
-import { isSuccess, isFailure } from '../../src/result';
 import { GenomicRegion } from '../../src/coordinates';
 import { at } from '../utils/test-utils';
 
@@ -13,15 +12,15 @@ describe('splice-sites (DNA-side)', () => {
       const sequence = 'ATGGTAAAAGCCCGGG';
       const introns: GenomicRegion[] = [{ start: 3, end: 10 }]; // GTAAAAG
       const result = validateSpliceSites(sequence, introns);
-      expect(isSuccess(result)).toBe(true);
+      expect(result.success).toBe(true);
     });
 
     test('returns invalid-donor-site with position + found bases', () => {
       const sequence = 'ATGATCCCAGTTTAAA';
       const introns: GenomicRegion[] = [{ start: 3, end: 11 }]; // ATCCCAGT (AT donor)
       const result = validateSpliceSites(sequence, introns);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'invalid-donor-site') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'invalid-donor-site') {
         expect(result.error.position).toBe(3);
         expect(result.error.found).toBe('AT');
         expect(result.error.intronIndex).toBe(0);
@@ -32,8 +31,8 @@ describe('splice-sites (DNA-side)', () => {
       const sequence = 'ATGGTCCCATTTTAAA';
       const introns: GenomicRegion[] = [{ start: 3, end: 11 }]; // GTCCCATT
       const result = validateSpliceSites(sequence, introns);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'invalid-acceptor-site') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'invalid-acceptor-site') {
         expect(result.error.found).toBe('TT');
         expect(result.error.position).toBe(9);
       }
@@ -43,8 +42,8 @@ describe('splice-sites (DNA-side)', () => {
       const sequence = 'ATGGTAAA';
       const introns: GenomicRegion[] = [{ start: 3, end: 5 }];
       const result = validateSpliceSites(sequence, introns);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'intron-too-short') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'intron-too-short') {
         expect(result.error.length).toBe(2);
         expect(result.error.min).toBe(4);
       }
@@ -53,19 +52,19 @@ describe('splice-sites (DNA-side)', () => {
     test('succeeds on the minimal 4-base GT-AG intron', () => {
       const sequence = 'ATGGTAG';
       const introns: GenomicRegion[] = [{ start: 3, end: 7 }];
-      expect(isSuccess(validateSpliceSites(sequence, introns))).toBe(true);
+      expect(validateSpliceSites(sequence, introns).success).toBe(true);
     });
 
     test('succeeds with an empty intron list', () => {
-      expect(isSuccess(validateSpliceSites('ATGCCC', []))).toBe(true);
+      expect(validateSpliceSites('ATGCCC', []).success).toBe(true);
     });
 
     test('reports the first failing rule (donor) when multiple are invalid', () => {
       const sequence = 'ATGATCCCATTTTAAA';
       const introns: GenomicRegion[] = [{ start: 3, end: 11 }]; // ATCCCATT, both invalid
       const result = validateSpliceSites(sequence, introns);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('invalid-donor-site');
       }
     });

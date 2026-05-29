@@ -1,10 +1,9 @@
 import { parsePromoterElement, PromoterElement } from '../../src/gene';
 import { parseNucleotidePattern, NucleotidePattern } from '../../src/pattern';
-import { isFailure, isSuccess } from '../../src/result';
 
 function pattern(input: string): NucleotidePattern {
   const result = parseNucleotidePattern(input);
-  if (!isSuccess(result)) {
+  if (!result.success) {
     throw new Error(`parseNucleotidePattern unexpectedly failed for '${input}'`);
   }
   return result.data;
@@ -12,7 +11,7 @@ function pattern(input: string): NucleotidePattern {
 
 function element(name: string, p: string, position: number, scoreWeight = 0): PromoterElement {
   const result = parsePromoterElement(name, pattern(p), position, scoreWeight);
-  if (!isSuccess(result)) {
+  if (!result.success) {
     throw new Error(`parsePromoterElement unexpectedly failed: ${JSON.stringify(result.error)}`);
   }
   return result.data;
@@ -42,24 +41,24 @@ describe('PromoterElement', () => {
   describe('parsePromoterElement failure cases', () => {
     test('rejects empty name', () => {
       const result = parsePromoterElement('', pattern('AAAA'), 0, 0);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('empty-name');
       }
     });
 
     test('rejects non-finite position', () => {
       const result = parsePromoterElement('X', pattern('AAAA'), Number.NaN, 0);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('invalid-position');
       }
     });
 
     test('rejects non-finite score weight', () => {
       const result = parsePromoterElement('X', pattern('AAAA'), 0, Number.POSITIVE_INFINITY);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('invalid-score-weight');
       }
     });

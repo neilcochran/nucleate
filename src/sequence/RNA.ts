@@ -1,13 +1,5 @@
 import { NucleicAcidImpl } from './internal-nucleic-acid-impl.js';
 
-/**
- * Module-private construction key gating the {@link RNA} constructor. Not re-exported from
- * the package barrel; only files inside `src/` reach it via {@link unsafeRNA}.
- *
- * @internal
- */
-const UNSAFE_RNA_KEY: unique symbol = Symbol('unsafe-rna');
-
 const RNA_COMPLEMENT_MAP: Readonly<Record<string, string>> = Object.freeze({
   A: 'U',
   U: 'A',
@@ -21,25 +13,20 @@ const RNA_COMPLEMENT_MAP: Readonly<Record<string, string>> = Object.freeze({
  * Instances are immutable: the `sequence` field is `readonly` and every transformation
  * (`getSubsequence`, `getComplement`, `getReverseComplement`) returns a new `RNA`. All the
  * methods (substring / complement / containment / equality) come from the shared
- * {@link NucleicAcidImpl} base; `RNA` only contributes the alphabet-specific complement table
- * and a sentinel-gated constructor.
+ * {@link NucleicAcidImpl} base; `RNA` only contributes the alphabet-specific complement table.
  *
- * Public callers construct instances via {@link parseRNA}; the constructor is gated by a
- * module-private sentinel.
+ * Public callers construct instances via {@link parseRNA}; the constructor is module-private
+ * and is not part of the package's public surface.
  */
 export class RNA extends NucleicAcidImpl<RNA> {
   /**
    * Constructs an `RNA`. Module-private; public callers must go through {@link parseRNA}.
    *
    * @param sequence - A pre-validated, normalized (upper-case) RNA sequence
-   * @param trustedKey - Sentinel proving the caller is `sequence/`-internal
    *
    * @internal
    */
-  constructor(sequence: string, trustedKey: typeof UNSAFE_RNA_KEY) {
-    if (trustedKey !== UNSAFE_RNA_KEY) {
-      throw new Error('RNA must be constructed via parseRNA');
-    }
+  constructor(sequence: string) {
     super(sequence, RNA_COMPLEMENT_MAP);
   }
 
@@ -54,7 +41,7 @@ export class RNA extends NucleicAcidImpl<RNA> {
    * @internal
    */
   protected clone(sequence: string): RNA {
-    return new RNA(sequence, UNSAFE_RNA_KEY);
+    return new RNA(sequence);
   }
 }
 
@@ -69,5 +56,5 @@ export class RNA extends NucleicAcidImpl<RNA> {
  * @internal
  */
 export function unsafeRNA(sequence: string): RNA {
-  return new RNA(sequence, UNSAFE_RNA_KEY);
+  return new RNA(sequence);
 }

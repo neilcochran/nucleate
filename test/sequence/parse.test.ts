@@ -1,4 +1,6 @@
-import { DNA, RNA, parseDNA, parseRNA } from '../../src/sequence';
+import { parseDNA, parseRNA } from '../../src/sequence';
+import { DNA } from '../../src/sequence/DNA';
+import { RNA } from '../../src/sequence/RNA';
 
 describe('parseDNA', () => {
   test('returns success for a valid sequence', () => {

@@ -8,7 +8,6 @@ import { parseGene } from '../../src/gene';
 import { transcribe } from '../../src/transcription';
 import { processRNA } from '../../src/modifications';
 import { findPolyadenylationSites } from '../../src/polyadenylation';
-import { isSuccess } from '../../src/result/Result';
 import { at } from '../utils/test-utils';
 
 describe('Polyadenylation Integration Tests', () => {
@@ -24,9 +23,9 @@ describe('Polyadenylation Integration Tests', () => {
 
     const gene = parseGene(geneSequence, exons, 'polya-test-gene').unwrap();
     const transcriptionResult = transcribe(gene);
-    expect(isSuccess(transcriptionResult)).toBe(true);
+    expect(transcriptionResult.success).toBe(true);
 
-    if (isSuccess(transcriptionResult)) {
+    if (transcriptionResult.success) {
       const preMRNA = transcriptionResult.data;
 
       // Check that polyadenylation site detection works
@@ -35,7 +34,7 @@ describe('Polyadenylation Integration Tests', () => {
 
       // Process RNA - should succeed
       const processingResult = processRNA(preMRNA);
-      if (isSuccess(processingResult)) {
+      if (processingResult.success) {
         const mRNA = processingResult.data;
 
         // Verify basic mRNA structure
@@ -63,9 +62,9 @@ describe('Polyadenylation Integration Tests', () => {
 
     const gene = parseGene(geneSequence, exons, 'site-detection-test').unwrap();
     const transcriptionResult = transcribe(gene);
-    expect(isSuccess(transcriptionResult)).toBe(true);
+    expect(transcriptionResult.success).toBe(true);
 
-    if (isSuccess(transcriptionResult)) {
+    if (transcriptionResult.success) {
       const preMRNA = transcriptionResult.data;
 
       // This should not throw an error
@@ -110,14 +109,14 @@ describe('Polyadenylation Integration Tests', () => {
 
       const gene = parseGene(geneSequence, exons, testCase.name).unwrap();
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
 
         // Should either succeed or fail gracefully
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
           expect(mRNA.isFullyProcessed()).toBe(true);
         } else {

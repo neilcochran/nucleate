@@ -15,7 +15,6 @@ import { parsePreMRNA } from '../../src/transcription';
 import { transcribe } from '../../src/transcription';
 import { replicate } from '../../src/replication';
 import { doubleStrandedDNA } from '../../src/sequence';
-import { isSuccess, isFailure } from '../../src/result/Result';
 
 describe('Comprehensive Pipeline Integration Tests', () => {
   describe('DNA -> RNA -> Protein Pipeline', () => {
@@ -128,7 +127,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
       // Test that errors propagate correctly through the pipeline without crashing
 
       // Invalid sequence should fail early
-      expect(isFailure(parseDNA('INVALID'))).toBe(true);
+      expect(!parseDNA('INVALID').success).toBe(true);
 
       // Invalid gene structure should fail gracefully
       const validSequence = 'ATGAAAGCCTTTGTGAACCAACACCTTGTAAGTAG';
@@ -136,7 +135,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
         { start: 100, end: 150, name: 'invalid' }, // Beyond sequence length
       ];
 
-      expect(isFailure(parseGene(validSequence, invalidExons, 'invalid-gene'))).toBe(true);
+      expect(!parseGene(validSequence, invalidExons, 'invalid-gene').success).toBe(true);
     });
 
     test('TSS validation prevents downstream failures', () => {
@@ -155,8 +154,8 @@ describe('Comprehensive Pipeline Integration Tests', () => {
       const transcriptionResult = transcribe(gene);
 
       // Should fail due to TSS/exon conflict
-      expect(isFailure(transcriptionResult)).toBe(true);
-      if (isFailure(transcriptionResult)) {
+      expect(!transcriptionResult.success).toBe(true);
+      if (!transcriptionResult.success) {
         expect(transcriptionResult.error.kind).toBe('tss-conflicts-with-exons');
       }
     });
@@ -182,9 +181,9 @@ describe('Comprehensive Pipeline Integration Tests', () => {
 
       // Step 1: Transcription
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const tss = preMRNA.transcriptionStartSite;
 
@@ -205,9 +204,9 @@ describe('Comprehensive Pipeline Integration Tests', () => {
 
         // Step 2: RNA Processing
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
 
           // Verify splicing removed introns
@@ -237,14 +236,14 @@ describe('Comprehensive Pipeline Integration Tests', () => {
 
       // Full pipeline
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
 
           // Create polypeptide
@@ -286,14 +285,14 @@ describe('Comprehensive Pipeline Integration Tests', () => {
       const gene = parseGene(largeGeneSequence, exons, 'large-gene').unwrap();
       const transcriptionResult = transcribe(gene);
 
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
           const polypeptide = translate(mRNA).unwrap();
 
@@ -324,16 +323,16 @@ describe('Comprehensive Pipeline Integration Tests', () => {
       const gene = parseGene(minimalGene, exons, 'minimal-gene').unwrap();
       const transcriptionResult = transcribe(gene);
 
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.hasIntrons()).toBe(false);
 
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
 
           // MEANINGFUL: Verify exact minimal coding sequence
@@ -376,9 +375,9 @@ describe('Comprehensive Pipeline Integration Tests', () => {
       const gene = parseGene(largeGeneSequence, exons, 'large-gene-10kb').unwrap();
       const transcriptionResult = transcribe(gene);
 
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.hasIntrons()).toBe(true);
 
@@ -386,7 +385,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
         const processingResult = processRNA(preMRNA);
 
         // Processing might fail on large sequences due to various issues
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
 
           // Verify splicing worked correctly - should have removed introns
@@ -399,7 +398,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
           expect(polypeptide.aminoAcids.length).toBe(expectedProteinLength);
         } else {
           // If processing fails on large sequences, that's understandable
-          expect(isFailure(processingResult)).toBe(true);
+          expect(!processingResult.success).toBe(true);
           expect(processingResult.error).toBeTruthy();
         }
       }
@@ -429,9 +428,9 @@ describe('Comprehensive Pipeline Integration Tests', () => {
       // Test replication of large sequence
       const parent = doubleStrandedDNA(dna);
       const replicationResult = replicate(parent);
-      expect(isSuccess(replicationResult)).toBe(true);
+      expect(replicationResult.success).toBe(true);
 
-      if (isSuccess(replicationResult)) {
+      if (replicationResult.success) {
         const [duplex1, duplex2] = replicationResult.data.daughters;
         expect(duplex1.forward.sequence.length).toBe(dna.getSequence().length);
         expect(duplex2.forward.sequence.length).toBe(dna.getSequence().length);
@@ -505,7 +504,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
 
         // Process variant through the full splicing + maturation pipeline
         const processResult = processSpliceVariant(preMRNA, variant);
-        if (isSuccess(processResult)) {
+        if (processResult.success) {
           const mRNA = processResult.data;
 
           // Verify the mature mRNA carries the variant's spliced exons as its transcript
@@ -519,9 +518,9 @@ describe('Comprehensive Pipeline Integration Tests', () => {
 
           // Step 3: Translate the mature mRNA
           const translateResult = translate(mRNA);
-          expect(isSuccess(translateResult)).toBe(true);
+          expect(translateResult.success).toBe(true);
 
-          if (isSuccess(translateResult)) {
+          if (translateResult.success) {
             expect(translateResult.data.aminoAcids.length).toBeGreaterThan(0);
             processedVariants++;
           }

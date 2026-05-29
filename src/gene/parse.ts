@@ -1,4 +1,4 @@
-import { Result, success, failure, isFailure } from '../result/index.js';
+import { Result, success, failure } from '../result/index.js';
 import { parseDNA } from '../sequence/index.js';
 import {
   geneCoord,
@@ -71,13 +71,13 @@ export function parseGene(
   splicingProfile?: AlternativeSplicingProfile,
 ): Result<Gene, GeneError> {
   const dnaResult = parseDNA(sequence);
-  if (isFailure(dnaResult)) {
+  if (!dnaResult.success) {
     return failure({ kind: 'invalid-sequence', cause: dnaResult.error });
   }
   const dna = dnaResult.data;
 
   const exonValidation = validateExons(exons, dna.getSequence().length);
-  if (isFailure(exonValidation)) {
+  if (!exonValidation.success) {
     return failure(exonValidation.error);
   }
 
@@ -96,7 +96,7 @@ export function parseGene(
 
   if (splicingProfile !== undefined) {
     const profileValidation = validateSplicingProfile(splicingProfile, gene);
-    if (isFailure(profileValidation)) {
+    if (!profileValidation.success) {
       return failure(profileValidation.error);
     }
   }
@@ -199,7 +199,7 @@ function validateSplicingProfile(
 
   for (const variant of profile.variants) {
     const variantValidation = validateSpliceVariant(variant, gene, STRUCTURAL_VALIDATION_ONLY);
-    if (isFailure(variantValidation)) {
+    if (!variantValidation.success) {
       return failure({ kind: 'invalid-variant', cause: variantValidation.error });
     }
   }

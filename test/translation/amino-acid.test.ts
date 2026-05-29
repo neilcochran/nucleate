@@ -4,7 +4,7 @@ import {
   AminoAcidPolarity,
   AminoAcidSideChainType,
 } from '../../src/translation';
-import { RNA } from '../../src/sequence';
+import { RNA } from '../../src/sequence/RNA';
 import { at } from '../utils/test-utils';
 
 describe('AminoAcid (via parseAminoAcid)', () => {

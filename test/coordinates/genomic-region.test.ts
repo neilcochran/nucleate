@@ -6,25 +6,24 @@ import {
   validateNonOverlappingRegions,
   deriveIntronsFromExons,
 } from '../../src/coordinates';
-import { isFailure, isSuccess } from '../../src/result';
 
 describe('GenomicRegion utilities', () => {
   describe('validateGenomicRegion', () => {
     test('validates correct region', () => {
       const region: GenomicRegion = { start: 0, end: 10 };
-      expect(isSuccess(validateGenomicRegion(region))).toBe(true);
+      expect(validateGenomicRegion(region).success).toBe(true);
     });
 
     test('validates region with name', () => {
       const region: GenomicRegion = { start: 5, end: 15, name: 'exon1' };
-      expect(isSuccess(validateGenomicRegion(region))).toBe(true);
+      expect(validateGenomicRegion(region).success).toBe(true);
     });
 
     test('rejects region where start equals end with start-not-before-end', () => {
       const region: GenomicRegion = { start: 5, end: 5 };
       const result = validateGenomicRegion(region);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('start-not-before-end');
       }
     });
@@ -32,8 +31,8 @@ describe('GenomicRegion utilities', () => {
     test('rejects region where start > end with start-not-before-end', () => {
       const region: GenomicRegion = { start: 10, end: 5 };
       const result = validateGenomicRegion(region);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'start-not-before-end') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'start-not-before-end') {
         expect(result.error.start).toBe(10);
         expect(result.error.end).toBe(5);
       }
@@ -42,8 +41,8 @@ describe('GenomicRegion utilities', () => {
     test('rejects region with negative start', () => {
       const region: GenomicRegion = { start: -1, end: 10 };
       const result = validateGenomicRegion(region);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'negative-start') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'negative-start') {
         expect(result.error.start).toBe(-1);
       }
     });
@@ -51,15 +50,15 @@ describe('GenomicRegion utilities', () => {
     test('rejects region with negative end', () => {
       const region: GenomicRegion = { start: 0, end: -5 };
       const result = validateGenomicRegion(region);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'negative-end') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'negative-end') {
         expect(result.error.end).toBe(-5);
       }
     });
 
     test('validates zero-start region', () => {
       const region: GenomicRegion = { start: 0, end: 1 };
-      expect(isSuccess(validateGenomicRegion(region))).toBe(true);
+      expect(validateGenomicRegion(region).success).toBe(true);
     });
 
     test('describeRegionError renders each variant', () => {

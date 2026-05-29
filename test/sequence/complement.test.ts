@@ -1,4 +1,6 @@
-import { DNA, RNA, parseDNA, parseRNA, complement, reverseComplement } from '../../src/sequence';
+import { parseDNA, parseRNA, complement, reverseComplement } from '../../src/sequence';
+import { DNA } from '../../src/sequence/DNA';
+import { RNA } from '../../src/sequence/RNA';
 
 function dna(sequence: string) {
   return parseDNA(sequence).unwrap();

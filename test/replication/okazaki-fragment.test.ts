@@ -17,7 +17,6 @@ import {
   unsafeSynthesizedFragment,
 } from '../../src/replication/OkazakiFragment';
 import { parseDNA } from '../../src/sequence';
-import { isFailure, isSuccess } from '../../src/result/Result';
 
 const PRIMER_AT_0 = parseRNAPrimer('AUCG', 0).unwrap();
 const PRIMER_AT_100 = parseRNAPrimer('AUCG', 100).unwrap();
@@ -26,8 +25,8 @@ describe('OkazakiFragment', () => {
   describe('parsePrimerOnlyFragment', () => {
     test('accepts a primer-only fragment', () => {
       const result = parsePrimerOnlyFragment('frag-1', 0, 1000, PRIMER_AT_0);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         const f = result.data;
         expect(f.phase).toBe('primer-only');
         expect(f.id).toBe('frag-1');
@@ -40,32 +39,32 @@ describe('OkazakiFragment', () => {
 
     test('rejects empty id', () => {
       const result = parsePrimerOnlyFragment('', 0, 100, PRIMER_AT_0);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('empty-id');
       }
     });
 
     test('rejects negative start position', () => {
       const result = parsePrimerOnlyFragment('frag', -1, 100, PRIMER_AT_0);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'invalid-position') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'invalid-position') {
         expect(result.error.position).toBe(-1);
       }
     });
 
     test('rejects non-integer start position', () => {
       const result = parsePrimerOnlyFragment('frag', 1.5, 100, PRIMER_AT_0);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('invalid-position');
       }
     });
 
     test('rejects endPosition not strictly greater than startPosition', () => {
       const result = parsePrimerOnlyFragment('frag', 100, 100, PRIMER_AT_100);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'invalid-range') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'invalid-range') {
         expect(result.error.startPosition).toBe(100);
         expect(result.error.endPosition).toBe(100);
       }
@@ -73,8 +72,8 @@ describe('OkazakiFragment', () => {
 
     test('rejects when primer position does not equal startPosition', () => {
       const result = parsePrimerOnlyFragment('frag', 50, 150, PRIMER_AT_0);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'primer-position-mismatch') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'primer-position-mismatch') {
         expect(result.error.primerPosition).toBe(0);
         expect(result.error.startPosition).toBe(50);
       }
@@ -85,8 +84,8 @@ describe('OkazakiFragment', () => {
     test('accepts a synthesized fragment with matching sequence length', () => {
       const sequence = parseDNA('ATCG').unwrap();
       const result = parseSynthesizedFragment('frag-x', 100, 104, PRIMER_AT_100, sequence);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         const f = result.data;
         expect(f.phase).toBe('synthesized');
         expect(f.sequence.sequence).toBe('ATCG');
@@ -98,8 +97,8 @@ describe('OkazakiFragment', () => {
     test('rejects sequence whose length does not match the range', () => {
       const sequence = parseDNA('AT').unwrap();
       const result = parseSynthesizedFragment('frag', 0, 10, PRIMER_AT_0, sequence);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'sequence-length-mismatch') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'sequence-length-mismatch') {
         expect(result.error.sequenceLength).toBe(2);
         expect(result.error.expectedLength).toBe(10);
       }
@@ -108,8 +107,8 @@ describe('OkazakiFragment', () => {
     test('shares the position / primer / id validation rules with the other parsers', () => {
       const sequence = parseDNA('ATCG').unwrap();
       const result = parseSynthesizedFragment('', 0, 4, PRIMER_AT_0, sequence);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('empty-id');
       }
     });
@@ -119,8 +118,8 @@ describe('OkazakiFragment', () => {
     test('accepts a primer-removed fragment', () => {
       const sequence = parseDNA('ATCG').unwrap();
       const result = parsePrimerRemovedFragment('frag', 100, 104, PRIMER_AT_100, sequence);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         expect(result.data.phase).toBe('primer-removed');
         expect(result.data.sequence.sequence).toBe('ATCG');
         expect(isComplete(result.data)).toBe(false);
@@ -130,8 +129,8 @@ describe('OkazakiFragment', () => {
     test('rejects sequence whose length does not match the range', () => {
       const sequence = parseDNA('AT').unwrap();
       const result = parsePrimerRemovedFragment('frag', 0, 10, PRIMER_AT_0, sequence);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('sequence-length-mismatch');
       }
     });
@@ -141,8 +140,8 @@ describe('OkazakiFragment', () => {
     test('accepts a ligated fragment', () => {
       const sequence = parseDNA('ATCG').unwrap();
       const result = parseLigatedFragment('frag', 100, 104, PRIMER_AT_100, sequence);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         const f = result.data;
         expect(f.phase).toBe('ligated');
         expect(f.sequence.sequence).toBe('ATCG');

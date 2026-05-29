@@ -1,15 +1,6 @@
 import type { NucleotidePattern } from '../pattern/index.js';
 
 /**
- * Module-private construction key gating the {@link PromoterElement} constructor. Not
- * re-exported from the package barrel; in-tree callers reach it via
- * {@link unsafePromoterElement}.
- *
- * @internal
- */
-const UNSAFE_PROMOTER_ELEMENT_KEY: unique symbol = Symbol('unsafe-promoter-element');
-
-/**
  * A single regulatory element of a gene promoter.
  *
  * Carries the nucleotide-level pattern that defines the element (e.g. the TATA-box IUPAC
@@ -17,8 +8,8 @@ const UNSAFE_PROMOTER_ELEMENT_KEY: unique symbol = Symbol('unsafe-promoter-eleme
  * (negative for upstream elements, positive for downstream), and the score weight that the
  * containing {@link Promoter} adds to its strength score when this element is present.
  *
- * Public construction goes through `parsePromoterElement`; the constructor is gated by a
- * module-private sentinel.
+ * Public construction goes through `parsePromoterElement`; the constructor is module-private
+ * and is not part of the package's public surface.
  */
 export class PromoterElement {
   /** The nucleotide pattern that defines this promoter element. */
@@ -48,20 +39,10 @@ export class PromoterElement {
    * @param pattern - IUPAC nucleotide pattern that matches the element
    * @param position - Position relative to TSS, in base pairs
    * @param scoreWeight - Score contribution for promoter-strength calculation
-   * @param trustedKey - Sentinel proving the caller is `gene/`-internal
    *
    * @internal
    */
-  constructor(
-    name: string,
-    pattern: NucleotidePattern,
-    position: number,
-    scoreWeight: number,
-    trustedKey: typeof UNSAFE_PROMOTER_ELEMENT_KEY,
-  ) {
-    if (trustedKey !== UNSAFE_PROMOTER_ELEMENT_KEY) {
-      throw new Error('PromoterElement must be constructed via parsePromoterElement');
-    }
+  constructor(name: string, pattern: NucleotidePattern, position: number, scoreWeight: number) {
     this.name = name;
     this.pattern = pattern;
     this.position = position;
@@ -114,5 +95,5 @@ export function unsafePromoterElement(
   position: number,
   scoreWeight: number,
 ): PromoterElement {
-  return new PromoterElement(name, pattern, position, scoreWeight, UNSAFE_PROMOTER_ELEMENT_KEY);
+  return new PromoterElement(name, pattern, position, scoreWeight);
 }

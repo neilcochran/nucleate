@@ -1,4 +1,4 @@
-import { Result, success, failure, isFailure, at } from '../result/index.js';
+import { Result, success, failure, at } from '../result/index.js';
 import { unsafeDNA } from '../sequence/DNA.js';
 import { unsafeRNA } from '../sequence/RNA.js';
 import type { Gene } from '../gene/index.js';
@@ -79,7 +79,7 @@ export function transcribe(
       maxPromoterSearchDistance,
       minPromoterStrength,
     );
-    if (isFailure(tssResult)) {
+    if (!tssResult.success) {
       return failure(tssResult.error);
     }
     tssValue = tssResult.data;

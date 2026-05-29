@@ -1,6 +1,5 @@
 import { parsePreMRNA } from '../../src/transcription';
 import { parseGene, Gene } from '../../src/gene';
-import { isFailure, isSuccess } from '../../src/result/Result';
 import { SIMPLE_TWO_EXON_GENE, SINGLE_EXON_GENE } from '../test-genes';
 
 describe('PreMRNA', () => {
@@ -15,8 +14,8 @@ describe('PreMRNA', () => {
   describe('parsePreMRNA', () => {
     test('parses pre-mRNA with TSS at the gene start', () => {
       const result = parsePreMRNA(SIMPLE_TWO_EXON_GENE.rnaSequence, testGene, 0);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         const preMRNA = result.data;
         expect(preMRNA.sequence.sequence).toBe(SIMPLE_TWO_EXON_GENE.rnaSequence);
         expect(preMRNA.sourceGene).toBe(testGene);
@@ -26,24 +25,24 @@ describe('PreMRNA', () => {
 
     test('parses pre-mRNA with non-zero TSS (partial first exon)', () => {
       const result = parsePreMRNA(SIMPLE_TWO_EXON_GENE.rnaSequence.substring(3), testGene, 3);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         expect(result.data.transcriptionStartSite).toBe(3);
       }
     });
 
     test('rejects negative TSS', () => {
       const result = parsePreMRNA(SIMPLE_TWO_EXON_GENE.rnaSequence, testGene, -1);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('tss-out-of-bounds');
       }
     });
 
     test('rejects malformed RNA sequence with the underlying RNA-parser error surfaced', () => {
       const result = parsePreMRNA('AUGXX', testGene, 0);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'invalid-rna-sequence') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'invalid-rna-sequence') {
         expect(result.error.cause.kind).toBe('invalid-characters');
         if (result.error.cause.kind === 'invalid-characters') {
           expect(result.error.cause.chars).toEqual(['X']);
@@ -54,8 +53,8 @@ describe('PreMRNA', () => {
 
     test('rejects empty RNA sequence with the underlying RNA-parser error surfaced', () => {
       const result = parsePreMRNA('', testGene, 0);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'invalid-rna-sequence') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'invalid-rna-sequence') {
         expect(result.error.cause.kind).toBe('empty-sequence');
       }
     });

@@ -1,6 +1,5 @@
 import { HUMAN, isComplete, replicateSteps } from '../../src/replication';
 import { doubleStrandedDNA, parseDNA } from '../../src/sequence';
-import { isFailure } from '../../src/result';
 import { at } from '../utils/test-utils';
 
 function seededRng(seed: number): () => number {
@@ -176,8 +175,8 @@ describe('replicateSteps', () => {
     test('returns Result.failure on a template that is too short', () => {
       const parent = parentOf('ATG');
       const result = replicateSteps(parent);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('template-too-short');
       }
     });

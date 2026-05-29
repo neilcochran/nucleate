@@ -2,23 +2,14 @@ import type { MRNA } from '../modifications/index.js';
 import type { AminoAcid } from './AminoAcid.js';
 
 /**
- * Module-private construction key gating the {@link Polypeptide} constructor. Not
- * re-exported from the package barrel; only files inside `src/translation/` reach it via
- * {@link unsafePolypeptide}.
- *
- * @internal
- */
-const UNSAFE_POLYPEPTIDE_KEY: unique symbol = Symbol('unsafe-polypeptide');
-
-/**
  * A polypeptide: the ordered amino-acid product of translating an mRNA's coding sequence.
  *
  * Composition over inheritance: a `Polypeptide` *has* an mRNA and an amino-acid sequence; it
  * is not a kind of sequence. Translation terminates at the first in-frame stop codon, so the
  * stored amino-acid sequence may be shorter than `mRNA.codingSequence.length / 3`.
  *
- * Public construction goes through the `translate` pipeline; the constructor is gated by a
- * module-private sentinel.
+ * Public construction goes through the `translate` pipeline; the constructor is module-private
+ * and is not part of the package's public surface.
  */
 export class Polypeptide {
   /** The mRNA whose coding sequence produced this polypeptide. */
@@ -32,18 +23,10 @@ export class Polypeptide {
    *
    * @param mRNA - The mRNA whose coding sequence produced this polypeptide
    * @param aminoAcids - The validated, in-order amino-acid sequence
-   * @param trustedKey - Sentinel proving the caller is `translation/`-internal
    *
    * @internal
    */
-  constructor(
-    mRNA: MRNA,
-    aminoAcids: readonly AminoAcid[],
-    trustedKey: typeof UNSAFE_POLYPEPTIDE_KEY,
-  ) {
-    if (trustedKey !== UNSAFE_POLYPEPTIDE_KEY) {
-      throw new Error('Polypeptide must be constructed via translate');
-    }
+  constructor(mRNA: MRNA, aminoAcids: readonly AminoAcid[]) {
     this.mRNA = mRNA;
     this.aminoAcids = aminoAcids;
   }
@@ -115,5 +98,5 @@ export class Polypeptide {
  * @internal
  */
 export function unsafePolypeptide(mRNA: MRNA, aminoAcids: readonly AminoAcid[]): Polypeptide {
-  return new Polypeptide(mRNA, aminoAcids, UNSAFE_POLYPEPTIDE_KEY);
+  return new Polypeptide(mRNA, aminoAcids);
 }

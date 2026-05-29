@@ -1,7 +1,6 @@
 import { spliceRNA } from '../../src/splicing';
 import { parsePreMRNA } from '../../src/transcription';
 import { parseGene } from '../../src/gene';
-import { isSuccess, isFailure } from '../../src/result';
 import {
   SIMPLE_TWO_EXON_GENE,
   THREE_EXON_GENE,
@@ -16,8 +15,8 @@ describe('spliceRNA', () => {
     ]).unwrap();
     const preMRNA = parsePreMRNA(SIMPLE_TWO_EXON_GENE.rnaSequence, gene, 0).unwrap();
     const result = spliceRNA(preMRNA);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.sequence).toBe(SIMPLE_TWO_EXON_GENE.splicedRNA);
     }
   });
@@ -26,8 +25,8 @@ describe('spliceRNA', () => {
     const gene = parseGene(THREE_EXON_GENE.dnaSequence, [...THREE_EXON_GENE.exons]).unwrap();
     const preMRNA = parsePreMRNA(THREE_EXON_GENE.rnaSequence, gene, 0).unwrap();
     const result = spliceRNA(preMRNA);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.sequence).toBe(THREE_EXON_GENE.splicedRNA);
     }
   });
@@ -36,8 +35,8 @@ describe('spliceRNA', () => {
     const gene = parseGene(SINGLE_EXON_GENE.dnaSequence, [...SINGLE_EXON_GENE.exons]).unwrap();
     const preMRNA = parsePreMRNA(SINGLE_EXON_GENE.rnaSequence, gene, 0).unwrap();
     const result = spliceRNA(preMRNA);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.sequence).toBe(SINGLE_EXON_GENE.splicedRNA);
     }
   });
@@ -48,8 +47,8 @@ describe('spliceRNA', () => {
     ]).unwrap();
     const preMRNA = parsePreMRNA(INVALID_SPLICE_GENE.rnaSequence, gene, 0).unwrap();
     const result = spliceRNA(preMRNA);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'invalid-donor-site') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'invalid-donor-site') {
       expect(result.error.intronIndex).toBe(0);
       expect(result.error.found).not.toBe('GU');
     }
@@ -65,8 +64,8 @@ describe('spliceRNA', () => {
     const rnaSequence = 'AUGAAAGUUCCCCCCCCCCCCCCCCCCGGG';
     const preMRNA = parsePreMRNA(rnaSequence, gene, 0).unwrap();
     const result = spliceRNA(preMRNA);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('invalid-acceptor-site');
     }
   });
@@ -78,11 +77,11 @@ describe('spliceRNA', () => {
     const preMRNA = parsePreMRNA(INVALID_SPLICE_GENE.rnaSequence, gene, 0).unwrap();
 
     const validated = spliceRNA(preMRNA);
-    expect(isFailure(validated)).toBe(true);
+    expect(!validated.success).toBe(true);
 
     const bypassed = spliceRNA(preMRNA, { skipSpliceSiteValidation: true });
-    expect(isSuccess(bypassed)).toBe(true);
-    if (isSuccess(bypassed)) {
+    expect(bypassed.success).toBe(true);
+    if (bypassed.success) {
       expect(bypassed.data.sequence).toBe('AUGAAAUCGGG');
     }
   });

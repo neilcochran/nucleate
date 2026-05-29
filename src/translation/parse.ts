@@ -1,4 +1,4 @@
-import { Result, success, failure, isFailure } from '../result/index.js';
+import { Result, success, failure } from '../result/index.js';
 import { parseRNA, CODON_LENGTH, isStopCodon } from '../sequence/index.js';
 import { unsafeCodon } from '../sequence/codons.js';
 import { type AminoAcid, unsafeAminoAcid } from './AminoAcid.js';
@@ -26,7 +26,7 @@ import type { TranslationError } from './errors.js';
  */
 export function parseAminoAcid(codon: string): Result<AminoAcid, TranslationError> {
   const rnaResult = parseRNA(codon);
-  if (isFailure(rnaResult)) {
+  if (!rnaResult.success) {
     return failure({ kind: 'invalid-codon-sequence', codon, cause: rnaResult.error });
   }
   const rna = rnaResult.data;

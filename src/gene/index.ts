@@ -3,12 +3,14 @@
  * tagged unions, the `parseGene` / `parsePromoter` / `parsePromoterElement` parsers,
  * `validateExons`, and the canonical promoter-element consensus instances.
  *
- * The module-private `unsafeGene` / `unsafePromoter` / `unsafePromoterElement` factories and
- * the `UNSAFE_*_KEY` symbols are deliberately excluded from this barrel.
+ * The `Gene` / `Promoter` / `PromoterElement` classes are exported as types only, so
+ * construction is reachable only through the parsers below. The module-private `unsafeGene` /
+ * `unsafePromoter` / `unsafePromoterElement` factories are likewise excluded from this barrel.
  */
-export { Gene } from './Gene.js';
-export { Promoter, PROMOTER_SYNERGY_MULTIPLIER } from './Promoter.js';
-export { PromoterElement } from './PromoterElement.js';
+export type { Gene } from './Gene.js';
+export type { Promoter } from './Promoter.js';
+export { PROMOTER_SYNERGY_MULTIPLIER } from './Promoter.js';
+export type { PromoterElement } from './PromoterElement.js';
 export { parseGene, parsePromoter, parsePromoterElement } from './parse.js';
 export { validateExons } from './validate-exons.js';
 export type { GeneError, PromoterError, PromoterElementError } from './errors.js';

@@ -1,12 +1,11 @@
 import { parseAminoAcid, describeTranslationError } from '../../src/translation';
-import { isSuccess, isFailure } from '../../src/result';
 import { STOP_CODONS } from '../../src/sequence';
 
 describe('parseAminoAcid', () => {
   test('parses a valid codon and returns an AminoAcid', () => {
     const result = parseAminoAcid('AUG');
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.codon.sequence).toBe('AUG');
       expect(result.data.data.singleLetterCode).toBe('M');
       expect(result.data.data.name).toBe('Methionine');
@@ -15,32 +14,32 @@ describe('parseAminoAcid', () => {
 
   test('normalizes case via underlying parseRNA', () => {
     const result = parseAminoAcid('aug');
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.codon.sequence).toBe('AUG');
     }
   });
 
   test('rejects empty input with invalid-codon-sequence', () => {
     const result = parseAminoAcid('');
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('invalid-codon-sequence');
     }
   });
 
   test('rejects non-RNA characters with invalid-codon-sequence', () => {
     const result = parseAminoAcid('ATG'); // T is DNA-only
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('invalid-codon-sequence');
     }
   });
 
   test('rejects too-short codon with invalid-codon-length', () => {
     const result = parseAminoAcid('AU');
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'invalid-codon-length') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'invalid-codon-length') {
       expect(result.error.length).toBe(2);
       expect(result.error.expected).toBe(3);
     }
@@ -48,8 +47,8 @@ describe('parseAminoAcid', () => {
 
   test('rejects too-long codon with invalid-codon-length', () => {
     const result = parseAminoAcid('AUGG');
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'invalid-codon-length') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'invalid-codon-length') {
       expect(result.error.length).toBe(4);
       expect(result.error.expected).toBe(3);
     }
@@ -58,8 +57,8 @@ describe('parseAminoAcid', () => {
   test('rejects every stop codon with stop-codon', () => {
     for (const stop of STOP_CODONS) {
       const result = parseAminoAcid(stop);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'stop-codon') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'stop-codon') {
         expect(result.error.codon).toBe(stop);
       }
     }
@@ -69,8 +68,8 @@ describe('parseAminoAcid', () => {
     const codons = ['AUG', 'UUU', 'UUC', 'AAA', 'GCA', 'GAC', 'UGG', 'UAC'];
     for (const codon of codons) {
       const result = parseAminoAcid(codon);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         expect(result.data.data.codons).toContain(codon);
       }
     }

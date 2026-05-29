@@ -8,10 +8,10 @@
  * failures, {@link ProcessingError} for the full `processRNA` pipeline including splicing /
  * codon-detection stages; every `MRNAError` is also a `ProcessingError`).
  *
- * The module-private `unsafeMRNA` factory and the `UNSAFE_MRNA_KEY` symbol are deliberately
- * excluded from this barrel.
+ * `MRNA` is exported as a type only, so construction is reachable only through `parseMRNA` /
+ * `processRNA`. The module-private `unsafeMRNA` factory is likewise excluded from this barrel.
  */
-export { MRNA } from './MRNA.js';
+export type { MRNA } from './MRNA.js';
 export { parseMRNA } from './parse.js';
 export { processRNA, processSpliced, DEFAULT_RNA_PROCESSING_OPTIONS } from './process-rna.js';
 export type { RNAProcessingOptions } from './process-rna.js';

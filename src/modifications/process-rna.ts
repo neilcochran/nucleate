@@ -1,4 +1,4 @@
-import { Result, success, failure, isFailure } from '../result/index.js';
+import { Result, success, failure } from '../result/index.js';
 import type { RNA } from '../sequence/index.js';
 import { unsafeRNA } from '../sequence/RNA.js';
 import type { PreMRNA } from '../transcription/index.js';
@@ -91,7 +91,7 @@ export function processRNA(
   const splicingResult = spliceRNA(preMRNA, {
     skipSpliceSiteValidation: opts.skipSpliceSiteValidation,
   });
-  if (isFailure(splicingResult)) {
+  if (!splicingResult.success) {
     return failure({ kind: 'splicing-failed', cause: splicingResult.error });
   }
   return processSpliced(splicingResult.data, opts);
@@ -145,7 +145,7 @@ export function processSpliced(
 
   if (opts.validateCodons) {
     const boundaries = findCodingBoundaries(finalSequence, polyATailLength);
-    if (isFailure(boundaries)) {
+    if (!boundaries.success) {
       return failure(boundaries.error);
     }
     codingStart = boundaries.data.codingStart;

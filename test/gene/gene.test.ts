@@ -1,6 +1,5 @@
 import { parseGene, Gene } from '../../src/gene';
 import type { GeneError } from '../../src/gene';
-import { isFailure, isSuccess } from '../../src/result';
 import type { GenomicRegion } from '../../src/coordinates';
 import { SIMPLE_TWO_EXON_GENE, THREE_EXON_GENE, SINGLE_EXON_GENE } from '../test-genes';
 
@@ -12,7 +11,7 @@ function unwrapGene(
   splicingProfile?: any,
 ): Gene {
   const result = parseGene(sequence, exons, name, splicingProfile);
-  if (!isSuccess(result)) {
+  if (!result.success) {
     throw new Error(`parseGene unexpectedly failed: ${JSON.stringify(result.error)}`);
   }
   return result.data;
@@ -88,8 +87,8 @@ describe('Gene', () => {
   describe('parseGene failure cases', () => {
     test('rejects empty exon list with kind=no-exons', () => {
       const result = parseGene('ATGCCCGGG', []);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('no-exons');
       }
     });
@@ -101,16 +100,16 @@ describe('Gene', () => {
         { start: 6, end: 18 },
       ];
       const result = parseGene(sequence, exons);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('exons-overlap');
       }
     });
 
     test('rejects exon extending beyond sequence with kind=exon-out-of-bounds', () => {
       const result = parseGene('ATGCCCGGG', [{ start: 0, end: 15 }]);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'exon-out-of-bounds') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'exon-out-of-bounds') {
         expect(result.error.exonEnd).toBe(15);
         expect(result.error.sequenceLength).toBe(9);
       } else {
@@ -120,24 +119,24 @@ describe('Gene', () => {
 
     test('rejects invalid coordinate ordering with kind=exon-invalid-coordinates', () => {
       const result = parseGene('ATGCCCGGG', [{ start: 5, end: 3 }]);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('exon-invalid-coordinates');
       }
     });
 
     test('rejects negative coordinates with kind=exon-invalid-coordinates', () => {
       const result = parseGene('ATGCCCGGG', [{ start: -1, end: 3 }]);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('exon-invalid-coordinates');
       }
     });
 
     test('rejects invalid DNA sequence with kind=invalid-sequence', () => {
       const result = parseGene('ATXCCCGGG', [{ start: 0, end: 9 }]);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('invalid-sequence');
       }
     });
@@ -234,8 +233,8 @@ describe('Gene', () => {
           variants: [],
         },
       );
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'invalid-splicing-profile') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'invalid-splicing-profile') {
         expect(result.error.reason).toBe('Splicing profile must contain at least one variant');
       } else {
         throw new Error(`expected invalid-splicing-profile, got ${JSON.stringify(result)}`);
@@ -253,8 +252,8 @@ describe('Gene', () => {
           variants: [{ name: 'empty', includedExons: [] }],
         },
       );
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'invalid-variant') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'invalid-variant') {
         expect(result.error.cause.kind).toBe('variant-no-included-exons');
         if (result.error.cause.kind === 'variant-no-included-exons') {
           expect(result.error.cause.variantName).toBe('empty');
@@ -275,8 +274,8 @@ describe('Gene', () => {
           variants: [{ name: 'invalid', includedExons: [0, 5] }],
         },
       );
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'invalid-variant') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'invalid-variant') {
         expect(result.error.cause.kind).toBe('variant-invalid-exon-index');
         if (result.error.cause.kind === 'variant-invalid-exon-index') {
           expect(result.error.cause.exonIndex).toBe(5);
@@ -298,8 +297,8 @@ describe('Gene', () => {
           variants: [{ name: 'duplicate', includedExons: [0, 1, 0] }],
         },
       );
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'invalid-variant') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'invalid-variant') {
         expect(result.error.cause.kind).toBe('variant-duplicate-exon-indices');
         if (result.error.cause.kind === 'variant-duplicate-exon-indices') {
           expect(result.error.cause.duplicateIndices).toEqual([0]);
@@ -323,8 +322,8 @@ describe('Gene', () => {
           ],
         },
       );
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'invalid-splicing-profile') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'invalid-splicing-profile') {
         expect(result.error.reason).toBe('Splicing profile contains duplicate variant names');
       }
     });
@@ -340,8 +339,8 @@ describe('Gene', () => {
           variants: [{ name: 'variant1', includedExons: [0, 1] }],
         },
       );
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'invalid-splicing-profile') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'invalid-splicing-profile') {
         expect(result.error.reason).toContain('Default variant');
       }
     });
@@ -365,8 +364,8 @@ describe('Gene', () => {
   describe('GeneError types are exported', () => {
     test('failure branch carries a GeneError', () => {
       const result = parseGene('ATGCCCGGG', []);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         const error: GeneError = result.error;
         expect(error.kind).toBe('no-exons');
       }

@@ -1,4 +1,5 @@
-import { RNA, parseRNA } from '../../src/sequence';
+import { parseRNA } from '../../src/sequence';
+import { RNA } from '../../src/sequence/RNA';
 
 function rna(sequence: string): RNA {
   return parseRNA(sequence).unwrap();

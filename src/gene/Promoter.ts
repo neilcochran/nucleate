@@ -2,14 +2,6 @@ import { geneCoord, type GeneCoord } from '../coordinates/index.js';
 import type { PromoterElement } from './PromoterElement.js';
 
 /**
- * Module-private construction key gating the {@link Promoter} constructor. Not re-exported
- * from the package barrel; in-tree callers reach it via {@link unsafePromoter}.
- *
- * @internal
- */
-const UNSAFE_PROMOTER_KEY: unique symbol = Symbol('unsafe-promoter');
-
-/**
  * Multiplier applied to the total element count when a promoter has more than one element,
  * modelling the synergistic effect of cooperating regulatory features.
  *
@@ -23,8 +15,8 @@ export const PROMOTER_SYNERGY_MULTIPLIER = 2;
  * A gene promoter: the cluster of regulatory elements that initiates transcription, together
  * with the transcription start site (TSS) they orient against.
  *
- * Public construction goes through `parsePromoter`; the constructor is gated by a
- * module-private sentinel.
+ * Public construction goes through `parsePromoter`; the constructor is module-private and is
+ * not part of the package's public surface.
  */
 export class Promoter {
   /** Promoter elements that comprise this promoter (immutable, in caller-supplied order). */
@@ -46,7 +38,6 @@ export class Promoter {
    * @param transcriptionStartSite - Validated, branded gene-coordinate TSS
    * @param elements - Promoter elements (the array is copied and frozen)
    * @param name - Optional identifier
-   * @param trustedKey - Sentinel proving the caller is `gene/`-internal
    *
    * @internal
    */
@@ -54,11 +45,7 @@ export class Promoter {
     transcriptionStartSite: GeneCoord,
     elements: readonly PromoterElement[],
     name: string | undefined,
-    trustedKey: typeof UNSAFE_PROMOTER_KEY,
   ) {
-    if (trustedKey !== UNSAFE_PROMOTER_KEY) {
-      throw new Error('Promoter must be constructed via parsePromoter');
-    }
     this.transcriptionStartSite = transcriptionStartSite;
     this.elements = Object.freeze([...elements]);
     this.name = name;
@@ -153,5 +140,5 @@ export function unsafePromoter(
   elements: readonly PromoterElement[],
   name: string | undefined,
 ): Promoter {
-  return new Promoter(transcriptionStartSite, elements, name, UNSAFE_PROMOTER_KEY);
+  return new Promoter(transcriptionStartSite, elements, name);
 }

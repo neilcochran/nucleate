@@ -1,4 +1,4 @@
-import { Result, success, failure, isFailure, at } from '../result/index.js';
+import { Result, success, failure, at } from '../result/index.js';
 import type { RNA } from '../sequence/index.js';
 import { unsafeRNA } from '../sequence/RNA.js';
 import type { PreMRNA } from '../transcription/index.js';
@@ -56,7 +56,7 @@ export function spliceRNA(
 
   if (!options.skipSpliceSiteValidation) {
     const validation = validateTranscriptSpliceSites(preMRNA);
-    if (isFailure(validation)) {
+    if (!validation.success) {
       return failure(validation.error);
     }
   }

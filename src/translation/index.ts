@@ -4,12 +4,12 @@
  * its derived codon-lookup maps, amino-acid biochemical classification enums, and the
  * {@link TranslationError} tagged union.
  *
- * The module-private `unsafeAminoAcid` / `unsafeAminoAcidFromString` factories and the
- * `UNSAFE_AMINO_ACID_KEY` / `UNSAFE_POLYPEPTIDE_KEY` symbols are deliberately excluded from
- * this barrel.
+ * The `AminoAcid` / `Polypeptide` classes are exported as types only, so construction is
+ * reachable only through `parseAminoAcid` / `translate`. The module-private `unsafeAminoAcid` /
+ * `unsafeAminoAcidFromString` factories are likewise excluded from this barrel.
  */
-export { AminoAcid } from './AminoAcid.js';
-export { Polypeptide } from './Polypeptide.js';
+export type { AminoAcid } from './AminoAcid.js';
+export type { Polypeptide } from './Polypeptide.js';
 export { parseAminoAcid } from './parse.js';
 export { translate } from './translate.js';
 export {

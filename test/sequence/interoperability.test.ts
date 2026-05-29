@@ -5,13 +5,13 @@
  */
 
 import {
-  DNA,
-  RNA,
   parseDNA,
   parseRNA,
   transcribeSequence,
   reverseTranscribeSequence,
 } from '../../src/sequence';
+import { DNA } from '../../src/sequence/DNA';
+import { RNA } from '../../src/sequence/RNA';
 
 function dna(sequence: string): DNA {
   return parseDNA(sequence).unwrap();

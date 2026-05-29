@@ -6,24 +6,25 @@
  */
 
 import { parseGene } from '../../src/gene';
-import { DNA, RNA, parseDNA, parseRNA, transcribeSequence } from '../../src/sequence';
+import { parseDNA, parseRNA, transcribeSequence } from '../../src/sequence';
+import { DNA } from '../../src/sequence/DNA';
+import { RNA } from '../../src/sequence/RNA';
 import { parseNucleotidePattern } from '../../src/pattern';
 import { at } from '../utils/test-utils';
 import { transcribe } from '../../src/transcription';
 import { processRNA, parseMRNA } from '../../src/modifications';
 import { translate } from '../../src/translation';
-import { isSuccess, isFailure } from '../../src/result/Result';
 
 describe('Validation Scenarios Integration Tests', () => {
   describe('Sequence Validation Across Modules', () => {
     test('invalid nucleotide propagation', () => {
-      expect(isFailure(parseDNA('ATGXYZ'))).toBe(true);
-      expect(isFailure(parseRNA('AUGXYZ'))).toBe(true);
+      expect(!parseDNA('ATGXYZ').success).toBe(true);
+      expect(!parseRNA('AUGXYZ').success).toBe(true);
     });
 
     test('edge case sequence lengths', () => {
-      expect(isFailure(parseDNA(''))).toBe(true);
-      expect(isFailure(parseRNA(''))).toBe(true);
+      expect(!parseDNA('').success).toBe(true);
+      expect(!parseRNA('').success).toBe(true);
 
       const singleDNA = parseDNA('A').unwrap();
       expect(singleDNA.getSequence()).toBe('A');
@@ -43,22 +44,22 @@ describe('Validation Scenarios Integration Tests', () => {
         { start: 0, end: 15, name: 'exon1' },
         { start: 35, end: 50, name: 'exon2' },
       ];
-      expect(isSuccess(parseGene(geneSequence, validExons, 'valid'))).toBe(true);
+      expect(parseGene(geneSequence, validExons, 'valid').success).toBe(true);
 
       const overlappingExons = [
         { start: 0, end: 20, name: 'exon1' },
         { start: 15, end: 35, name: 'exon2' },
       ];
-      expect(isFailure(parseGene(geneSequence, overlappingExons, 'overlapping'))).toBe(true);
+      expect(!parseGene(geneSequence, overlappingExons, 'overlapping').success).toBe(true);
 
       const beyondExons = [{ start: 0, end: 60, name: 'exon1' }];
-      expect(isFailure(parseGene(geneSequence, beyondExons, 'beyond'))).toBe(true);
+      expect(!parseGene(geneSequence, beyondExons, 'beyond').success).toBe(true);
 
       const negativeExons = [{ start: -5, end: 10, name: 'exon1' }];
-      expect(isFailure(parseGene(geneSequence, negativeExons, 'negative'))).toBe(true);
+      expect(!parseGene(geneSequence, negativeExons, 'negative').success).toBe(true);
 
       const invalidOrderExons = [{ start: 20, end: 10, name: 'exon1' }];
-      expect(isFailure(parseGene(geneSequence, invalidOrderExons, 'invalid-order'))).toBe(true);
+      expect(!parseGene(geneSequence, invalidOrderExons, 'invalid-order').success).toBe(true);
     });
 
     test('splice site validation integration', () => {
@@ -78,14 +79,14 @@ describe('Validation Scenarios Integration Tests', () => {
       const gene = parseGene(badSpliceGene, exons, 'bad-splice').unwrap();
       const transcriptionResult = transcribe(gene);
 
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
 
-        expect(isFailure(processingResult)).toBe(true);
-        if (isFailure(processingResult) && processingResult.error.kind === 'splicing-failed') {
+        expect(!processingResult.success).toBe(true);
+        if (!processingResult.success && processingResult.error.kind === 'splicing-failed') {
           const splicingKind = processingResult.error.cause.kind;
           expect(
             splicingKind === 'invalid-donor-site' || splicingKind === 'invalid-acceptor-site',
@@ -103,8 +104,8 @@ describe('Validation Scenarios Integration Tests', () => {
       const matches = validPattern.findAll(testSequence);
       expect(matches.length).toBe(1);
 
-      expect(isFailure(parseNucleotidePattern(''))).toBe(true);
-      expect(isFailure(parseNucleotidePattern('ATGXYZ'))).toBe(true);
+      expect(!parseNucleotidePattern('').success).toBe(true);
+      expect(!parseNucleotidePattern('ATGXYZ').success).toBe(true);
 
       const longPattern = 'A'.repeat(1000);
       const longPatternObj = parseNucleotidePattern(longPattern).unwrap();
@@ -120,7 +121,7 @@ describe('Validation Scenarios Integration Tests', () => {
 
       const gene = parseGene(noPromoterGene, exons, 'no-promoter').unwrap();
       const transcriptionResult = transcribe(gene);
-      expect(isFailure(transcriptionResult)).toBe(true);
+      expect(!transcriptionResult.success).toBe(true);
     });
 
     test("processing errors don't crash the system", () => {
@@ -131,9 +132,9 @@ describe('Validation Scenarios Integration Tests', () => {
       const gene = parseGene(problematicGene, exons, 'problematic').unwrap();
       const transcriptionResult = transcribe(gene);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const processingResult = processRNA(transcriptionResult.data);
-        if (isFailure(processingResult)) {
+        if (!processingResult.success) {
           expect(processingResult.error).toBeDefined();
           expect(typeof processingResult.error.kind).toBe('string');
         }
@@ -169,13 +170,13 @@ describe('Validation Scenarios Integration Tests', () => {
       const sequence = 'ATGAAAGCCTTTGTGAACCAACACCTTGTAAGTAG';
 
       const startExons = [{ start: 0, end: 10, name: 'start' }];
-      expect(isSuccess(parseGene(sequence, startExons, 'start'))).toBe(true);
+      expect(parseGene(sequence, startExons, 'start').success).toBe(true);
 
       const endExons = [{ start: 25, end: 35, name: 'end' }];
-      expect(isSuccess(parseGene(sequence, endExons, 'end'))).toBe(true);
+      expect(parseGene(sequence, endExons, 'end').success).toBe(true);
 
       const minExons = [{ start: 10, end: 13, name: 'minimum' }];
-      expect(isSuccess(parseGene(sequence, minExons, 'minimum'))).toBe(true);
+      expect(parseGene(sequence, minExons, 'minimum').success).toBe(true);
     });
   });
 
@@ -197,19 +198,19 @@ describe('Validation Scenarios Integration Tests', () => {
   describe('parseDNA/parseRNA Integration', () => {
     test('parseDNA integration with transcription pipeline', () => {
       const dnaResult = parseDNA('GCGCTATAAAAGGCGCGGGGGGATGAAACCCAAATAA');
-      expect(isSuccess(dnaResult)).toBe(true);
+      expect(dnaResult.success).toBe(true);
 
-      if (isSuccess(dnaResult)) {
+      if (dnaResult.success) {
         const gene = parseGene(dnaResult.data.getSequence(), [
           { start: 20, end: 35, name: 'single-exon' },
         ]).unwrap();
         const transcriptionResult = transcribe(gene);
 
-        if (isSuccess(transcriptionResult)) {
+        if (transcriptionResult.success) {
           const preMRNA = transcriptionResult.data;
           expect(preMRNA.sequence.sequence.startsWith('AUG')).toBe(true);
         } else {
-          expect(isFailure(transcriptionResult)).toBe(true);
+          expect(!transcriptionResult.success).toBe(true);
           expect(transcriptionResult.error).toBeTruthy();
         }
       }
@@ -217,9 +218,9 @@ describe('Validation Scenarios Integration Tests', () => {
 
     test('parseRNA integration with translation pipeline', () => {
       const rnaResult = parseRNA('AUGAAACCCAAAUAA');
-      expect(isSuccess(rnaResult)).toBe(true);
+      expect(rnaResult.success).toBe(true);
 
-      if (isSuccess(rnaResult)) {
+      if (rnaResult.success) {
         const sequence = rnaResult.data.sequence;
         const mRNA = parseMRNA(sequence, 0, sequence.length).unwrap();
         const polypeptide = translate(mRNA).unwrap();
@@ -230,41 +231,41 @@ describe('Validation Scenarios Integration Tests', () => {
 
     test('error propagation through parseDNA/parseRNA', () => {
       const invalidDNAResult = parseDNA('ATGXYZ');
-      expect(isFailure(invalidDNAResult)).toBe(true);
-      if (isFailure(invalidDNAResult)) {
+      expect(!invalidDNAResult.success).toBe(true);
+      if (!invalidDNAResult.success) {
         expect(invalidDNAResult.error.kind).toBe('invalid-characters');
       }
 
       const invalidRNAResult = parseRNA('AUGXYZ');
-      expect(isFailure(invalidRNAResult)).toBe(true);
-      if (isFailure(invalidRNAResult)) {
+      expect(!invalidRNAResult.success).toBe(true);
+      if (!invalidRNAResult.success) {
         expect(invalidRNAResult.error.kind).toBe('invalid-characters');
       }
     });
 
     test('parseDNA/parseRNA edge cases', () => {
-      expect(isFailure(parseDNA(''))).toBe(true);
-      expect(isFailure(parseRNA(''))).toBe(true);
+      expect(!parseDNA('').success).toBe(true);
+      expect(!parseRNA('').success).toBe(true);
 
       const longSequence = 'ATGAAACCCAAATAA'.repeat(100);
       const longDNAResult = parseDNA(longSequence);
-      expect(isSuccess(longDNAResult)).toBe(true);
-      if (isSuccess(longDNAResult)) {
+      expect(longDNAResult.success).toBe(true);
+      if (longDNAResult.success) {
         expect(longDNAResult.data.length()).toBe(longSequence.length);
       }
     });
 
     test('parseDNA + transcribeSequence + parseRNA round trip', () => {
       const dnaResult = parseDNA('ATGAAACCCAAATAA');
-      expect(isSuccess(dnaResult)).toBe(true);
+      expect(dnaResult.success).toBe(true);
 
-      if (isSuccess(dnaResult)) {
+      if (dnaResult.success) {
         const rna = transcribeSequence(dnaResult.data);
         expect(rna.getSequence()).toBe('AUGAAACCCAAAUAA');
 
         const rnaResult = parseRNA(rna.getSequence());
-        expect(isSuccess(rnaResult)).toBe(true);
-        if (isSuccess(rnaResult)) {
+        expect(rnaResult.success).toBe(true);
+        if (rnaResult.success) {
           expect(rnaResult.data.getSequence()).toBe('AUGAAACCCAAAUAA');
         }
       }
@@ -274,8 +275,8 @@ describe('Validation Scenarios Integration Tests', () => {
   describe('Error Propagation Integration', () => {
     test('invalid DNA propagates through entire gene expression pipeline', () => {
       const invalidDNAResult = parseDNA('ATGXYZ');
-      expect(isFailure(invalidDNAResult)).toBe(true);
-      if (isFailure(invalidDNAResult)) {
+      expect(!invalidDNAResult.success).toBe(true);
+      if (!invalidDNAResult.success) {
         expect(invalidDNAResult.error.kind).toBe('invalid-characters');
       }
     });
@@ -288,14 +289,14 @@ describe('Validation Scenarios Integration Tests', () => {
 
       const transcriptionResult = transcribe(gene);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const processingResult = processRNA(transcriptionResult.data);
-        if (isFailure(processingResult)) {
+        if (!processingResult.success) {
           expect(processingResult.error).toBeTruthy();
           expect(typeof processingResult.error.kind).toBe('string');
         }
       } else {
-        expect(isFailure(transcriptionResult)).toBe(true);
+        expect(!transcriptionResult.success).toBe(true);
         expect(transcriptionResult.error).toBeTruthy();
       }
     });
@@ -307,8 +308,8 @@ describe('Validation Scenarios Integration Tests', () => {
       const dnaResult = parseDNA(invalidSequence);
       const rnaResult = parseRNA(invalidRNASequence);
 
-      expect(isFailure(dnaResult)).toBe(true);
-      expect(isFailure(rnaResult)).toBe(true);
+      expect(!dnaResult.success).toBe(true);
+      expect(!rnaResult.success).toBe(true);
     });
   });
 });

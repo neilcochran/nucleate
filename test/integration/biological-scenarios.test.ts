@@ -11,7 +11,6 @@ import { parseMRNA, processRNA } from '../../src/modifications';
 import { transcribe } from '../../src/transcription';
 import { translate } from '../../src/translation';
 import { transcribeSequence } from '../../src/sequence';
-import { isSuccess, isFailure } from '../../src/result/Result';
 
 describe('Biological Scenarios Integration Tests', () => {
   describe('Human Gene Models', () => {
@@ -46,16 +45,16 @@ describe('Biological Scenarios Integration Tests', () => {
 
       // Test full processing pipeline
       const transcriptionResult = transcribe(betaGlobin);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.hasIntrons()).toBe(true);
 
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
           const codingSeq = mRNA.codingSequence.sequence;
 
@@ -115,14 +114,14 @@ describe('Biological Scenarios Integration Tests', () => {
       const insulin = parseGene(insulinLike, exons, 'insulin-like').unwrap();
 
       const transcriptionResult = transcribe(insulin);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
           const polypeptide = translate(mRNA).unwrap();
 
@@ -172,14 +171,14 @@ describe('Biological Scenarios Integration Tests', () => {
         forceTranscriptionStartSite: 35, // ATG starts at position 35
       });
 
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.hasIntrons()).toBe(false);
 
         const processingResult = processRNA(preMRNA);
-        if (isFailure(processingResult)) {
+        if (!processingResult.success) {
           // For prokaryotic genes, processing might fail but pre-mRNA should be usable
 
           // Verify pre-mRNA has correct properties
@@ -230,13 +229,13 @@ describe('Biological Scenarios Integration Tests', () => {
 
       const transcriptionResult = transcribe(eukGene);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.hasIntrons()).toBe(true);
 
         const processingResult = processRNA(preMRNA);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
           const polypeptide = translate(mRNA).unwrap();
           expect(polypeptide.aminoAcids.length).toBe(26); // (81bp - 3bp stop) / 3 = 26 amino acids
@@ -276,20 +275,20 @@ describe('Biological Scenarios Integration Tests', () => {
       const normalGene = parseGene(alternativeSplicingGene, normalExons, 'normal').unwrap();
       const normalResult = transcribe(normalGene);
 
-      expect(isSuccess(normalResult)).toBe(true);
+      expect(normalResult.success).toBe(true);
 
       // Test alternative splicing
       const altGene = parseGene(alternativeSplicingGene, skippedExons, 'alternative').unwrap();
       const altResult = transcribe(altGene);
 
-      expect(isSuccess(altResult)).toBe(true);
+      expect(altResult.success).toBe(true);
 
       // Compare results
-      if (isSuccess(normalResult) && isSuccess(altResult)) {
+      if (normalResult.success && altResult.success) {
         const normalProcessed = processRNA(normalResult.data);
         const altProcessed = processRNA(altResult.data);
 
-        if (isSuccess(normalProcessed) && isSuccess(altProcessed)) {
+        if (normalProcessed.success && altProcessed.success) {
           const normalCoding = normalProcessed.data.codingSequence.sequence;
           const altCoding = altProcessed.data.codingSequence.sequence;
 
@@ -344,14 +343,14 @@ describe('Biological Scenarios Integration Tests', () => {
       const multiDomain = parseGene(multiDomainGene, exons, 'multi-domain').unwrap();
 
       const transcriptionResult = transcribe(multiDomain);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
           const polypeptide = translate(mRNA).unwrap();
 

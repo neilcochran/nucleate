@@ -1,12 +1,10 @@
 import {
-  DoubleStrandedDNA,
   doubleStrandedDNA,
   parseDNA,
   parseDoubleStrandedDNA,
   describeDoubleStrandedError,
 } from '../../src/sequence';
 import { unsafeDoubleStrandedDNA } from '../../src/sequence/DoubleStrandedDNA';
-import { isFailure, isSuccess } from '../../src/result/Result';
 
 describe('DoubleStrandedDNA', () => {
   describe('doubleStrandedDNA (infallible factory)', () => {
@@ -40,8 +38,8 @@ describe('DoubleStrandedDNA', () => {
       const forward = parseDNA('ATCG').unwrap();
       const reverse = parseDNA('CGAT').unwrap();
       const result = parseDoubleStrandedDNA(forward, reverse);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         expect(result.data.forward.sequence).toBe('ATCG');
         expect(result.data.reverse.sequence).toBe('CGAT');
       }
@@ -51,8 +49,8 @@ describe('DoubleStrandedDNA', () => {
       const forward = parseDNA('ATCG').unwrap();
       const reverse = parseDNA('CGA').unwrap();
       const result = parseDoubleStrandedDNA(forward, reverse);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('length-mismatch');
         if (result.error.kind === 'length-mismatch') {
           expect(result.error.forwardLength).toBe(4);
@@ -65,8 +63,8 @@ describe('DoubleStrandedDNA', () => {
       const forward = parseDNA('ATCG').unwrap();
       const reverse = parseDNA('ATCG').unwrap();
       const result = parseDoubleStrandedDNA(forward, reverse);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('not-complementary');
         if (result.error.kind === 'not-complementary') {
           expect(result.error.firstMismatchAt).toBe(0);
@@ -80,8 +78,8 @@ describe('DoubleStrandedDNA', () => {
       const forward = parseDNA('AAAA').unwrap();
       const reverse = parseDNA('TTGT').unwrap();
       const result = parseDoubleStrandedDNA(forward, reverse);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'not-complementary') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'not-complementary') {
         expect(result.error.firstMismatchAt).toBe(2);
         expect(result.error.expected).toBe('T');
         expect(result.error.actual).toBe('G');
@@ -91,7 +89,7 @@ describe('DoubleStrandedDNA', () => {
     test('accepts a palindrome (forward equals reverse)', () => {
       const seq = parseDNA('GAATTC').unwrap();
       const result = parseDoubleStrandedDNA(seq, parseDNA('GAATTC').unwrap());
-      expect(isSuccess(result)).toBe(true);
+      expect(result.success).toBe(true);
     });
   });
 
@@ -120,14 +118,6 @@ describe('DoubleStrandedDNA', () => {
   });
 
   describe('constructor', () => {
-    test('the public constructor rejects calls without the trusted key', () => {
-      const forward = parseDNA('ATCG').unwrap();
-      const reverse = parseDNA('CGAT').unwrap();
-      expect(() => new DoubleStrandedDNA(forward, reverse, undefined as never)).toThrow(
-        /module-private/,
-      );
-    });
-
     test('the internal unsafe factory bypasses validation', () => {
       const forward = parseDNA('ATCG').unwrap();
       const wrongReverse = parseDNA('AAAA').unwrap();

@@ -6,11 +6,10 @@ import {
   PROMOTER_SYNERGY_MULTIPLIER,
 } from '../../src/gene';
 import { parseNucleotidePattern, NucleotidePattern } from '../../src/pattern';
-import { isFailure, isSuccess } from '../../src/result';
 
 function pattern(input: string): NucleotidePattern {
   const result = parseNucleotidePattern(input);
-  if (!isSuccess(result)) {
+  if (!result.success) {
     throw new Error(`parseNucleotidePattern unexpectedly failed for '${input}'`);
   }
   return result.data;
@@ -18,7 +17,7 @@ function pattern(input: string): NucleotidePattern {
 
 function element(name: string, p: string, position: number, scoreWeight = 0): PromoterElement {
   const result = parsePromoterElement(name, pattern(p), position, scoreWeight);
-  if (!isSuccess(result)) {
+  if (!result.success) {
     throw new Error(`parsePromoterElement unexpectedly failed: ${JSON.stringify(result.error)}`);
   }
   return result.data;
@@ -26,7 +25,7 @@ function element(name: string, p: string, position: number, scoreWeight = 0): Pr
 
 function promoter(tss: number, elements: PromoterElement[], name?: string): Promoter {
   const result = parsePromoter(tss, elements, name);
-  if (!isSuccess(result)) {
+  if (!result.success) {
     throw new Error(`parsePromoter unexpectedly failed: ${JSON.stringify(result.error)}`);
   }
   return result.data;
@@ -77,16 +76,16 @@ describe('Promoter', () => {
   describe('parsePromoter failure cases', () => {
     test('rejects negative TSS with kind=invalid-tss', () => {
       const result = parsePromoter(-100, [tataElement]);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('invalid-tss');
       }
     });
 
     test('rejects non-finite TSS', () => {
       const result = parsePromoter(Number.POSITIVE_INFINITY, [tataElement]);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('invalid-tss');
       }
     });

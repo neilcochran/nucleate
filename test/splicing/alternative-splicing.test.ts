@@ -15,7 +15,6 @@ import {
 } from '../../src/variants';
 import { parseGene } from '../../src/gene';
 import { parsePreMRNA } from '../../src/transcription';
-import { isSuccess, isFailure } from '../../src/result';
 import { FOUR_EXON_GENE } from '../test-genes';
 import { at } from '../utils/test-utils';
 
@@ -27,14 +26,14 @@ describe('validateSpliceVariant', () => {
 
   test('accepts a full-length variant under default options', () => {
     const variant: SpliceVariant = { name: 'full', includedExons: [0, 1, 2, 3] };
-    expect(isSuccess(validateSpliceVariant(variant, gene))).toBe(true);
+    expect(validateSpliceVariant(variant, gene).success).toBe(true);
   });
 
   test('rejects an out-of-range exon index', () => {
     const variant: SpliceVariant = { name: 'bad', includedExons: [0, 1, 10] };
     const result = validateSpliceVariant(variant, gene);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'variant-invalid-exon-index') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'variant-invalid-exon-index') {
       expect(result.error.exonIndex).toBe(10);
       expect(result.error.totalExons).toBe(4);
     }
@@ -43,8 +42,8 @@ describe('validateSpliceVariant', () => {
   test('rejects a variant that skips the first exon when not allowed', () => {
     const variant: SpliceVariant = { name: 'no-first', includedExons: [1, 2, 3] };
     const result = validateSpliceVariant(variant, gene);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('variant-skips-first-exon');
     }
   });
@@ -52,8 +51,8 @@ describe('validateSpliceVariant', () => {
   test('rejects a variant that skips the last exon when not allowed', () => {
     const variant: SpliceVariant = { name: 'no-last', includedExons: [0, 1, 2] };
     const result = validateSpliceVariant(variant, gene);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('variant-skips-last-exon');
     }
   });
@@ -66,8 +65,8 @@ describe('validateSpliceVariant', () => {
       allowSkipLastExon: true,
     };
     const result = validateSpliceVariant(variant, gene, opts);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'variant-below-minimum-exons') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'variant-below-minimum-exons') {
       expect(result.error.included).toBe(1);
       expect(result.error.minimum).toBe(2);
     }
@@ -88,8 +87,8 @@ describe('validateSpliceVariant', () => {
       validateReadingFrames: true,
       validateCodons: false,
     });
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'variant-not-in-frame') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'variant-not-in-frame') {
       expect(result.error.length).toBe(13);
     }
   });
@@ -100,8 +99,8 @@ describe('validateSpliceVariant', () => {
       allowSkipFirstExon: true,
       validateCodons: true,
     });
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'variant-missing-start-codon') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'variant-missing-start-codon') {
       expect(result.error.found).not.toBe('AUG');
     }
   });
@@ -112,8 +111,8 @@ describe('validateSpliceVariant', () => {
       allowSkipLastExon: true,
       validateCodons: true,
     });
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('variant-missing-stop-codon');
     }
   });
@@ -125,8 +124,8 @@ describe('spliceRNAWithVariant', () => {
     const preMRNA = parsePreMRNA(testSequence.replace(/T/g, 'U'), gene, 0).unwrap();
     const variant: SpliceVariant = { name: 'skip-2', includedExons: [0, 2, 3] };
     const result = spliceRNAWithVariant(preMRNA, variant);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.sequence).toBe('AUGAAAGGGUUUUAG');
     }
   });
@@ -136,8 +135,8 @@ describe('spliceRNAWithVariant', () => {
     const preMRNA = parsePreMRNA(testSequence.replace(/T/g, 'U'), gene, 0).unwrap();
     const variant: SpliceVariant = { name: 'full', includedExons: [0, 1, 2, 3] };
     const result = spliceRNAWithVariant(preMRNA, variant);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.sequence).toBe('AUGAAACCCGGGGGGUUUUAG');
     }
   });
@@ -147,8 +146,8 @@ describe('spliceRNAWithVariant', () => {
     const preMRNA = parsePreMRNA(testSequence.replace(/T/g, 'U'), gene, 0).unwrap();
     const variant: SpliceVariant = { name: 'oob', includedExons: [0, 1, 5] };
     const result = spliceRNAWithVariant(preMRNA, variant);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'variant-invalid-exon-index') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'variant-invalid-exon-index') {
       expect(result.error.exonIndex).toBe(5);
     }
   });
@@ -171,8 +170,8 @@ describe('processAllSplicingVariants', () => {
       allowSkipLastExon: true,
       validateCodons: false,
     });
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data).toHaveLength(3);
       const names = result.data.map(outcome => outcome.variant.name).sort();
       expect(names).toEqual(['full', 'short', 'skip-2']);
@@ -183,8 +182,8 @@ describe('processAllSplicingVariants', () => {
     const gene = parseGene(testSequence, testExons, 'TEST_GENE').unwrap();
     const preMRNA = parsePreMRNA(testSequence.replace(/T/g, 'U'), gene, 0).unwrap();
     const result = processAllSplicingVariants(preMRNA);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('no-splicing-profile');
     }
   });
@@ -201,8 +200,8 @@ describe('processAllSplicingVariants', () => {
     const gene = parseGene(testSequence, testExons, 'TEST_GENE', profile).unwrap();
     const preMRNA = parsePreMRNA(testSequence.replace(/T/g, 'U'), gene, 0).unwrap();
     const result = processAllSplicingVariants(preMRNA);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data).toHaveLength(1);
       expect(at(result.data, 0).variant.name).toBe('full');
     }
@@ -219,8 +218,8 @@ describe('processDefaultSpliceVariant', () => {
     const gene = parseGene(testSequence, testExons, 'TEST_GENE', profile).unwrap();
     const preMRNA = parsePreMRNA(testSequence.replace(/T/g, 'U'), gene, 0).unwrap();
     const result = processDefaultSpliceVariant(preMRNA);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       const mRNA = result.data;
       // The mature mRNA's coding sequence is the variant's spliced exons (AUG...UAG)
       expect(mRNA.codingSequence.sequence).toBe('AUGAAACCCGGGGGGUUUUAG');
@@ -234,8 +233,8 @@ describe('processDefaultSpliceVariant', () => {
     const gene = parseGene(testSequence, testExons, 'TEST_GENE').unwrap();
     const preMRNA = parsePreMRNA(testSequence.replace(/T/g, 'U'), gene, 0).unwrap();
     const result = processDefaultSpliceVariant(preMRNA);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('no-default-variant');
     }
   });

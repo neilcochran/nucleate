@@ -5,7 +5,6 @@ import {
   type ReplicationOutput,
 } from '../../src/replication';
 import { doubleStrandedDNA, parseDNA } from '../../src/sequence';
-import { isFailure, isSuccess } from '../../src/result/Result';
 
 /** Deterministic LCG-style PRNG for reproducibility in fragment-sizing tests. */
 function seededRng(seed: number): () => number {
@@ -93,8 +92,8 @@ describe('replicate', () => {
     test('rejects E. coli template shorter than 10 bp', () => {
       const parent = parentOf('ATCGATCG');
       const result = replicate(parent);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('template-too-short');
         expect(result.error.length).toBe(8);
         expect(result.error.minimum).toBe(10);
@@ -104,8 +103,8 @@ describe('replicate', () => {
     test('rejects 3-bp template (legacy edge case)', () => {
       const parent = parentOf('ATG');
       const result = replicate(parent);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'template-too-short') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'template-too-short') {
         expect(result.error.length).toBe(3);
       }
     });
@@ -113,14 +112,14 @@ describe('replicate', () => {
     test('accepts a template exactly at the minimum length (10 bp for E. coli)', () => {
       const parent = parentOf('ATCGATCGAT');
       const result = replicate(parent);
-      expect(isSuccess(result)).toBe(true);
+      expect(result.success).toBe(true);
     });
 
     test('HUMAN profile has the same 10-bp minimum (matching primer-length max)', () => {
       const parent = parentOf('ATCGATCG');
       const result = replicate(parent, { organism: HUMAN });
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result) && result.error.kind === 'template-too-short') {
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'template-too-short') {
         expect(result.error.minimum).toBe(10);
       }
     });

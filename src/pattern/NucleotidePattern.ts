@@ -4,15 +4,6 @@ import type { IUPACSymbol } from './iupac-symbols.js';
 import type { PatternError } from './errors.js';
 
 /**
- * Module-private construction key gating the {@link NucleotidePattern} constructor. Not
- * re-exported from the package barrel; in-tree callers reach it via {@link unsafeNucleotidePattern}
- * or `unsafeCompilePattern`.
- *
- * @internal
- */
-const UNSAFE_NUCLEOTIDE_PATTERN_KEY: unique symbol = Symbol('unsafe-nucleotide-pattern');
-
-/**
  * Constructs a {@link NucleotidePattern} from a pre-validated source string and its compiled
  * regex forms, skipping all IUPAC validation. Reserved for `pattern/`-internal callers
  * (the parser; the complement-pattern helper) that have already compiled the regex.
@@ -24,12 +15,7 @@ export function unsafeNucleotidePattern(
   patternRegex: RegExp,
   patternRegexGlobal: RegExp,
 ): NucleotidePattern {
-  return new NucleotidePattern(
-    pattern,
-    patternRegex,
-    patternRegexGlobal,
-    UNSAFE_NUCLEOTIDE_PATTERN_KEY,
-  );
+  return new NucleotidePattern(pattern, patternRegex, patternRegexGlobal);
 }
 
 /** Acceptable input shape for pattern matching: a raw string or a validated `DNA` / `RNA`. */
@@ -65,7 +51,7 @@ export interface NucleotideMatch {
  * is treated as a sequence of nucleotide characters without re-validation. Use the typed
  * inputs when the caller already holds a parsed sequence; the string overload is a convenience
  * for one-off matches. Public callers construct instances via {@link parseNucleotidePattern};
- * the constructor is gated by a module-private sentinel.
+ * the constructor is module-private and is not part of the package's public surface.
  *
  * @see {@link NucleotidePatternSymbol}
  * @see {@link https://en.wikipedia.org/wiki/Nucleic_acid_notation#IUPAC_notation|IUPAC notation}
@@ -87,19 +73,10 @@ export class NucleotidePattern {
    * @param pattern - A pattern string, pre-validated by the parser
    * @param patternRegex - Compiled regex form (no flags)
    * @param patternRegexGlobal - Compiled regex form (with `g` flag)
-   * @param trustedKey - Sentinel proving the caller is `pattern/`-internal
    *
    * @internal
    */
-  constructor(
-    pattern: string,
-    patternRegex: RegExp,
-    patternRegexGlobal: RegExp,
-    trustedKey: typeof UNSAFE_NUCLEOTIDE_PATTERN_KEY,
-  ) {
-    if (trustedKey !== UNSAFE_NUCLEOTIDE_PATTERN_KEY) {
-      throw new Error('NucleotidePattern must be constructed via parseNucleotidePattern');
-    }
+  constructor(pattern: string, patternRegex: RegExp, patternRegexGlobal: RegExp) {
     this.pattern = pattern;
     this.patternRegex = patternRegex;
     this.patternRegexGlobal = patternRegexGlobal;
@@ -290,7 +267,7 @@ export function unsafeCompilePattern(pattern: string): NucleotidePattern {
   }
   const basicRegex = new RegExp(outcome.source);
   const globalRegex = new RegExp(outcome.source, 'g');
-  return new NucleotidePattern(pattern, basicRegex, globalRegex, UNSAFE_NUCLEOTIDE_PATTERN_KEY);
+  return new NucleotidePattern(pattern, basicRegex, globalRegex);
 }
 
 /** Case-insensitive regex character class for a single IUPAC symbol. */

@@ -11,7 +11,6 @@ import {
   type PolyadenylationSite,
 } from '../../src/polyadenylation';
 import { parseMRNA } from '../../src/modifications';
-import { isSuccess, isFailure } from '../../src/result';
 
 function rna(sequence: string): RNA {
   return parseRNA(sequence).unwrap();
@@ -36,48 +35,48 @@ describe('MRNA.withCap', () => {
 describe('add3PrimePolyATail', () => {
   test('cleaves at the supplied site and appends the tail', () => {
     const result = add3PrimePolyATail(rna('AUGAAACCCGGGAAUAAACCC'), 15, 10);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.sequence).toBe('AUGAAACCCGGGAAU' + 'A'.repeat(10));
     }
   });
 
   test('applies the default tail length when omitted', () => {
     const result = add3PrimePolyATail(rna('AUGAAACCCGGG'), 12);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.sequence.length).toBe(12 + DEFAULT_POLY_A_TAIL_LENGTH);
     }
   });
 
   test('clamps cleavage site beyond sequence length to the sequence end', () => {
     const result = add3PrimePolyATail(rna('AUGAAACCCGGG'), 100, 5);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.sequence).toBe('AUGAAACCCGGGAAAAA');
     }
   });
 
   test('rejects a negative cleavage site', () => {
     const result = add3PrimePolyATail(rna('AUGAAACCCGGG'), -1);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'invalid-cleavage-site') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'invalid-cleavage-site') {
       expect(result.error.cleavageSite).toBe(-1);
     }
   });
 
   test('rejects a negative tail length', () => {
     const result = add3PrimePolyATail(rna('AUGAAACCCGGG'), 12, -10);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('invalid-tail-length');
     }
   });
 
   test('rejects a tail length larger than MAX_POLY_A_TAIL_LENGTH', () => {
     const result = add3PrimePolyATail(rna('AUGAAACCCGGG'), 12, MAX_POLY_A_TAIL_LENGTH + 1);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'invalid-tail-length') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'invalid-tail-length') {
       expect(result.error.max).toBe(MAX_POLY_A_TAIL_LENGTH);
     }
   });
@@ -92,8 +91,8 @@ describe('add3PrimePolyATailAtSite', () => {
       cleavageSite: 20,
     };
     const result = add3PrimePolyATailAtSite(rna('AUGAAACCCGGGAAUAAACCC'), site, 10);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.sequence).toBe('AUGAAACCCGGGAAUAAACC' + 'A'.repeat(10));
     }
   });
@@ -105,8 +104,8 @@ describe('add3PrimePolyATailAtSite', () => {
       strength: 100,
     };
     const result = add3PrimePolyATailAtSite(rna('AUGAAACCCGGGAAUAAACCC'), site, 5);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       // position 12 + signal 6 + default offset 15 = 33, clamped to sequence length 21
       expect(result.data.sequence).toBe('AUGAAACCCGGGAAUAAACCC' + 'A'.repeat(5));
     }
@@ -116,16 +115,16 @@ describe('add3PrimePolyATailAtSite', () => {
 describe('remove3PrimePolyATail', () => {
   test('strips a trailing A run', () => {
     const result = remove3PrimePolyATail(rna('AUGAAACCCGGGAAAAAAAAAA'));
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.sequence).toBe('AUGAAACCCGGG');
     }
   });
 
   test('fails when no trailing A run is found', () => {
     const result = remove3PrimePolyATail(rna('AUGAAACCCGGGCCC'));
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error).toBe('no-tail');
     }
   });

@@ -2,22 +2,12 @@ import { NUCLEOTIDE_PATTERN_SYMBOLS } from './iupac-symbols.js';
 import type { IUPACSymbol } from './iupac-symbols.js';
 
 /**
- * Module-private construction key gating the {@link NucleotidePatternSymbol} constructor.
- * Not re-exported from the package barrel; in-tree callers reach it via
- * {@link unsafeNucleotidePatternSymbol}.
- *
- * @internal
- */
-const UNSAFE_NUCLEOTIDE_PATTERN_SYMBOL_KEY: unique symbol = Symbol(
-  'unsafe-nucleotide-pattern-symbol',
-);
-
-/**
  * A single IUPAC nucleotide notation symbol (e.g. `A`, `T`, `R`, `N`) with the concrete bases
  * it matches and a compiled, case-insensitive regex character class.
  *
  * Instances are immutable. Public callers construct instances via
- * {@link parseNucleotidePatternSymbol}; the constructor is gated by a module-private sentinel.
+ * {@link parseNucleotidePatternSymbol}; the constructor is module-private and is not part of
+ * the package's public surface.
  *
  * @see {@link https://en.wikipedia.org/wiki/Nucleic_acid_notation#IUPAC_notation|IUPAC notation}
  */
@@ -36,16 +26,10 @@ export class NucleotidePatternSymbol {
    * {@link parseNucleotidePatternSymbol}.
    *
    * @param symbol - A pre-validated, upper-cased IUPAC nucleotide symbol
-   * @param trustedKey - Sentinel proving the caller is `pattern/`-internal
    *
    * @internal
    */
-  constructor(symbol: IUPACSymbol, trustedKey: typeof UNSAFE_NUCLEOTIDE_PATTERN_SYMBOL_KEY) {
-    if (trustedKey !== UNSAFE_NUCLEOTIDE_PATTERN_SYMBOL_KEY) {
-      throw new Error(
-        'NucleotidePatternSymbol must be constructed via parseNucleotidePatternSymbol',
-      );
-    }
+  constructor(symbol: IUPACSymbol) {
     this.symbol = symbol;
     this.matchingBases = NUCLEOTIDE_PATTERN_SYMBOLS[symbol];
     this.matchingRegex = buildSymbolRegex(this.matchingBases);
@@ -58,7 +42,7 @@ export class NucleotidePatternSymbol {
  * @internal
  */
 export function unsafeNucleotidePatternSymbol(symbol: IUPACSymbol): NucleotidePatternSymbol {
-  return new NucleotidePatternSymbol(symbol, UNSAFE_NUCLEOTIDE_PATTERN_SYMBOL_KEY);
+  return new NucleotidePatternSymbol(symbol);
 }
 
 /**

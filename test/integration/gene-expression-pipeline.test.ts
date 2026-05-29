@@ -12,7 +12,6 @@ import { parseGene } from '../../src/gene';
 import { translate } from '../../src/translation';
 import { transcribe } from '../../src/transcription';
 import { processRNA } from '../../src/modifications';
-import { isSuccess, isFailure } from '../../src/result/Result';
 
 describe('Gene Expression Pipeline Integration', () => {
   describe('complete pipeline: Gene -> transcription -> RNA processing', () => {
@@ -43,18 +42,18 @@ describe('Gene Expression Pipeline Integration', () => {
 
       // Step 2: Transcription
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
 
         // Verify successful transcription
 
         // Step 3: RNA Processing
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
 
           // Validate biological accuracy
@@ -83,8 +82,8 @@ describe('Gene Expression Pipeline Integration', () => {
       const transcriptionResult = transcribe(gene);
 
       // Should fail transcription (either no promoter found or TSS/exon conflict)
-      expect(isFailure(transcriptionResult)).toBe(true);
-      if (isFailure(transcriptionResult)) {
+      expect(!transcriptionResult.success).toBe(true);
+      if (!transcriptionResult.success) {
         const kind = transcriptionResult.error.kind;
         expect(kind === 'no-promoter-found' || kind === 'tss-conflicts-with-exons').toBe(true);
       }
@@ -109,17 +108,17 @@ describe('Gene Expression Pipeline Integration', () => {
         forceTranscriptionStartSite: 16,
       });
 
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.transcriptionStartSite).toBe(16);
 
         // Should be able to process RNA normally
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
           const codingSeq = mRNA.codingSequence.sequence;
           expect(codingSeq.startsWith('AUG')).toBe(true);
@@ -140,16 +139,16 @@ describe('Gene Expression Pipeline Integration', () => {
 
       // Full pipeline
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.hasIntrons()).toBe(false);
 
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
           const codingSeq = mRNA.codingSequence.sequence;
           expect(codingSeq).toBe('AUGAAACCCGGGUAG');
@@ -180,9 +179,9 @@ describe('Gene Expression Pipeline Integration', () => {
       const gene = parseGene(geneSequence, exons, 'coord-test-gene').unwrap();
 
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const tss = preMRNA.transcriptionStartSite;
 
@@ -222,14 +221,14 @@ describe('Gene Expression Pipeline Integration', () => {
       // Test normal splicing (all exons included)
       const gene = parseGene(geneSequence, allExons, 'alternatively-spliced-gene').unwrap();
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
 
         // Processing might fail due to invalid splice sites, accept either outcome
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
 
           // Should include all exons: AUGAAACCCGGGIIUAG (with U conversion)
@@ -243,7 +242,7 @@ describe('Gene Expression Pipeline Integration', () => {
           expect(polypeptide.aminoAcids[1]?.data.singleLetterCode).toBe('K');
         } else {
           // If processing fails due to splice site issues, that's okay
-          expect(isFailure(processingResult)).toBe(true);
+          expect(!processingResult.success).toBe(true);
           expect(processingResult.error).toBeTruthy();
         }
       }
@@ -260,14 +259,14 @@ describe('Gene Expression Pipeline Integration', () => {
         'alternative-isoform',
       ).unwrap();
       const altTranscriptionResult = transcribe(alternativeGene);
-      expect(isSuccess(altTranscriptionResult)).toBe(true);
+      expect(altTranscriptionResult.success).toBe(true);
 
-      if (isSuccess(altTranscriptionResult)) {
+      if (altTranscriptionResult.success) {
         const altPreMRNA = altTranscriptionResult.data;
         const altProcessingResult = processRNA(altPreMRNA);
 
         // Processing might fail due to invalid splice sites, accept either outcome
-        if (isSuccess(altProcessingResult)) {
+        if (altProcessingResult.success) {
           const altMRNA = altProcessingResult.data;
 
           // Should skip exon2: AUGAAAUUUUAG
@@ -282,7 +281,7 @@ describe('Gene Expression Pipeline Integration', () => {
           expect(altPolypeptide.aminoAcids[2]?.data.singleLetterCode).toBe('F');
         } else {
           // If processing fails due to splice site issues, that's okay
-          expect(isFailure(altProcessingResult)).toBe(true);
+          expect(!altProcessingResult.success).toBe(true);
           expect(altProcessingResult.error).toBeTruthy();
         }
       }
@@ -311,7 +310,7 @@ describe('Gene Expression Pipeline Integration', () => {
 
       const gene1 = parseGene(complexGeneSeq, isoform1Exons, 'isoform1').unwrap();
       const result1 = transcribe(gene1);
-      expect(isSuccess(result1)).toBe(true);
+      expect(result1.success).toBe(true);
 
       // Isoform 2: exon1 -> exonB -> exon3
       const isoform2Exons = [
@@ -322,17 +321,17 @@ describe('Gene Expression Pipeline Integration', () => {
 
       const gene2 = parseGene(complexGeneSeq, isoform2Exons, 'isoform2').unwrap();
       const result2 = transcribe(gene2);
-      expect(isSuccess(result2)).toBe(true);
+      expect(result2.success).toBe(true);
 
       // Both isoforms should produce valid but different proteins
-      if (isSuccess(result1) && isSuccess(result2)) {
+      if (result1.success && result2.success) {
         const processing1 = processRNA(result1.data);
         const processing2 = processRNA(result2.data);
 
-        expect(isSuccess(processing1)).toBe(true);
-        expect(isSuccess(processing2)).toBe(true);
+        expect(processing1.success).toBe(true);
+        expect(processing2.success).toBe(true);
 
-        if (isSuccess(processing1) && isSuccess(processing2)) {
+        if (processing1.success && processing2.success) {
           const protein1 = translate(processing1.data).unwrap();
           const protein2 = translate(processing2.data).unwrap();
 

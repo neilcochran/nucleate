@@ -10,14 +10,6 @@ import {
 } from '../coordinates/index.js';
 
 /**
- * Module-private construction key gating the {@link PreMRNA} constructor. Not re-exported
- * from the package barrel; in-tree callers reach it via {@link unsafePreMRNA}.
- *
- * @internal
- */
-const UNSAFE_PREMRNA_KEY: unique symbol = Symbol('unsafe-premrna');
-
-/**
  * Pre-mRNA: the unprocessed RNA transcript produced by transcription, before splicing,
  * capping, or polyadenylation. Carries the transcript {@link RNA}, the source {@link Gene},
  * the gene-relative TSS, and the exon/intron regions translated into transcript coordinates.
@@ -32,7 +24,7 @@ const UNSAFE_PREMRNA_KEY: unique symbol = Symbol('unsafe-premrna');
  * drift from the source data.
  *
  * Public construction goes through `parsePreMRNA` or the `transcribe` pipeline; the
- * constructor is gated by a module-private sentinel.
+ * constructor is module-private and is not part of the package's public surface.
  */
 export class PreMRNA {
   /** The transcribed RNA sequence (still contains introns). */
@@ -67,7 +59,6 @@ export class PreMRNA {
    * @param transcriptionStartSite - Gene-relative TSS (branded)
    * @param exonRegions - Pre-computed, branded exon regions in transcript coordinates
    * @param intronRegions - Pre-computed, branded intron regions in transcript coordinates
-   * @param trustedKey - Sentinel proving the caller is `transcription/`-internal
    *
    * @internal
    */
@@ -77,11 +68,7 @@ export class PreMRNA {
     transcriptionStartSite: GeneCoord,
     exonRegions: readonly GenomicRegion<TranscriptCoord>[],
     intronRegions: readonly GenomicRegion<TranscriptCoord>[],
-    trustedKey: typeof UNSAFE_PREMRNA_KEY,
   ) {
-    if (trustedKey !== UNSAFE_PREMRNA_KEY) {
-      throw new Error('PreMRNA must be constructed via parsePreMRNA');
-    }
     this.sequence = sequence;
     this.sourceGene = sourceGene;
     this.transcriptionStartSite = transcriptionStartSite;
@@ -178,14 +165,7 @@ export function unsafePreMRNA(
     transcriptLength,
   );
   const intronRegions = deriveIntronsFromExons(exonRegions);
-  return new PreMRNA(
-    sequence,
-    sourceGene,
-    transcriptionStartSite,
-    exonRegions,
-    intronRegions,
-    UNSAFE_PREMRNA_KEY,
-  );
+  return new PreMRNA(sequence, sourceGene, transcriptionStartSite, exonRegions, intronRegions);
 }
 
 /**

@@ -35,8 +35,9 @@ export abstract class NucleicAcidImpl<Self extends NucleicAcidImpl<Self>> {
   private readonly complementMap: Readonly<Record<string, string>>;
 
   /**
-   * Initializes the shared state. Subclasses are expected to perform their own sentinel-key
-   * check before calling `super(...)`; the base assumes both inputs are already trusted.
+   * Initializes the shared state from already-trusted inputs. The constructor is module-private
+   * (subclasses are not value-exported from the package barrel), so construction is reachable
+   * only through the parsers.
    *
    * @param sequence - Pre-validated, normalized sequence string
    * @param complementMap - Frozen alphabet-specific complement table
@@ -51,7 +52,7 @@ export abstract class NucleicAcidImpl<Self extends NucleicAcidImpl<Self>> {
   /**
    * Builds a new instance of the concrete subclass over a pre-validated sequence string. Used
    * by the Self-returning methods on this base class. Subclasses implement this by delegating
-   * to their own sentinel-gated constructor.
+   * to their own constructor.
    *
    * @param sequence - Pre-validated, normalized sequence string
    * @returns A new instance of the concrete subclass

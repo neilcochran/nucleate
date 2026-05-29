@@ -1,15 +1,6 @@
 import { DNA } from './DNA.js';
 
 /**
- * Module-private construction key gating the {@link DoubleStrandedDNA} constructor. Not
- * re-exported from the package barrel; only files inside `src/` reach it via
- * {@link unsafeDoubleStrandedDNA}.
- *
- * @internal
- */
-const UNSAFE_DSDNA_KEY: unique symbol = Symbol('unsafe-dsdna');
-
-/**
  * An immutable double-stranded DNA duplex modeled as a pair of complementary {@link DNA}
  * strands.
  *
@@ -20,9 +11,7 @@ const UNSAFE_DSDNA_KEY: unique symbol = Symbol('unsafe-dsdna');
  * Instances are immutable. Construction goes through {@link parseDoubleStrandedDNA} (which
  * validates that the supplied pair of strands actually form a duplex) or
  * {@link doubleStrandedDNA} (which synthesizes the reverse strand from a single forward
- * strand). The public constructor accepts an optional sequence-internal key that bypasses
- * validation when the caller can prove the pair is well-formed; the key is module-private and
- * is not part of the package surface.
+ * strand). The constructor is module-private and is not part of the package surface.
  */
 export class DoubleStrandedDNA {
   /** The forward strand, oriented 5'-to-3'. */
@@ -39,25 +28,14 @@ export class DoubleStrandedDNA {
    * strands.
    *
    * Public callers must use {@link parseDoubleStrandedDNA} or {@link doubleStrandedDNA}
-   * instead; the constructor is gated by a module-private sentinel so that the duplex
-   * invariant ("reverse equals forward.getReverseComplement()") cannot be sidestepped from
-   * outside the sequence module.
+   * instead; the constructor is module-private so that the duplex invariant ("reverse equals
+   * forward.getReverseComplement()") cannot be sidestepped from outside the sequence module.
    *
    * @param forward - Validated forward strand (5'-to-3')
    * @param reverse - Validated reverse strand (5'-to-3'); must equal
    * `forward.getReverseComplement()`
-   * @param trustedKey - Sequence-internal construction key. Module-private; public callers
-   * must not pass this. When supplied with the matching key, the pair is stored verbatim with
-   * no complementarity validation.
-   *
-   * @throws Error if `trustedKey` is missing or does not match the sentinel
    */
-  constructor(forward: DNA, reverse: DNA, trustedKey: typeof UNSAFE_DSDNA_KEY) {
-    if (trustedKey !== UNSAFE_DSDNA_KEY) {
-      throw new Error(
-        'DoubleStrandedDNA constructor is module-private; use parseDoubleStrandedDNA or doubleStrandedDNA',
-      );
-    }
+  constructor(forward: DNA, reverse: DNA) {
     this.forward = forward;
     this.reverse = reverse;
   }
@@ -98,5 +76,5 @@ export class DoubleStrandedDNA {
  * @internal
  */
 export function unsafeDoubleStrandedDNA(forward: DNA, reverse: DNA): DoubleStrandedDNA {
-  return new DoubleStrandedDNA(forward, reverse, UNSAFE_DSDNA_KEY);
+  return new DoubleStrandedDNA(forward, reverse);
 }

@@ -4,15 +4,6 @@ import { unsafeRNA } from '../sequence/RNA.js';
 import type { AminoAcidData } from './AminoAcidData.js';
 
 /**
- * Module-private construction key gating the {@link AminoAcid} constructor. Not re-exported
- * from the package barrel; only files inside `src/translation/` reach it via
- * {@link unsafeAminoAcid} / {@link unsafeAminoAcidFromString}.
- *
- * @internal
- */
-const UNSAFE_AMINO_ACID_KEY: unique symbol = Symbol('unsafe-amino-acid');
-
-/**
  * A proteinogenic amino acid as encoded by a specific RNA codon.
  *
  * Composition over inheritance: an `AminoAcid` *has* an RNA codon and *has* a
@@ -21,7 +12,7 @@ const UNSAFE_AMINO_ACID_KEY: unique symbol = Symbol('unsafe-amino-acid');
  *
  * Public construction goes through `parseAminoAcid` (for reconstruction from raw codon
  * strings) or through the `translate` pipeline (for the mRNA -\> polypeptide flow). The
- * constructor is gated by a module-private sentinel.
+ * constructor is module-private and is not part of the package's public surface.
  */
 export class AminoAcid {
   /** The validated, length-3 RNA codon that codes for this amino acid in this instance. */
@@ -40,14 +31,10 @@ export class AminoAcid {
    *
    * @param codon - The validated, codon-length RNA
    * @param data - The validated amino-acid data (codon must appear in `data.codons`)
-   * @param trustedKey - Sentinel proving the caller is `translation/`-internal
    *
    * @internal
    */
-  constructor(codon: Codon, data: AminoAcidData, trustedKey: typeof UNSAFE_AMINO_ACID_KEY) {
-    if (trustedKey !== UNSAFE_AMINO_ACID_KEY) {
-      throw new Error('AminoAcid must be constructed via parseAminoAcid or translate');
-    }
+  constructor(codon: Codon, data: AminoAcidData) {
     this.codon = codon;
     this.data = data;
   }
@@ -128,7 +115,7 @@ export class AminoAcid {
  * @internal
  */
 export function unsafeAminoAcid(codon: Codon, data: AminoAcidData): AminoAcid {
-  return new AminoAcid(codon, data, UNSAFE_AMINO_ACID_KEY);
+  return new AminoAcid(codon, data);
 }
 
 /**

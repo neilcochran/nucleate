@@ -7,10 +7,9 @@
  *
  * Designed so that `if (result.success)` narrows the type to the success branch (and vice
  * versa), preserving the discriminated-union ergonomics. Each branch additionally carries
- * fluent methods (`map`, `chain`, `unwrap`, etc.) for callers who prefer chaining over the
- * free-function equivalents exported alongside.
+ * fluent methods (`map`, `chain`, `unwrap`, etc.) for transforming and unwrapping results.
  *
- * Construct via {@link success} / {@link failure} (free functions).
+ * Construct via {@link success} / {@link failure}.
  *
  * @typeParam T - Type of the data carried on success
  * @typeParam E - Type of the error carried on failure (defaults to `string`)
@@ -260,109 +259,4 @@ export function success<T>(data: T): SuccessResult<T, never> {
  */
 export function failure<E>(error: E): FailureResult<never, E> {
   return new FailureResult<never, E>(error);
-}
-
-/**
- * Type guard for the success branch.
- *
- * @param result - The result to test
- * @returns `true` if `result` is a {@link SuccessResult}, narrowing the type accordingly
- * @typeParam T - Data type of the result
- * @typeParam E - Error type of the result
- */
-export function isSuccess<T, E>(result: Result<T, E>): result is SuccessResult<T, E> {
-  return result.success;
-}
-
-/**
- * Type guard for the failure branch.
- *
- * @param result - The result to test
- * @returns `true` if `result` is a {@link FailureResult}, narrowing the type accordingly
- * @typeParam T - Data type of the result
- * @typeParam E - Error type of the result
- */
-export function isFailure<T, E>(result: Result<T, E>): result is FailureResult<T, E> {
-  return !result.success;
-}
-
-/**
- * Maps the successful payload of `result` through `mapper`. Failures pass through unchanged.
- *
- * @param result - The input result
- * @param mapper - Function applied to the data on success
- * @returns A new {@link Result} with the mapped data (success) or the original error (failure)
- * @typeParam T - Data type of the input result
- * @typeParam U - Data type of the mapped result
- * @typeParam E - Error type (preserved on failure)
- */
-export function map<T, U, E>(result: Result<T, E>, mapper: (data: T) => U): Result<U, E> {
-  return result.map(mapper);
-}
-
-/**
- * Chains another result-producing operation onto a success. Failures pass through unchanged.
- *
- * @param result - The input result
- * @param mapper - Function applied to the data on success, returning a new {@link Result}
- * @returns The {@link Result} produced by `mapper` on success, or the original failure
- * @typeParam T - Data type of the input result
- * @typeParam U - Data type of the chained result
- * @typeParam E - Error type of the input result
- * @typeParam E2 - Error type of the chained result
- */
-export function chain<T, U, E, E2>(
-  result: Result<T, E>,
-  mapper: (data: T) => Result<U, E2>,
-): Result<U, E | E2> {
-  return result.chain(mapper);
-}
-
-/**
- * Extracts the data from a {@link Result}, throwing on failure.
- *
- * @param result - The input result
- * @returns The data payload
- * @throws If `result` is a {@link FailureResult}; the thrown Error's message is the string form
- * of the failure payload (or a generic fallback).
- * @typeParam T - Data type of the result
- * @typeParam E - Error type of the result
- */
-export function unwrap<T, E>(result: Result<T, E>): T {
-  return result.unwrap();
-}
-
-/**
- * Extracts the data from a {@link Result}, returning a default value on failure.
- *
- * @param result - The input result
- * @param defaultValue - The value to return on failure
- * @returns The data payload on success, or `defaultValue` on failure
- * @typeParam T - Data type of the result
- * @typeParam E - Error type of the result
- */
-export function unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T {
-  return result.unwrapOr(defaultValue);
-}
-
-/**
- * Branches on success vs failure, applying the appropriate handler.
- *
- * @param result - The input result
- * @param handlers - Object with `success` and `failure` handler functions
- * @returns The result of the matching handler
- * @typeParam T - Data type of the result
- * @typeParam E - Error type of the result
- * @typeParam R - Return type of the handler functions
- */
-export function match<T, E, R>(
-  result: Result<T, E>,
-  handlers: {
-    /** Handler invoked with the data payload on success. */
-    success: (data: T) => R;
-    /** Handler invoked with the error payload on failure. */
-    failure: (error: E) => R;
-  },
-): R {
-  return result.match(handlers);
 }

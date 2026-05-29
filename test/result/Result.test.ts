@@ -1,17 +1,5 @@
 import type { Result } from '../../src/result/Result';
-import {
-  SuccessResult,
-  FailureResult,
-  success,
-  failure,
-  isSuccess,
-  isFailure,
-  map,
-  chain,
-  unwrap,
-  unwrapOr,
-  match,
-} from '../../src/result/Result';
+import { SuccessResult, FailureResult, success, failure } from '../../src/result/Result';
 
 describe('Result module', () => {
   describe('success helper', () => {
@@ -55,36 +43,6 @@ describe('Result module', () => {
     });
   });
 
-  describe('isSuccess / isFailure type guards', () => {
-    test('isSuccess narrows the type on a success', () => {
-      const result: Result<string> = success('ok');
-      if (isSuccess(result)) {
-        expect(result.data).toBe('ok');
-      } else {
-        throw new Error('expected success');
-      }
-    });
-
-    test('isFailure narrows the type on a failure', () => {
-      const result: Result<string> = failure('err');
-      if (isFailure(result)) {
-        expect(result.error).toBe('err');
-      } else {
-        throw new Error('expected failure');
-      }
-    });
-
-    test('isSuccess returns false on a failure', () => {
-      const result: Result<string> = failure('err');
-      expect(isSuccess(result)).toBe(false);
-    });
-
-    test('isFailure returns false on a success', () => {
-      const result: Result<string> = success('ok');
-      expect(isFailure(result)).toBe(false);
-    });
-  });
-
   describe('direct discriminated-union narrowing on result.success', () => {
     test('if (result.success) narrows to SuccessResult', () => {
       const result: Result<string> = success('ok');
@@ -105,120 +63,6 @@ describe('Result module', () => {
     });
   });
 
-  describe('map (free function)', () => {
-    test('maps a success', () => {
-      const result = map(success(2), n => n * 10);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.data).toBe(20);
-      }
-    });
-
-    test('leaves a failure unchanged', () => {
-      const result: Result<number, string> = failure('nope');
-      const mapped = map(result, n => n * 10);
-      expect(isFailure(mapped)).toBe(true);
-      if (isFailure(mapped)) {
-        expect(mapped.error).toBe('nope');
-      }
-    });
-
-    test('changes data type', () => {
-      const result = map(success(7), n => `value=${n}`);
-      if (isSuccess(result)) {
-        expect(result.data).toBe('value=7');
-      }
-    });
-  });
-
-  describe('chain (free function)', () => {
-    test('chains successes', () => {
-      const parse = (s: string): Result<number, string> => {
-        const n = Number(s);
-        return Number.isNaN(n) ? failure('not a number') : success(n);
-      };
-      const double = (n: number): Result<number, string> => success(n * 2);
-
-      const result = chain(parse('21'), double);
-      if (isSuccess(result)) {
-        expect(result.data).toBe(42);
-      } else {
-        throw new Error('expected success');
-      }
-    });
-
-    test('stops on first failure', () => {
-      const parse = (s: string): Result<number, string> => failure('parse failed: ' + s);
-      const double = jest.fn((n: number): Result<number, string> => success(n * 2));
-
-      const result = chain(parse('x'), double);
-      expect(double).not.toHaveBeenCalled();
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toContain('parse failed');
-      }
-    });
-  });
-
-  describe('unwrap (free function)', () => {
-    test('returns the data on a success', () => {
-      expect(unwrap(success(99))).toBe(99);
-    });
-
-    test('throws on a failure', () => {
-      expect(() => unwrap(failure('nope'))).toThrow('nope');
-    });
-
-    test('throws with generic message for non-string errors', () => {
-      const result = failure({ code: 1 });
-      expect(() => unwrap(result)).toThrow('Result is a failure');
-    });
-
-    test('preserves the structured payload on Error.cause for non-string errors', () => {
-      const payload = { kind: 'invalid-input', field: 'name' } as const;
-      const result = failure(payload);
-      try {
-        unwrap(result);
-        throw new Error('unwrap was expected to throw but did not');
-      } catch (caught) {
-        expect(caught).toBeInstanceOf(Error);
-        expect((caught as Error).message).toBe('Result is a failure');
-        expect((caught as Error).cause).toEqual(payload);
-      }
-    });
-  });
-
-  describe('unwrapOr (free function)', () => {
-    test('returns the data on a success', () => {
-      expect(unwrapOr(success(7), 99)).toBe(7);
-    });
-
-    test('returns the default on a failure', () => {
-      const result: Result<number, string> = failure('nope');
-      expect(unwrapOr(result, 99)).toBe(99);
-    });
-  });
-
-  describe('match (free function)', () => {
-    test('runs the success handler on a success', () => {
-      const result: Result<number, string> = success(3);
-      const out = match(result, {
-        success: n => `ok:${n}`,
-        failure: e => `err:${e}`,
-      });
-      expect(out).toBe('ok:3');
-    });
-
-    test('runs the failure handler on a failure', () => {
-      const result: Result<number, string> = failure('boom');
-      const out = match(result, {
-        success: n => `ok:${n}`,
-        failure: e => `err:${e}`,
-      });
-      expect(out).toBe('err:boom');
-    });
-  });
-
   describe('class methods on Result', () => {
     test('.map on a success transforms the data', () => {
       const r = success(5).map(n => n + 1);
@@ -228,12 +72,12 @@ describe('Result module', () => {
     test('.map on a failure passes through', () => {
       const r: Result<number, string> = failure('e');
       const mapped = r.map(n => n + 1);
-      expect(isFailure(mapped)).toBe(true);
+      expect(!mapped.success).toBe(true);
     });
 
     test('.chain on a success runs the mapper', () => {
       const r = success(5).chain(n => success(n * 2));
-      if (isSuccess(r)) {
+      if (r.success) {
         expect(r.data).toBe(10);
       }
     });
@@ -248,7 +92,7 @@ describe('Result module', () => {
     test('.mapError transforms the failure payload', () => {
       const r: Result<number, string> = failure('e');
       const mapped = r.mapError(e => `[wrapped] ${e}`);
-      if (isFailure(mapped)) {
+      if (!mapped.success) {
         expect(mapped.error).toBe('[wrapped] e');
       }
     });
@@ -264,6 +108,24 @@ describe('Result module', () => {
 
     test('.unwrap on failure throws', () => {
       expect(() => failure('e').unwrap()).toThrow('e');
+    });
+
+    test('.unwrap on a non-string failure throws a generic message', () => {
+      const r = failure({ code: 1 });
+      expect(() => r.unwrap()).toThrow('Result is a failure');
+    });
+
+    test('.unwrap preserves the structured payload on Error.cause for non-string errors', () => {
+      const payload = { kind: 'invalid-input', field: 'name' } as const;
+      const r = failure(payload);
+      try {
+        r.unwrap();
+        throw new Error('unwrap was expected to throw but did not');
+      } catch (caught) {
+        expect(caught).toBeInstanceOf(Error);
+        expect((caught as Error).message).toBe('Result is a failure');
+        expect((caught as Error).cause).toEqual(payload);
+      }
     });
 
     test('.unwrapOr returns data on success and default on failure', () => {

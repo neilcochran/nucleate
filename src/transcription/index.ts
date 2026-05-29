@@ -3,10 +3,11 @@
  * type and its parser, promoter recognition + TSS identification, and the
  * `TranscriptionError` tagged union.
  *
- * The module-private `unsafePreMRNA` factory and the `UNSAFE_PREMRNA_KEY` symbol are
- * deliberately excluded from this barrel.
+ * `PreMRNA` is exported as a type only, so construction is reachable only through
+ * `parsePreMRNA` / `transcribe`. The module-private `unsafePreMRNA` factory is likewise
+ * excluded from this barrel.
  */
-export { PreMRNA } from './PreMRNA.js';
+export type { PreMRNA } from './PreMRNA.js';
 export { parsePreMRNA } from './parse.js';
 export { transcribe } from './transcribe.js';
 export type { TranscriptionOptions } from './transcribe.js';

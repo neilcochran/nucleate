@@ -4,14 +4,6 @@ import type { MatureMRNACoord } from '../coordinates/index.js';
 import { MIN_POLY_A_DETECTION_LENGTH } from '../polyadenylation/biology.js';
 
 /**
- * Module-private construction key gating the {@link MRNA} constructor. Not re-exported from
- * the package barrel; in-tree callers reach it via {@link unsafeMRNA}.
- *
- * @internal
- */
-const UNSAFE_MRNA_KEY: unique symbol = Symbol('unsafe-mrna');
-
-/**
  * Mature mRNA: a validated {@link RNA} sequence together with coding-region boundaries, a
  * 5'-cap flag, and the length of the 3' poly-A tail.
  *
@@ -22,8 +14,8 @@ const UNSAFE_MRNA_KEY: unique symbol = Symbol('unsafe-mrna');
  * is the suffix of {@link sequence}).
  *
  * Public construction goes through `parseMRNA` (for reconstruction from saved data) or
- * `processRNA` (for the pre-mRNA -\> mature mRNA pipeline). The constructor is gated by a
- * module-private sentinel.
+ * `processRNA` (for the pre-mRNA -\> mature mRNA pipeline). The constructor is module-private
+ * and is not part of the package's public surface.
  */
 export class MRNA {
   /** The validated, full mature-mRNA sequence (cap is metadata; tail bases are included). */
@@ -65,7 +57,6 @@ export class MRNA {
    * @param codingEnd - Validated coding-sequence end (0-based exclusive)
    * @param fivePrimeCap - Whether the mRNA carries a 5' cap
    * @param polyATailLength - Length of the 3' poly-A tail (0 means no tail)
-   * @param trustedKey - Sentinel proving the caller is `modifications/`-internal
    *
    * @internal
    */
@@ -75,11 +66,7 @@ export class MRNA {
     codingEnd: MatureMRNACoord,
     fivePrimeCap: boolean,
     polyATailLength: number,
-    trustedKey: typeof UNSAFE_MRNA_KEY,
   ) {
-    if (trustedKey !== UNSAFE_MRNA_KEY) {
-      throw new Error('MRNA must be constructed via parseMRNA');
-    }
     this.sequence = sequence;
     this.codingStart = codingStart;
     this.codingEnd = codingEnd;
@@ -139,14 +126,7 @@ export class MRNA {
     if (this.fivePrimeCap) {
       return this;
     }
-    return new MRNA(
-      this.sequence,
-      this.codingStart,
-      this.codingEnd,
-      true,
-      this.polyATailLength,
-      UNSAFE_MRNA_KEY,
-    );
+    return new MRNA(this.sequence, this.codingStart, this.codingEnd, true, this.polyATailLength);
   }
 
   /**
@@ -162,14 +142,7 @@ export class MRNA {
     if (this.polyATailLength === tailLength) {
       return this;
     }
-    return new MRNA(
-      this.sequence,
-      this.codingStart,
-      this.codingEnd,
-      this.fivePrimeCap,
-      tailLength,
-      UNSAFE_MRNA_KEY,
-    );
+    return new MRNA(this.sequence, this.codingStart, this.codingEnd, this.fivePrimeCap, tailLength);
   }
 
   /**
@@ -212,5 +185,5 @@ export function unsafeMRNA(
   fivePrimeCap: boolean,
   polyATailLength: number,
 ): MRNA {
-  return new MRNA(sequence, codingStart, codingEnd, fivePrimeCap, polyATailLength, UNSAFE_MRNA_KEY);
+  return new MRNA(sequence, codingStart, codingEnd, fivePrimeCap, polyATailLength);
 }

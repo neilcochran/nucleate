@@ -1,14 +1,15 @@
 /**
  * Pattern subsystem: IUPAC nucleotide-pattern matching over validated `DNA` / `RNA` sequences.
  *
- * Exports the {@link NucleotidePattern} and {@link NucleotidePatternSymbol} classes, the
- * `parseNucleotidePattern` / `parseNucleotidePatternSymbol` parsers, the {@link PatternError}
- * tagged union with its `describePatternError` renderer, the canonical IUPAC symbol table, and
- * the {@link NucleotideMatch} interface returned by `findAll` / `findFirst`.
+ * Exports the {@link NucleotidePattern} and {@link NucleotidePatternSymbol} classes as types
+ * only (construction goes through the parsers), the `parseNucleotidePattern` /
+ * `parseNucleotidePatternSymbol` parsers, the {@link PatternError} tagged union with its
+ * `describePatternError` renderer, the canonical IUPAC symbol table, and the
+ * {@link NucleotideMatch} interface returned by `findAll` / `findFirst`.
  */
-export { NucleotidePattern } from './NucleotidePattern.js';
+export type { NucleotidePattern } from './NucleotidePattern.js';
 export type { NucleotideMatch } from './NucleotidePattern.js';
-export { NucleotidePatternSymbol } from './NucleotidePatternSymbol.js';
+export type { NucleotidePatternSymbol } from './NucleotidePatternSymbol.js';
 export {
   parseNucleotidePattern,
   parseNucleotidePatternSymbol,

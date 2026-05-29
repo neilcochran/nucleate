@@ -4,7 +4,6 @@ import {
   MAX_PROMOTER_SEARCH_DISTANCE,
 } from '../../src/transcription';
 import { parseGene, Gene, MIN_INTRON_SIZE } from '../../src/gene';
-import { isSuccess, isFailure } from '../../src/result/Result';
 import { COMPLEX_GENE } from '../test-genes';
 
 describe('transcribe', () => {
@@ -17,8 +16,8 @@ describe('transcribe', () => {
   describe('success path', () => {
     test('transcribes a gene with promoter-detected TSS', () => {
       const result = transcribe(testGene);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         const preMRNA = result.data;
         expect(preMRNA.sequence.sequence).toContain('AUGAAA'); // exon1 in RNA
         expect(preMRNA.sequence.sequence).toContain('AUAAAAAUA'); // exon2 in RNA
@@ -30,8 +29,8 @@ describe('transcribe', () => {
     test('respects forceTranscriptionStartSite', () => {
       const options: TranscriptionOptions = { forceTranscriptionStartSite: 6 };
       const result = transcribe(testGene, options);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         const preMRNA = result.data;
         expect(preMRNA.transcriptionStartSite).toBe(6);
         expect(preMRNA.sequence.sequence.startsWith('AUGAAA')).toBe(true);
@@ -44,8 +43,8 @@ describe('transcribe', () => {
         [{ start: 128, end: 140 }],
       ).unwrap();
       const result = transcribe(simpleGene);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         const preMRNA = result.data;
         expect(preMRNA.sequence.sequence).toContain('AUGAAAUUUGGG');
         const tss = preMRNA.transcriptionStartSite;
@@ -55,13 +54,13 @@ describe('transcribe', () => {
 
     test('accepts a lowered promoter-strength threshold', () => {
       const result = transcribe(testGene, { minPromoterStrength: 1 });
-      expect(isSuccess(result)).toBe(true);
+      expect(result.success).toBe(true);
     });
 
     test('builds a pre-mRNA with the same exon count as the gene', () => {
       const result = transcribe(testGene);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         const preMRNA = result.data;
         expect(preMRNA.exonRegions.length).toBe(testGene.exons.length);
         expect(preMRNA.getCodingSequence().sequence.length).toBeLessThan(
@@ -74,8 +73,8 @@ describe('transcribe', () => {
   describe('biological accuracy', () => {
     test('output sequence contains only RNA bases', () => {
       const result = transcribe(testGene);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
+      expect(result.success).toBe(true);
+      if (result.success) {
         const seq = result.data.sequence.sequence;
         expect(seq).not.toContain('T');
         expect(seq).toContain('U');
@@ -96,8 +95,8 @@ describe('transcribe', () => {
         { start: 230, end: 236 },
       ]).unwrap();
       const result = transcribe(nopromoterGene);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('no-promoter-found');
         if (result.error.kind === 'no-promoter-found') {
           expect(result.error.minStrength).toBe(5);
@@ -109,15 +108,15 @@ describe('transcribe', () => {
       const result = transcribe(testGene, {
         forceTranscriptionStartSite: testGene.sequence.sequence.length + 10,
       });
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('tss-out-of-bounds');
       }
     });
 
     test('returns no-promoter-found when the search window is too narrow', () => {
       const result = transcribe(testGene, { maxPromoterSearchDistance: 10 });
-      if (isFailure(result)) {
+      if (!result.success) {
         expect(result.error.kind).toBe('no-promoter-found');
       }
     });
@@ -126,8 +125,8 @@ describe('transcribe', () => {
       // gene-has-no-exons is unreachable through transcribe because parseGene rejects an empty
       // exon list at construction time with the no-exons GeneError variant.
       const result = parseGene('ATGAAATTTGGG', []);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      expect(!result.success).toBe(true);
+      if (!result.success) {
         expect(result.error.kind).toBe('no-exons');
       }
     });

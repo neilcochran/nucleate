@@ -1,12 +1,11 @@
 import { validateExons, MIN_INTRON_SIZE } from '../../src/gene';
-import { isFailure, isSuccess } from '../../src/result';
 import type { GenomicRegion } from '../../src/coordinates';
 
 describe('validateExons', () => {
   test('validates a single exon successfully', () => {
     const exons: GenomicRegion[] = [{ start: 0, end: 100, name: 'exon1' }];
     const result = validateExons(exons, 200);
-    expect(isSuccess(result)).toBe(true);
+    expect(result.success).toBe(true);
   });
 
   test('validates multiple non-overlapping exons', () => {
@@ -16,13 +15,13 @@ describe('validateExons', () => {
       { start: 200, end: 250, name: 'exon3' },
     ];
     const result = validateExons(exons, 300);
-    expect(isSuccess(result)).toBe(true);
+    expect(result.success).toBe(true);
   });
 
   test('rejects empty exon list with kind=no-exons', () => {
     const result = validateExons([], 100);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('no-exons');
     }
   });
@@ -34,8 +33,8 @@ describe('validateExons', () => {
       { start: 100, end: 150, name: 'exon3' },
     ];
     const result = validateExons(exons, 200);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'exons-overlap') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'exons-overlap') {
       expect(result.error.at).toBe(40);
     }
   });
@@ -46,8 +45,8 @@ describe('validateExons', () => {
       { start: 100, end: 250 },
     ];
     const result = validateExons(exons, 200);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('exon-out-of-bounds');
     }
   });
@@ -58,8 +57,8 @@ describe('validateExons', () => {
       { start: 50, end: 100 },
     ];
     const result = validateExons(exons, 150);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'exon-too-small') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'exon-too-small') {
       expect(result.error.length).toBe(2);
       expect(result.error.min).toBe(3);
     } else {
@@ -70,8 +69,8 @@ describe('validateExons', () => {
   test('enforces maximum exon size constraint', () => {
     const exons: GenomicRegion[] = [{ start: 0, end: 60000 }];
     const result = validateExons(exons, 70000);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'exon-too-large') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'exon-too-large') {
       expect(result.error.length).toBe(60000);
       expect(result.error.max).toBe(50000);
     } else {
@@ -85,8 +84,8 @@ describe('validateExons', () => {
       { start: 65, end: 100 },
     ];
     const result = validateExons(exons, 150);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'intron-too-small') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'intron-too-small') {
       expect(result.error.length).toBe(15);
       expect(result.error.min).toBe(MIN_INTRON_SIZE);
     } else {
@@ -100,8 +99,8 @@ describe('validateExons', () => {
       { start: 3050100, end: 3050150 },
     ];
     const result = validateExons(exons, 3050200);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'intron-too-large') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'intron-too-large') {
       expect(result.error.max).toBe(3000000);
     } else {
       throw new Error(`expected intron-too-large, got ${JSON.stringify(result)}`);
@@ -116,15 +115,15 @@ describe('validateExons', () => {
     const startTime = performance.now();
     const result = validateExons(exons, 100000);
     const endTime = performance.now();
-    expect(isSuccess(result)).toBe(true);
+    expect(result.success).toBe(true);
     expect(endTime - startTime).toBeLessThan(100);
   });
 
   test('rejects invalid (negative-start) coordinates', () => {
     const exons: GenomicRegion[] = [{ start: -5, end: 50 }];
     const result = validateExons(exons, 100);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('exon-invalid-coordinates');
     }
   });
@@ -136,6 +135,6 @@ describe('validateExons', () => {
       { start: 140, end: 190 },
     ];
     const result = validateExons(exons, 200);
-    expect(isSuccess(result)).toBe(true);
+    expect(result.success).toBe(true);
   });
 });

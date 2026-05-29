@@ -1,4 +1,4 @@
-import { Result, success, failure, isFailure } from '../result/index.js';
+import { Result, success, failure } from '../result/index.js';
 import { parseRNA } from '../sequence/index.js';
 import { geneCoord } from '../coordinates/index.js';
 import type { Gene } from '../gene/index.js';
@@ -38,7 +38,7 @@ export function parsePreMRNA(
   transcriptionStartSite: number,
 ): Result<PreMRNA, TranscriptionError> {
   const rnaResult = parseRNA(sequence);
-  if (isFailure(rnaResult)) {
+  if (!rnaResult.success) {
     return failure({ kind: 'invalid-rna-sequence', cause: rnaResult.error });
   }
   const rna = rnaResult.data;

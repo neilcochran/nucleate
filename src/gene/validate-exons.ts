@@ -1,6 +1,6 @@
 import { MIN_EXON_SIZE, MAX_EXON_SIZE, MIN_INTRON_SIZE, MAX_INTRON_SIZE } from './biology.js';
 import { type GenomicRegion, validateGenomicRegion } from '../coordinates/index.js';
-import { Result, success, failure, isFailure, at } from '../result/index.js';
+import { Result, success, failure, at } from '../result/index.js';
 import type { GeneError } from './errors.js';
 
 /**
@@ -34,7 +34,7 @@ export function validateExons(
   for (let i = 0; i < exons.length; i++) {
     const exon = at(exons, i);
 
-    if (isFailure(validateGenomicRegion(exon))) {
+    if (!validateGenomicRegion(exon).success) {
       return failure({
         kind: 'exon-invalid-coordinates',
         exonIndex: i,

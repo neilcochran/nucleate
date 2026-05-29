@@ -1,4 +1,4 @@
-import { Result, success, failure, isFailure } from '../result/index.js';
+import { Result, success, failure } from '../result/index.js';
 import { parseRNA } from '../sequence/index.js';
 import { mRNACoord } from '../coordinates/index.js';
 import { type MRNA, unsafeMRNA } from './MRNA.js';
@@ -41,7 +41,7 @@ export function parseMRNA(
   polyATailLength: number = 0,
 ): Result<MRNA, MRNAError> {
   const rnaResult = parseRNA(sequence);
-  if (isFailure(rnaResult)) {
+  if (!rnaResult.success) {
     return failure({ kind: 'invalid-sequence', cause: rnaResult.error });
   }
   const rna = rnaResult.data;

@@ -29,7 +29,8 @@ export {
   fragmentLength,
   isComplete,
 } from './OkazakiFragment.js';
-export { RNAPrimer, parseRNAPrimer } from './RNAPrimer.js';
+export type { RNAPrimer } from './RNAPrimer.js';
+export { parseRNAPrimer } from './RNAPrimer.js';
 export { replicate, replicateSteps, type ReplicationOptions } from './replicate.js';
 export type {
   ReplicationEvent,

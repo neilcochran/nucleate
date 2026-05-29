@@ -5,14 +5,6 @@ import type { GeneCoord, GenomicRegion } from '../coordinates/index.js';
 import type { AlternativeSplicingProfile, SpliceVariant } from '../variants/index.js';
 
 /**
- * Module-private construction key gating the {@link Gene} constructor. Not re-exported from
- * the package barrel; in-tree callers reach it via {@link unsafeGene}.
- *
- * @internal
- */
-const UNSAFE_GENE_KEY: unique symbol = Symbol('unsafe-gene');
-
-/**
  * A gene: a `DNA` sequence together with its exon/intron structure, an optional name, and an
  * optional alternative-splicing profile.
  *
@@ -21,7 +13,7 @@ const UNSAFE_GENE_KEY: unique symbol = Symbol('unsafe-gene');
  * transcription uses the `transcribe(gene)` pipeline function in `transcription/`.
  *
  * Coordinates are gene-relative ({@link GeneCoord}). Public construction goes through
- * `parseGene`; the constructor is gated by a module-private sentinel.
+ * `parseGene`; the constructor is module-private and is not part of the package's public surface.
  */
 export class Gene {
   /** The validated DNA sequence backing this gene. */
@@ -50,7 +42,6 @@ export class Gene {
    * @param introns - Validated, branded intron regions (derived from `exons`)
    * @param name - Optional gene identifier
    * @param splicingProfile - Optional alternative-splicing profile
-   * @param trustedKey - Sentinel proving the caller is `gene/`-internal
    *
    * @internal
    */
@@ -60,11 +51,7 @@ export class Gene {
     introns: readonly GenomicRegion<GeneCoord>[],
     name: string | undefined,
     splicingProfile: AlternativeSplicingProfile | undefined,
-    trustedKey: typeof UNSAFE_GENE_KEY,
   ) {
-    if (trustedKey !== UNSAFE_GENE_KEY) {
-      throw new Error('Gene must be constructed via parseGene');
-    }
     this.sequence = sequence;
     this.exons = Object.freeze([...exons]);
     this.introns = Object.freeze([...introns]);
@@ -212,5 +199,5 @@ export function unsafeGene(
   name: string | undefined,
   splicingProfile: AlternativeSplicingProfile | undefined,
 ): Gene {
-  return new Gene(sequence, exons, introns, name, splicingProfile, UNSAFE_GENE_KEY);
+  return new Gene(sequence, exons, introns, name, splicingProfile);
 }

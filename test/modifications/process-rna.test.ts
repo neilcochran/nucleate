@@ -6,7 +6,6 @@ import {
 import { DEFAULT_POLY_A_TAIL_LENGTH } from '../../src/polyadenylation';
 import { parseGene } from '../../src/gene';
 import { parsePreMRNA } from '../../src/transcription';
-import { isSuccess, isFailure } from '../../src/result';
 import { GenomicRegion } from '../../src/coordinates';
 import { SIMPLE_TWO_EXON_GENE, SINGLE_EXON_GENE, INVALID_SPLICE_GENE } from '../test-genes';
 
@@ -17,8 +16,8 @@ describe('processRNA', () => {
     ]).unwrap();
     const preMRNA = parsePreMRNA(SIMPLE_TWO_EXON_GENE.rnaSequence, gene, 0).unwrap();
     const result = processRNA(preMRNA);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       const mRNA = result.data;
       expect(mRNA.fivePrimeCap).toBe(true);
       expect(mRNA.polyATailLength).toBe(DEFAULT_POLY_A_TAIL_LENGTH);
@@ -30,8 +29,8 @@ describe('processRNA', () => {
     const gene = parseGene(SINGLE_EXON_GENE.dnaSequence, [...SINGLE_EXON_GENE.exons]).unwrap();
     const preMRNA = parsePreMRNA(SINGLE_EXON_GENE.rnaSequence, gene, 0).unwrap();
     const result = processRNA(preMRNA);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.codingSequence.sequence).toBe('AUGAAACCCGGGUAG');
     }
   });
@@ -45,8 +44,8 @@ describe('processRNA', () => {
       addPolyATail: false,
     };
     const result = processRNA(preMRNA, opts);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       expect(result.data.fivePrimeCap).toBe(false);
       expect(result.data.polyATailLength).toBe(0);
     }
@@ -57,8 +56,8 @@ describe('processRNA', () => {
     const gene = parseGene('AAACCCGGGTAA', exons).unwrap();
     const preMRNA = parsePreMRNA('AAACCCGGGUAA', gene, 0).unwrap();
     const result = processRNA(preMRNA);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('no-start-codon');
     }
   });
@@ -68,8 +67,8 @@ describe('processRNA', () => {
     const gene = parseGene('ATGAAACCCGGGAAA', exons).unwrap();
     const preMRNA = parsePreMRNA('AUGAAACCCGGGAAA', gene, 0).unwrap();
     const result = processRNA(preMRNA);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
+    expect(!result.success).toBe(true);
+    if (!result.success) {
       expect(result.error.kind).toBe('no-in-frame-stop');
     }
   });
@@ -80,8 +79,8 @@ describe('processRNA', () => {
     ]).unwrap();
     const preMRNA = parsePreMRNA(INVALID_SPLICE_GENE.rnaSequence, gene, 0).unwrap();
     const result = processRNA(preMRNA);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result) && result.error.kind === 'splicing-failed') {
+    expect(!result.success).toBe(true);
+    if (!result.success && result.error.kind === 'splicing-failed') {
       expect(result.error.cause.kind).toBe('invalid-donor-site');
     }
   });
@@ -95,8 +94,8 @@ describe('processRNA', () => {
       skipSpliceSiteValidation: true,
       validateCodons: false,
     });
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
+    expect(result.success).toBe(true);
+    if (result.success) {
       const mRNA = result.data;
       expect(mRNA.fivePrimeCap).toBe(true);
       expect(mRNA.polyATailLength).toBe(DEFAULT_POLY_A_TAIL_LENGTH);

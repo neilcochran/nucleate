@@ -13,7 +13,9 @@ export const CODON_LENGTH = 3;
  * Branded subtype of `RNA` so the type system distinguishes "any RNA" from "RNA known to be
  * codon-length." Functions that take a `Codon` will reject a general `RNA`; functions that take
  * an `RNA` continue to accept `Codon` (since `Codon` is an `RNA`). All `RNA` methods
- * (`.sequence`, `.length()`, complements) work on `Codon` unchanged.
+ * (`.sequence`, `.length()`, complements) work on `Codon` unchanged. This is deliberately a
+ * brand-on-an-entity (a length-refined `RNA`), not a third construction mechanism alongside the
+ * parser-constructed classes and the factory-built branded records.
  *
  * Construct via {@link parseCodon} for untrusted input, or via {@link unsafeCodon} for in-tree
  * callers that have already verified the length invariant.

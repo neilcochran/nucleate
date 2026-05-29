@@ -1,18 +1,9 @@
-import { Result, success, failure, isFailure } from '../result/index.js';
+import { Result, success, failure } from '../result/index.js';
 import { parseRNA } from '../sequence/index.js';
 import type { RNA } from '../sequence/index.js';
 import { unsafeRNA } from '../sequence/RNA.js';
 import { MIN_RNA_PRIMER_LENGTH, MAX_RNA_PRIMER_LENGTH } from './biology.js';
 import type { RNAPrimerError } from './errors.js';
-
-/**
- * Module-private construction key gating the {@link RNAPrimer} constructor. Not re-exported
- * from the package barrel; only files inside `src/replication/` reach it via
- * {@link unsafeRNAPrimer}.
- *
- * @internal
- */
-const UNSAFE_PRIMER_KEY: unique symbol = Symbol('unsafe-rna-primer');
 
 /**
  * An immutable RNA primer used to initiate DNA synthesis on an Okazaki fragment.
@@ -39,19 +30,13 @@ export class RNAPrimer {
   /**
    * Constructs an {@link RNAPrimer} from already-validated inputs.
    *
-   * Public callers must use {@link parseRNAPrimer} instead; the constructor is gated by a
-   * module-private sentinel.
+   * Public callers must use {@link parseRNAPrimer} instead; the constructor is module-private
+   * and is not part of the package's public surface.
    *
    * @param sequence - Validated RNA sequence (3-10 nucleotides)
    * @param position - 0-based template position
-   * @param trustedKey - Module-private construction key.
-   *
-   * @throws Error if `trustedKey` is missing or does not match the sentinel
    */
-  constructor(sequence: RNA, position: number, trustedKey: typeof UNSAFE_PRIMER_KEY) {
-    if (trustedKey !== UNSAFE_PRIMER_KEY) {
-      throw new Error('RNAPrimer constructor is module-private; use parseRNAPrimer');
-    }
+  constructor(sequence: RNA, position: number) {
     this.sequence = sequence;
     this.position = position;
   }
@@ -95,7 +80,7 @@ export function parseRNAPrimer(
     return failure({ kind: 'invalid-position', position });
   }
   const rnaResult = parseRNA(sequence);
-  if (isFailure(rnaResult)) {
+  if (!rnaResult.success) {
     return failure({ kind: 'invalid-sequence', cause: rnaResult.error });
   }
   const rna = rnaResult.data;
@@ -122,7 +107,7 @@ export function parseRNAPrimer(
  * @returns A new `RNAPrimer`
  */
 export function unsafeRNAPrimer(sequence: RNA, position: number): RNAPrimer {
-  return new RNAPrimer(sequence, position, UNSAFE_PRIMER_KEY);
+  return new RNAPrimer(sequence, position);
 }
 
 /**

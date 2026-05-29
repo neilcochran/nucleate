@@ -1,4 +1,4 @@
-import { Result, success, failure, isFailure } from '../result/index.js';
+import { Result, success, failure } from '../result/index.js';
 import { transcribeSequence, type RNA } from '../sequence/index.js';
 import type { Gene } from '../gene/index.js';
 import type { PreMRNA } from '../transcription/index.js';
@@ -46,7 +46,7 @@ export function spliceRNAWithVariant(
 ): Result<RNA, SplicingError> {
   const sourceGene = preMRNA.sourceGene;
   const validation = validateSpliceVariant(variant, sourceGene, options);
-  if (isFailure(validation)) {
+  if (!validation.success) {
     return failure(validation.error);
   }
   const variantDNA = sourceGene.getVariantSequence(variant);
@@ -74,7 +74,7 @@ export function processSpliceVariant(
   options: SpliceVariantProcessingOptions = {},
 ): Result<MRNA, ProcessingError> {
   const spliceResult = spliceRNAWithVariant(preMRNA, variant, options);
-  if (isFailure(spliceResult)) {
+  if (!spliceResult.success) {
     return failure({ kind: 'splicing-failed', cause: spliceResult.error });
   }
   return processSpliced(spliceResult.data, options);
@@ -190,7 +190,7 @@ export function* enumerateSpliceVariants(
       includedExons,
     };
 
-    if (isFailure(validateSpliceVariant(variant, gene, options))) {
+    if (!validateSpliceVariant(variant, gene, options).success) {
       continue;
     }
 
