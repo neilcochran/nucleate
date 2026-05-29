@@ -1,4 +1,5 @@
-import { assertUnreachable } from '../result/index.js';
+import { makeDescriber } from '../result/index.js';
+import type { DescriberArms } from '../result/index.js';
 
 /**
  * Error variants produced by {@link validateSpliceVariant}: the per-variant rule checks
@@ -87,28 +88,34 @@ export type VariantValidationError =
       readonly found: string;
     };
 
+/**
+ * Per-`kind` renderers for {@link VariantValidationError}. Exported for cross-module spread: the
+ * `processing/` module folds these arms into its `splicing-failed` cause renderer rather than
+ * re-enumerating the variant-validation kinds. Intentionally not re-exported from the module
+ * barrel - it is internal infrastructure, reached only by deep import (the same boundary the
+ * `unsafe*` factories use).
+ */
+export const VARIANT_VALIDATION_ERROR_ARMS: DescriberArms<VariantValidationError> = {
+  'variant-no-included-exons': e => `Variant '${e.variantName}' must include at least one exon`,
+  'variant-duplicate-exon-indices': e =>
+    `Variant '${e.variantName}' contains duplicate exon indices: ${e.duplicateIndices.join(', ')}`,
+  'variant-invalid-exon-index': e =>
+    `Variant '${e.variantName}' references invalid exon index ${e.exonIndex}. Gene has ${e.totalExons} exons.`,
+  'variant-skips-first-exon': e =>
+    `Variant '${e.variantName}' skips the first exon, which is not allowed`,
+  'variant-skips-last-exon': e =>
+    `Variant '${e.variantName}' skips the last exon, which is not allowed`,
+  'variant-below-minimum-exons': e =>
+    `Variant '${e.variantName}' includes ${e.included} exons, but minimum required is ${e.minimum}`,
+  'variant-not-in-frame': e =>
+    `Variant '${e.variantName}' does not maintain reading frame: length ${e.length} is not divisible by 3`,
+  'variant-missing-start-codon': e =>
+    `Variant '${e.variantName}' does not start with start codon AUG, found '${e.found}'`,
+  'variant-missing-stop-codon': e =>
+    `Variant '${e.variantName}' does not end with stop codon, found '${e.found}'`,
+};
+
 /** Renders a {@link VariantValidationError} as a human-readable message. */
-export function describeVariantValidationError(error: VariantValidationError): string {
-  switch (error.kind) {
-    case 'variant-no-included-exons':
-      return `Variant '${error.variantName}' must include at least one exon`;
-    case 'variant-duplicate-exon-indices':
-      return `Variant '${error.variantName}' contains duplicate exon indices: ${error.duplicateIndices.join(', ')}`;
-    case 'variant-invalid-exon-index':
-      return `Variant '${error.variantName}' references invalid exon index ${error.exonIndex}. Gene has ${error.totalExons} exons.`;
-    case 'variant-skips-first-exon':
-      return `Variant '${error.variantName}' skips the first exon, which is not allowed`;
-    case 'variant-skips-last-exon':
-      return `Variant '${error.variantName}' skips the last exon, which is not allowed`;
-    case 'variant-below-minimum-exons':
-      return `Variant '${error.variantName}' includes ${error.included} exons, but minimum required is ${error.minimum}`;
-    case 'variant-not-in-frame':
-      return `Variant '${error.variantName}' does not maintain reading frame: length ${error.length} is not divisible by 3`;
-    case 'variant-missing-start-codon':
-      return `Variant '${error.variantName}' does not start with start codon AUG, found '${error.found}'`;
-    case 'variant-missing-stop-codon':
-      return `Variant '${error.variantName}' does not end with stop codon, found '${error.found}'`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeVariantValidationError = makeDescriber<VariantValidationError>(
+  VARIANT_VALIDATION_ERROR_ARMS,
+);

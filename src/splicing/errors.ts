@@ -6,7 +6,8 @@
  * alongside the structured payload.
  */
 
-import { assertUnreachable } from '../result/index.js';
+import { makeDescriber } from '../result/index.js';
+import type { DescriberArms } from '../result/index.js';
 
 /**
  * Error variants produced by `spliceRNA`, `validateTranscriptSpliceSites`, and
@@ -66,20 +67,24 @@ export type SplicingError =
       readonly min: number;
     };
 
+/**
+ * Per-`kind` renderers for {@link SplicingError}. Exported for cross-module spread: the
+ * `processing/` module folds these arms into its `splicing-failed` cause renderer rather than
+ * re-enumerating the splice variants. Intentionally not re-exported from the module barrel - it
+ * is internal infrastructure, reached only by deep import (the same boundary the `unsafe*`
+ * factories use).
+ */
+export const SPLICING_ERROR_ARMS: DescriberArms<SplicingError> = {
+  'no-exons': () => 'Cannot splice RNA: no exons found in pre-mRNA',
+  'exon-out-of-bounds': e =>
+    `Exon ${e.exonIndex} region ${e.start}-${e.end} is outside transcript bounds (length ${e.sequenceLength})`,
+  'invalid-donor-site': e =>
+    `Invalid 5' splice site at transcript position ${e.position}: expected GU, found ${e.found}`,
+  'invalid-acceptor-site': e =>
+    `Invalid 3' splice site at transcript position ${e.position}: expected AG, found ${e.found}`,
+  'intron-too-short': e =>
+    `Intron ${e.intronIndex} is too short: ${e.length} bp (minimum ${e.min} bp required)`,
+};
+
 /** Renders a {@link SplicingError} as a human-readable message. */
-export function describeSplicingError(error: SplicingError): string {
-  switch (error.kind) {
-    case 'no-exons':
-      return 'Cannot splice RNA: no exons found in pre-mRNA';
-    case 'exon-out-of-bounds':
-      return `Exon ${error.exonIndex} region ${error.start}-${error.end} is outside transcript bounds (length ${error.sequenceLength})`;
-    case 'invalid-donor-site':
-      return `Invalid 5' splice site at transcript position ${error.position}: expected GU, found ${error.found}`;
-    case 'invalid-acceptor-site':
-      return `Invalid 3' splice site at transcript position ${error.position}: expected AG, found ${error.found}`;
-    case 'intron-too-short':
-      return `Intron ${error.intronIndex} is too short: ${error.length} bp (minimum ${error.min} bp required)`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeSplicingError = makeDescriber<SplicingError>(SPLICING_ERROR_ARMS);

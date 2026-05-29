@@ -9,7 +9,7 @@
 import type { GeneCoord, GenomicRegion } from '../coordinates/index.js';
 import type { RNAError } from '../sequence/index.js';
 import { describeRNAError } from '../sequence/index.js';
-import { assertUnreachable } from '../result/index.js';
+import { makeDescriber } from '../result/index.js';
 
 /**
  * Error variants produced by `transcribe` and `parsePreMRNA`.
@@ -68,21 +68,15 @@ export type TranscriptionError =
     };
 
 /** Renders a {@link TranscriptionError} as a human-readable message. */
-export function describeTranscriptionError(error: TranscriptionError): string {
-  switch (error.kind) {
-    case 'invalid-rna-sequence':
-      return `Invalid pre-mRNA sequence: ${describeRNAError(error.cause)}`;
-    case 'gene-has-no-exons':
-      return 'Gene has no exons; cannot determine transcript bounds';
-    case 'no-promoter-found':
-      return `No promoter passing minStrength=${error.minStrength} found in gene region [${error.searchedRegion.start}, ${error.searchedRegion.end})`;
-    case 'tss-not-identifiable':
-      return 'Promoter located but no transcription start site could be derived from its elements';
-    case 'tss-out-of-bounds':
-      return `Transcription start site ${error.tss} is outside gene bounds (sequence length ${error.sequenceLength})`;
-    case 'tss-conflicts-with-exons':
-      return `TSS at position ${error.tss} conflicts with gene exon structure; exons ${error.conflictingExons.join(', ')} start upstream of the TSS`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeTranscriptionError = makeDescriber<TranscriptionError>({
+  'invalid-rna-sequence': e => `Invalid pre-mRNA sequence: ${describeRNAError(e.cause)}`,
+  'gene-has-no-exons': () => 'Gene has no exons; cannot determine transcript bounds',
+  'no-promoter-found': e =>
+    `No promoter passing minStrength=${e.minStrength} found in gene region [${e.searchedRegion.start}, ${e.searchedRegion.end})`,
+  'tss-not-identifiable': () =>
+    'Promoter located but no transcription start site could be derived from its elements',
+  'tss-out-of-bounds': e =>
+    `Transcription start site ${e.tss} is outside gene bounds (sequence length ${e.sequenceLength})`,
+  'tss-conflicts-with-exons': e =>
+    `TSS at position ${e.tss} conflicts with gene exon structure; exons ${e.conflictingExons.join(', ')} start upstream of the TSS`,
+});

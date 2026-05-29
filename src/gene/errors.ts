@@ -11,7 +11,7 @@ import type { DNAError } from '../sequence/index.js';
 import { describeDNAError } from '../sequence/index.js';
 import type { VariantValidationError } from '../variants/errors.js';
 import { describeVariantValidationError } from '../variants/errors.js';
-import { assertUnreachable } from '../result/index.js';
+import { makeDescriber } from '../result/index.js';
 
 /**
  * Error variants produced by `parseGene` and the validators it composes.
@@ -156,53 +156,38 @@ export type PromoterElementError =
     };
 
 /** Renders a {@link GeneError} as a human-readable message. */
-export function describeGeneError(error: GeneError): string {
-  switch (error.kind) {
-    case 'invalid-sequence':
-      return `Invalid gene sequence: ${describeDNAError(error.cause)}`;
-    case 'no-exons':
-      return 'Gene must have at least one exon';
-    case 'exon-invalid-coordinates':
-      return `Exon ${error.exonIndex} has invalid coordinates: start=${error.start}, end=${error.end}`;
-    case 'exon-out-of-bounds':
-      return `Exon ${error.exonIndex} extends beyond sequence length: end=${error.exonEnd}, sequence length=${error.sequenceLength}`;
-    case 'exon-too-small':
-      return `Exon ${error.exonIndex} is too small: ${error.length} bp (minimum ${error.min} bp required)`;
-    case 'exon-too-large':
-      return `Exon ${error.exonIndex} is unrealistically large: ${error.length} bp (maximum ${error.max} bp)`;
-    case 'exons-overlap':
-      return `Exon overlap detected at position ${error.at}. Overlapping exons: ${error.indices.join(', ')}`;
-    case 'intron-too-small':
-      return `Intron ${error.intronIndex} is too small: ${error.length} bp (minimum ${error.min} bp required for proper splicing)`;
-    case 'intron-too-large':
-      return `Intron ${error.intronIndex} is unrealistically large: ${error.length} bp (maximum ${error.max} bp)`;
-    case 'invalid-splicing-profile':
-      return error.reason;
-    case 'invalid-variant':
-      return describeVariantValidationError(error.cause);
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeGeneError = makeDescriber<GeneError>({
+  'invalid-sequence': e => `Invalid gene sequence: ${describeDNAError(e.cause)}`,
+  'no-exons': () => 'Gene must have at least one exon',
+  'exon-invalid-coordinates': e =>
+    `Exon ${e.exonIndex} has invalid coordinates: start=${e.start}, end=${e.end}`,
+  'exon-out-of-bounds': e =>
+    `Exon ${e.exonIndex} extends beyond sequence length: end=${e.exonEnd}, sequence length=${e.sequenceLength}`,
+  'exon-too-small': e =>
+    `Exon ${e.exonIndex} is too small: ${e.length} bp (minimum ${e.min} bp required)`,
+  'exon-too-large': e =>
+    `Exon ${e.exonIndex} is unrealistically large: ${e.length} bp (maximum ${e.max} bp)`,
+  'exons-overlap': e =>
+    `Exon overlap detected at position ${e.at}. Overlapping exons: ${e.indices.join(', ')}`,
+  'intron-too-small': e =>
+    `Intron ${e.intronIndex} is too small: ${e.length} bp (minimum ${e.min} bp required for proper splicing)`,
+  'intron-too-large': e =>
+    `Intron ${e.intronIndex} is unrealistically large: ${e.length} bp (maximum ${e.max} bp)`,
+  'invalid-splicing-profile': e => e.reason,
+  'invalid-variant': e => describeVariantValidationError(e.cause),
+});
 
 /** Renders a {@link PromoterError} as a human-readable message. */
-export function describePromoterError(error: PromoterError): string {
-  switch (error.kind) {
-    case 'invalid-tss':
-      return `Promoter transcription start site must be a finite non-negative integer; received ${error.tss}`;
-  }
-}
+export const describePromoterError = makeDescriber<PromoterError>({
+  'invalid-tss': e =>
+    `Promoter transcription start site must be a finite non-negative integer; received ${e.tss}`,
+});
 
 /** Renders a {@link PromoterElementError} as a human-readable message. */
-export function describePromoterElementError(error: PromoterElementError): string {
-  switch (error.kind) {
-    case 'empty-name':
-      return 'Promoter element name cannot be empty';
-    case 'invalid-position':
-      return `Promoter element position must be a finite integer; received ${error.position}`;
-    case 'invalid-score-weight':
-      return `Promoter element score weight must be a finite number; received ${error.scoreWeight}`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describePromoterElementError = makeDescriber<PromoterElementError>({
+  'empty-name': () => 'Promoter element name cannot be empty',
+  'invalid-position': e =>
+    `Promoter element position must be a finite integer; received ${e.position}`,
+  'invalid-score-weight': e =>
+    `Promoter element score weight must be a finite number; received ${e.scoreWeight}`,
+});

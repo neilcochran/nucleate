@@ -7,7 +7,7 @@
  * work uniformly across coordinate spaces.
  */
 
-import { Result, success, failure, assertUnreachable, at } from '../result/index.js';
+import { Result, success, failure, makeDescriber, at } from '../result/index.js';
 
 /**
  * A region within a sequence, expressed in 0-based half-open coordinates `[start, end)`.
@@ -89,18 +89,12 @@ export function validateGenomicRegion<C extends number>(
 }
 
 /** Renders a {@link RegionError} as a human-readable message. */
-export function describeRegionError(error: RegionError): string {
-  switch (error.kind) {
-    case 'negative-start':
-      return `Region start ${error.start} must be non-negative`;
-    case 'negative-end':
-      return `Region end ${error.end} must be non-negative`;
-    case 'start-not-before-end':
-      return `Region start (${error.start}) must be strictly less than end (${error.end})`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeRegionError = makeDescriber<RegionError>({
+  'negative-start': e => `Region start ${e.start} must be non-negative`,
+  'negative-end': e => `Region end ${e.end} must be non-negative`,
+  'start-not-before-end': e =>
+    `Region start (${e.start}) must be strictly less than end (${e.end})`,
+});
 
 /**
  * Tests whether two regions in the same coordinate space overlap.

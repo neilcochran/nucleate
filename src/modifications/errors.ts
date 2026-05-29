@@ -10,7 +10,8 @@
 
 import type { RNAError } from '../sequence/index.js';
 import { describeRNAError } from '../sequence/index.js';
-import { assertUnreachable } from '../result/index.js';
+import { makeDescriber } from '../result/index.js';
+import type { DescriberArms } from '../result/index.js';
 
 /**
  * Construction-time validation failures produced by `parseMRNA`.
@@ -46,16 +47,20 @@ export type MRNAError =
       readonly sequenceLength: number;
     };
 
+/**
+ * Per-`kind` renderers for {@link MRNAError}. Exported for cross-module spread: `processing/`
+ * folds these arms into {@link ProcessingError}'s renderer (every `MRNAError` is also a
+ * `ProcessingError`) rather than re-enumerating the construction-time kinds. Intentionally not
+ * re-exported from the module barrel - it is internal infrastructure, reached only by deep import
+ * (the same boundary the `unsafe*` factories use).
+ */
+export const MRNA_ERROR_ARMS: DescriberArms<MRNAError> = {
+  'invalid-sequence': e => `Invalid mRNA sequence: ${describeRNAError(e.cause)}`,
+  'invalid-coding-boundaries': e =>
+    `Invalid coding-sequence boundaries: start=${e.codingStart}, end=${e.codingEnd}, sequence length=${e.sequenceLength}`,
+  'invalid-polya-tail-length': e =>
+    `Invalid poly-A tail length ${e.polyATailLength}: must be between 0 and the sequence length (${e.sequenceLength})`,
+};
+
 /** Renders an {@link MRNAError} as a human-readable message. */
-export function describeMRNAError(error: MRNAError): string {
-  switch (error.kind) {
-    case 'invalid-sequence':
-      return `Invalid mRNA sequence: ${describeRNAError(error.cause)}`;
-    case 'invalid-coding-boundaries':
-      return `Invalid coding-sequence boundaries: start=${error.codingStart}, end=${error.codingEnd}, sequence length=${error.sequenceLength}`;
-    case 'invalid-polya-tail-length':
-      return `Invalid poly-A tail length ${error.polyATailLength}: must be between 0 and the sequence length (${error.sequenceLength})`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeMRNAError = makeDescriber<MRNAError>(MRNA_ERROR_ARMS);

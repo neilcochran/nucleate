@@ -6,7 +6,7 @@
  * alongside the structured payload.
  */
 
-import { assertUnreachable } from '../result/index.js';
+import { makeDescriber } from '../result/index.js';
 
 /**
  * Error variants produced by `add3PrimePolyATail` and `add3PrimePolyATailAtSite`.
@@ -31,13 +31,9 @@ export type PolyadenylationError =
     };
 
 /** Renders a {@link PolyadenylationError} as a human-readable message. */
-export function describePolyadenylationError(error: PolyadenylationError): string {
-  switch (error.kind) {
-    case 'invalid-cleavage-site':
-      return `Invalid cleavage site ${error.cleavageSite}: must be a non-negative integer`;
-    case 'invalid-tail-length':
-      return `Invalid poly-A tail length ${error.tailLength}: must be between 0 and ${error.max}`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describePolyadenylationError = makeDescriber<PolyadenylationError>({
+  'invalid-cleavage-site': e =>
+    `Invalid cleavage site ${e.cleavageSite}: must be a non-negative integer`,
+  'invalid-tail-length': e =>
+    `Invalid poly-A tail length ${e.tailLength}: must be between 0 and ${e.max}`,
+});

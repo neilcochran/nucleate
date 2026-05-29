@@ -1,6 +1,6 @@
 import type { RNAError } from '../sequence/index.js';
 import { describeRNAError } from '../sequence/index.js';
-import { assertUnreachable } from '../result/index.js';
+import { makeDescriber } from '../result/index.js';
 
 /**
  * Tagged-union errors produced by `parseAminoAcid` and the `translate` pipeline.
@@ -61,19 +61,13 @@ export type TranslationError =
     };
 
 /** Renders a {@link TranslationError} as a human-readable message. */
-export function describeTranslationError(error: TranslationError): string {
-  switch (error.kind) {
-    case 'invalid-codon-sequence':
-      return `Invalid codon '${error.codon}': ${describeRNAError(error.cause)}`;
-    case 'invalid-codon-length':
-      return `Invalid codon '${error.codon}': length ${error.length} (expected ${error.expected})`;
-    case 'stop-codon':
-      return `Codon '${error.codon}' is a stop codon and does not code for an amino acid`;
-    case 'invalid-codon':
-      return `Codon '${error.codon}' at position ${error.position} does not code for any amino acid`;
-    case 'invalid-reading-frame':
-      return `Coding sequence length ${error.codingLength} is not a multiple of codon length ${error.codonLength}`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeTranslationError = makeDescriber<TranslationError>({
+  'invalid-codon-sequence': e => `Invalid codon '${e.codon}': ${describeRNAError(e.cause)}`,
+  'invalid-codon-length': e =>
+    `Invalid codon '${e.codon}': length ${e.length} (expected ${e.expected})`,
+  'stop-codon': e => `Codon '${e.codon}' is a stop codon and does not code for an amino acid`,
+  'invalid-codon': e =>
+    `Codon '${e.codon}' at position ${e.position} does not code for any amino acid`,
+  'invalid-reading-frame': e =>
+    `Coding sequence length ${e.codingLength} is not a multiple of codon length ${e.codonLength}`,
+});

@@ -15,12 +15,12 @@
  */
 
 import type { MRNAError } from '../modifications/index.js';
-import { describeMRNAError } from '../modifications/index.js';
+import { MRNA_ERROR_ARMS } from '../modifications/errors.js';
 import type { SplicingError } from '../splicing/index.js';
-import { describeSplicingError } from '../splicing/index.js';
+import { SPLICING_ERROR_ARMS } from '../splicing/errors.js';
 import type { VariantValidationError } from '../variants/index.js';
-import { describeVariantValidationError } from '../variants/index.js';
-import { assertUnreachable } from '../result/index.js';
+import { VARIANT_VALIDATION_ERROR_ARMS } from '../variants/errors.js';
+import { makeDescriber } from '../result/index.js';
 
 /**
  * Pipeline-stage failures raised only by the `processRNA` / `processSpliced` pipeline (never by
@@ -54,45 +54,27 @@ type ProcessingPipelineError =
 export type ProcessingError = MRNAError | ProcessingPipelineError;
 
 /**
- * Renders a {@link ProcessingError} as a human-readable message. Delegates the {@link MRNAError}
- * subset to {@link describeMRNAError}; handles pipeline-specific kinds inline.
- *
- * @param error - The processing error to render
- * @returns A human-readable description of the failure
+ * Renders the cause of a `splicing-failed` failure. The cause is the union of the pure-splice
+ * {@link SplicingError} and the per-variant {@link VariantValidationError}; spreading both arms
+ * records renders either side without re-enumerating its variants, so a new variant in either
+ * union never forces an edit here.
  */
-export function describeProcessingError(error: ProcessingError): string {
-  switch (error.kind) {
-    case 'invalid-sequence':
-    case 'invalid-coding-boundaries':
-    case 'invalid-polya-tail-length':
-      return describeMRNAError(error);
-    case 'splicing-failed':
-      return `Splicing failed: ${describeSplicingFailureCause(error.cause)}`;
-    case 'no-start-codon':
-      return 'No start codon (AUG) found in spliced sequence';
-    case 'no-in-frame-stop':
-      return 'No in-frame stop codon found after start codon';
-    default:
-      return assertUnreachable(error);
-  }
-}
+const describeSplicingFailureCause = makeDescriber<SplicingError | VariantValidationError>({
+  ...SPLICING_ERROR_ARMS,
+  ...VARIANT_VALIDATION_ERROR_ARMS,
+});
 
 /**
- * Renders the cause of a `splicing-failed` failure, routing to the splice-operation renderer or
- * the per-variant renderer depending on which union the cause belongs to.
+ * Renders a {@link ProcessingError} as a human-readable message. Spreads {@link MRNA_ERROR_ARMS}
+ * (every `MRNAError` is also a `ProcessingError`) and handles the pipeline-specific kinds inline,
+ * so the shared construction-time kinds render identically to {@link describeMRNAError}.
  */
-function describeSplicingFailureCause(cause: SplicingError | VariantValidationError): string {
-  switch (cause.kind) {
-    case 'no-exons':
-    case 'exon-out-of-bounds':
-    case 'invalid-donor-site':
-    case 'invalid-acceptor-site':
-    case 'intron-too-short':
-      return describeSplicingError(cause);
-    default:
-      return describeVariantValidationError(cause);
-  }
-}
+export const describeProcessingError = makeDescriber<ProcessingError>({
+  ...MRNA_ERROR_ARMS,
+  'splicing-failed': e => `Splicing failed: ${describeSplicingFailureCause(e.cause)}`,
+  'no-start-codon': () => 'No start codon (AUG) found in spliced sequence',
+  'no-in-frame-stop': () => 'No in-frame stop codon found after start codon',
+});
 
 /**
  * Variant-selection failures: a splice-variant operation required splicing metadata the source
@@ -112,19 +94,8 @@ export type SpliceVariantSelectionError =
       readonly kind: 'no-default-variant';
     };
 
-/**
- * Renders a {@link SpliceVariantSelectionError} as a human-readable message.
- *
- * @param error - The variant-selection error to render
- * @returns A human-readable description of the failure
- */
-export function describeSpliceVariantSelectionError(error: SpliceVariantSelectionError): string {
-  switch (error.kind) {
-    case 'no-splicing-profile':
-      return 'Gene does not have an alternative splicing profile';
-    case 'no-default-variant':
-      return 'Gene does not have a default splice variant defined';
-    default:
-      return assertUnreachable(error);
-  }
-}
+/** Renders a {@link SpliceVariantSelectionError} as a human-readable message. */
+export const describeSpliceVariantSelectionError = makeDescriber<SpliceVariantSelectionError>({
+  'no-splicing-profile': () => 'Gene does not have an alternative splicing profile',
+  'no-default-variant': () => 'Gene does not have a default splice variant defined',
+});

@@ -6,7 +6,7 @@
  * rendering layer (see {@link describeDNAError} / {@link describeRNAError} /
  * {@link describeReadingFrameError}) rather than carried alongside the structured payload.
  */
-import { assertUnreachable } from '../result/index.js';
+import { makeDescriber } from '../result/index.js';
 
 /**
  * Error variants produced when parsing a DNA sequence string.
@@ -61,14 +61,9 @@ export type CodonError = {
 };
 
 /** Renders a {@link CodonError} as a human-readable message. */
-export function describeCodonError(error: CodonError): string {
-  switch (error.kind) {
-    case 'wrong-codon-length':
-      return `Codon must be ${error.expected} nucleotides; received ${error.length}`;
-    default:
-      return assertUnreachable(error.kind);
-  }
-}
+export const describeCodonError = makeDescriber<CodonError>({
+  'wrong-codon-length': e => `Codon must be ${e.expected} nucleotides; received ${e.length}`,
+});
 
 /**
  * Error variants raised by `validateReadingFrame`.
@@ -96,40 +91,26 @@ export type ReadingFrameError =
     };
 
 /** Renders a {@link DNAError} as a human-readable message. */
-export function describeDNAError(error: DNAError): string {
-  switch (error.kind) {
-    case 'empty-sequence':
-      return 'DNA sequence cannot be empty';
-    case 'invalid-characters':
-      return `Invalid DNA sequence: contains invalid characters ${error.chars.join(', ')} (first at index ${error.firstAt})`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeDNAError = makeDescriber<DNAError>({
+  'empty-sequence': () => 'DNA sequence cannot be empty',
+  'invalid-characters': e =>
+    `Invalid DNA sequence: contains invalid characters ${e.chars.join(', ')} (first at index ${e.firstAt})`,
+});
 
 /** Renders an {@link RNAError} as a human-readable message. */
-export function describeRNAError(error: RNAError): string {
-  switch (error.kind) {
-    case 'empty-sequence':
-      return 'RNA sequence cannot be empty';
-    case 'invalid-characters':
-      return `Invalid RNA sequence: contains invalid characters ${error.chars.join(', ')} (first at index ${error.firstAt})`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeRNAError = makeDescriber<RNAError>({
+  'empty-sequence': () => 'RNA sequence cannot be empty',
+  'invalid-characters': e =>
+    `Invalid RNA sequence: contains invalid characters ${e.chars.join(', ')} (first at index ${e.firstAt})`,
+});
 
 /** Renders a {@link ReadingFrameError} as a human-readable message. */
-export function describeReadingFrameError(error: ReadingFrameError): string {
-  switch (error.kind) {
-    case 'frame-misaligned':
-      return `Reading frame error: coding sequence length ${error.codingLength} is not divisible by ${error.codonLength}`;
-    case 'missing-start-codon':
-      return `Expected start codon AUG at position ${error.position}, found ${error.found}`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeReadingFrameError = makeDescriber<ReadingFrameError>({
+  'frame-misaligned': e =>
+    `Reading frame error: coding sequence length ${e.codingLength} is not divisible by ${e.codonLength}`,
+  'missing-start-codon': e =>
+    `Expected start codon AUG at position ${e.position}, found ${e.found}`,
+});
 
 /**
  * Error variants raised by `parseDoubleStrandedDNA` when validating that two `DNA` strands
@@ -158,13 +139,9 @@ export type DoubleStrandedError =
     };
 
 /** Renders a {@link DoubleStrandedError} as a human-readable message. */
-export function describeDoubleStrandedError(error: DoubleStrandedError): string {
-  switch (error.kind) {
-    case 'length-mismatch':
-      return `Double-stranded DNA requires equal-length strands; forward is ${error.forwardLength} nt, reverse is ${error.reverseLength} nt`;
-    case 'not-complementary':
-      return `Strands are not complementary: at forward index ${error.firstMismatchAt} the reverse strand has '${error.actual}' but expected '${error.expected}'`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeDoubleStrandedError = makeDescriber<DoubleStrandedError>({
+  'length-mismatch': e =>
+    `Double-stranded DNA requires equal-length strands; forward is ${e.forwardLength} nt, reverse is ${e.reverseLength} nt`,
+  'not-complementary': e =>
+    `Strands are not complementary: at forward index ${e.firstMismatchAt} the reverse strand has '${e.actual}' but expected '${e.expected}'`,
+});

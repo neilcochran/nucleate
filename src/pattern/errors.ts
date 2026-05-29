@@ -5,7 +5,7 @@
  * and full-pattern (`parseNucleotidePattern`) failures. Human-readable messages are produced by
  * the {@link describePatternError} renderer rather than carried alongside the structured payload.
  */
-import { assertUnreachable } from '../result/index.js';
+import { makeDescriber } from '../result/index.js';
 
 /**
  * Error variants produced by `parseNucleotidePattern` and `parseNucleotidePatternSymbol`.
@@ -52,19 +52,11 @@ export type PatternError =
     };
 
 /** Renders a {@link PatternError} as a human-readable message. */
-export function describePatternError(error: PatternError): string {
-  switch (error.kind) {
-    case 'empty-pattern':
-      return 'Nucleotide pattern cannot be empty';
-    case 'empty-symbol':
-      return 'Nucleotide pattern symbol cannot be empty';
-    case 'invalid-iupac-character':
-      return `Invalid nucleotide pattern character '${error.character}' at index ${error.index}`;
-    case 'invalid-iupac-symbol':
-      return `Invalid IUPAC nucleotide symbol: '${error.symbol}'`;
-    case 'invalid-regex-construction':
-      return `Invalid nucleotide pattern '${error.pattern}': ${error.cause}`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describePatternError = makeDescriber<PatternError>({
+  'empty-pattern': () => 'Nucleotide pattern cannot be empty',
+  'empty-symbol': () => 'Nucleotide pattern symbol cannot be empty',
+  'invalid-iupac-character': e =>
+    `Invalid nucleotide pattern character '${e.character}' at index ${e.index}`,
+  'invalid-iupac-symbol': e => `Invalid IUPAC nucleotide symbol: '${e.symbol}'`,
+  'invalid-regex-construction': e => `Invalid nucleotide pattern '${e.pattern}': ${e.cause}`,
+});

@@ -1,6 +1,6 @@
 import type { RNAError } from '../sequence/index.js';
 import { describeRNAError } from '../sequence/index.js';
-import { assertUnreachable } from '../result/index.js';
+import { makeDescriber } from '../result/index.js';
 
 /**
  * Tagged-union errors raised by {@link parseRNAPrimer}.
@@ -100,41 +100,29 @@ export type ReplicationError = {
 };
 
 /** Renders an {@link RNAPrimerError} as a human-readable message. */
-export function describeRNAPrimerError(error: RNAPrimerError): string {
-  switch (error.kind) {
-    case 'invalid-position':
-      return `RNA primer position must be a non-negative integer; received ${error.position}`;
-    case 'invalid-sequence':
-      return `Invalid RNA primer sequence: ${describeRNAError(error.cause)}`;
-    case 'invalid-length':
-      return `RNA primers must be ${error.min}-${error.max} nucleotides; received length ${error.length}`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeRNAPrimerError = makeDescriber<RNAPrimerError>({
+  'invalid-position': e =>
+    `RNA primer position must be a non-negative integer; received ${e.position}`,
+  'invalid-sequence': e => `Invalid RNA primer sequence: ${describeRNAError(e.cause)}`,
+  'invalid-length': e =>
+    `RNA primers must be ${e.min}-${e.max} nucleotides; received length ${e.length}`,
+});
 
 /** Renders an {@link OkazakiFragmentError} as a human-readable message. */
-export function describeOkazakiFragmentError(error: OkazakiFragmentError): string {
-  switch (error.kind) {
-    case 'empty-id':
-      return 'Okazaki fragment id cannot be empty';
-    case 'invalid-position':
-      return `Okazaki fragment ${error.field} must be a non-negative integer; received ${error.position}`;
-    case 'invalid-range':
-      return `Okazaki fragment endPosition (${error.endPosition}) must be strictly greater than startPosition (${error.startPosition})`;
-    case 'primer-position-mismatch':
-      return `RNA primer position (${error.primerPosition}) must equal fragment startPosition (${error.startPosition})`;
-    case 'sequence-length-mismatch':
-      return `Okazaki fragment sequence length (${error.sequenceLength}) must equal range length (${error.expectedLength})`;
-    default:
-      return assertUnreachable(error);
-  }
-}
+export const describeOkazakiFragmentError = makeDescriber<OkazakiFragmentError>({
+  'empty-id': () => 'Okazaki fragment id cannot be empty',
+  'invalid-position': e =>
+    `Okazaki fragment ${e.field} must be a non-negative integer; received ${e.position}`,
+  'invalid-range': e =>
+    `Okazaki fragment endPosition (${e.endPosition}) must be strictly greater than startPosition (${e.startPosition})`,
+  'primer-position-mismatch': e =>
+    `RNA primer position (${e.primerPosition}) must equal fragment startPosition (${e.startPosition})`,
+  'sequence-length-mismatch': e =>
+    `Okazaki fragment sequence length (${e.sequenceLength}) must equal range length (${e.expectedLength})`,
+});
 
 /** Renders a {@link ReplicationError} as a human-readable message. */
-export function describeReplicationError(error: ReplicationError): string {
-  switch (error.kind) {
-    case 'template-too-short':
-      return `Template length ${error.length} bp is below the minimum ${error.minimum} bp required for replication on the chosen organism`;
-  }
-}
+export const describeReplicationError = makeDescriber<ReplicationError>({
+  'template-too-short': e =>
+    `Template length ${e.length} bp is below the minimum ${e.minimum} bp required for replication on the chosen organism`,
+});
