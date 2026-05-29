@@ -11,7 +11,7 @@
  * consumers cannot reach them.
  *
  * Replication-specific biological constants (primer length bounds) live inline at
- * `./biological-constants.js` and are not re-exported here; they are implementation details
+ * `./biology.js` and are not re-exported here; they are implementation details
  * of the simulation rather than part of its public surface.
  */
 export type {

@@ -13,7 +13,7 @@ import {
  * sites the analyzer ranks or reports; biology constants (signal sequences, offsets) live in
  * `biology.test.ts`.
  */
-describe('Processing scoring constants', () => {
+describe('Polyadenylation tuning constants', () => {
   test('DEFAULT_POLYA_SIGNAL_STRENGTH falls below every known signal', () => {
     expect(DEFAULT_POLYA_SIGNAL_STRENGTH).toBe(8);
     expect(DEFAULT_POLYA_SIGNAL_STRENGTH).toBeLessThan(Math.min(...Object.values(POLYA_SIGNALS)));

@@ -10,8 +10,8 @@ import {
   MAX_PROMOTER_SEARCH_DISTANCE,
   TSS_PROXIMITY_THRESHOLD,
   DEFAULT_MIN_PROMOTER_STRENGTH,
-} from './biological-constants.js';
-import { TATA_BOX_TYPICAL_POSITION, DPE_TYPICAL_POSITION } from '../gene/biological-constants.js';
+} from './tuning.js';
+import { TATA_BOX_TYPICAL_POSITION, DPE_TYPICAL_POSITION } from '../gene/biology.js';
 
 /**
  * Configuration for {@link findPromoters}.

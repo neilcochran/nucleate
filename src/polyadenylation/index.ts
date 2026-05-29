@@ -44,6 +44,6 @@ export {
   USE_ELEMENT_MAX_BOOST,
   DSE_ELEMENT_MAX_BOOST,
   MIN_POLYA_SITE_STRENGTH,
-} from './scoring.js';
+} from './tuning.js';
 export type { PolyadenylationError } from './errors.js';
 export { describePolyadenylationError } from './errors.js';

@@ -21,7 +21,7 @@ import {
   HIGH_USE_SCORE,
   PERFECT_DSE_SCORE,
   MIN_POLYA_SITE_STRENGTH,
-} from './scoring.js';
+} from './tuning.js';
 import type { GenomicRegion } from '../coordinates/index.js';
 import {
   PolyadenylationSite,

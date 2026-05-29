@@ -9,7 +9,7 @@ import {
   MIN_POLY_A_DETECTION_LENGTH,
   POLY_A_TAIL_PATTERN,
 } from './biology.js';
-import { DEFAULT_CLEAVAGE_OFFSET } from './scoring.js';
+import { DEFAULT_CLEAVAGE_OFFSET } from './tuning.js';
 
 /**
  * Cleaves the supplied {@link RNA} at `cleavageSite` (clamped to the sequence length) and

@@ -1,9 +1,4 @@
-import {
-  MIN_EXON_SIZE,
-  MAX_EXON_SIZE,
-  MIN_INTRON_SIZE,
-  MAX_INTRON_SIZE,
-} from './biological-constants.js';
+import { MIN_EXON_SIZE, MAX_EXON_SIZE, MIN_INTRON_SIZE, MAX_INTRON_SIZE } from './biology.js';
 import { type GenomicRegion, validateGenomicRegion } from '../coordinates/index.js';
 import { Result, success, failure, isFailure, at } from '../result/index.js';
 import type { GeneError } from './errors.js';

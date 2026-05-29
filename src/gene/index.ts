@@ -36,7 +36,7 @@ export {
   MAX_EXON_SIZE,
   MIN_INTRON_SIZE,
   MAX_INTRON_SIZE,
-  DEFAULT_MAX_INTRON_SEARCH,
   TATA_BOX_TYPICAL_POSITION,
   DPE_TYPICAL_POSITION,
-} from './biological-constants.js';
+} from './biology.js';
+export { DEFAULT_MAX_INTRON_SEARCH } from './tuning.js';

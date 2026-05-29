@@ -20,4 +20,4 @@ export {
   DEFAULT_DOWNSTREAM_SEARCH_DISTANCE,
   TSS_PROXIMITY_THRESHOLD,
   DEFAULT_MIN_PROMOTER_STRENGTH,
-} from './biological-constants.js';
+} from './tuning.js';

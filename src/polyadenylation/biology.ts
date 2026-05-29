@@ -2,7 +2,7 @@
  * Fundamental biology of polyadenylation - the constants that describe what cells actually
  * do. These values should not change without a corresponding change in biological
  * understanding. For tunable algorithm parameters (USE / DSE scoring weights, thresholds,
- * search cutoffs), see `scoring.ts`.
+ * search cutoffs), see `tuning.ts`.
  *
  * Sizes are in nucleotides.
  */

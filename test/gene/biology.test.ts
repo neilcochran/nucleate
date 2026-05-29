@@ -3,7 +3,6 @@ import {
   MAX_EXON_SIZE,
   MIN_INTRON_SIZE,
   MAX_INTRON_SIZE,
-  DEFAULT_MAX_INTRON_SEARCH,
   TATA_BOX_TYPICAL_POSITION,
   DPE_TYPICAL_POSITION,
 } from '../../src/gene';
@@ -40,11 +39,6 @@ describe('Gene biological constants', () => {
     test('MAX_INTRON_SIZE covers the largest known mammalian intron with headroom', () => {
       expect(MAX_INTRON_SIZE).toBe(3000000);
     });
-
-    test('DEFAULT_MAX_INTRON_SEARCH is practical for splice-site detection', () => {
-      expect(DEFAULT_MAX_INTRON_SEARCH).toBe(10000);
-      expect(DEFAULT_MAX_INTRON_SEARCH).toBeLessThan(MAX_INTRON_SIZE);
-    });
   });
 
   describe('Promoter element positioning', () => {
@@ -65,10 +59,6 @@ describe('Gene biological constants', () => {
     test('Minimum sizes are smaller than maximum sizes', () => {
       expect(MIN_EXON_SIZE).toBeLessThan(MAX_EXON_SIZE);
       expect(MIN_INTRON_SIZE).toBeLessThan(MAX_INTRON_SIZE);
-    });
-
-    test('Default search distance fits within the max intron size', () => {
-      expect(DEFAULT_MAX_INTRON_SEARCH).toBeLessThan(MAX_INTRON_SIZE);
     });
   });
 });

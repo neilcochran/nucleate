@@ -8,12 +8,13 @@ import {
 import { TATA_BOX_TYPICAL_POSITION } from '../../src/gene';
 
 /**
- * Validates transcription algorithmic / biological constants.
+ * Validates transcription tunable algorithm parameters - promoter search distances, the
+ * TSS-proximity threshold, and the minimum promoter strength to report.
  *
  * References:
  * - Maston et al. (2006) Annual Review of Genomics and Human Genetics, "Transcriptional regulatory elements in the human genome"
  */
-describe('Transcription biological constants', () => {
+describe('Transcription tuning parameters', () => {
   test('MAX_PROMOTER_SEARCH_DISTANCE covers core and proximal elements', () => {
     expect(MAX_PROMOTER_SEARCH_DISTANCE).toBe(200);
     expect(MAX_PROMOTER_SEARCH_DISTANCE).toBeGreaterThanOrEqual(100);

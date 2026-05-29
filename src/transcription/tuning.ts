@@ -1,9 +1,11 @@
 /**
- * Biological / algorithmic constants for the transcription pipeline.
+ * Tunable algorithm parameters for the transcription pipeline - promoter search distances, the
+ * TSS-proximity threshold, and the minimum promoter strength to report. Changing these shifts
+ * which promoters `transcribe` and promoter-recognition find or report without changing the
+ * underlying biology.
  *
- * Search distances and proximity thresholds are in base pairs. Defaults reflect what the
- * `transcribe` and promoter-recognition implementations use when the caller does not supply
- * an override.
+ * Distances and thresholds are in base pairs. Defaults reflect what the implementations use
+ * when the caller does not supply an override.
  */
 
 /**

@@ -10,7 +10,7 @@ import {
   DEFAULT_MAX_PROMOTER_SEARCH_DISTANCE,
   DEFAULT_DOWNSTREAM_SEARCH_DISTANCE,
   DEFAULT_MIN_PROMOTER_STRENGTH,
-} from './biological-constants.js';
+} from './tuning.js';
 
 /**
  * Configuration options for {@link transcribe}.
