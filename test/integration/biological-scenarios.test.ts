@@ -7,7 +7,8 @@
 
 import { parseGene } from '../../src/gene';
 import { parseDNA } from '../../src/sequence';
-import { parseMRNA, processRNA } from '../../src/modifications';
+import { parseMRNA } from '../../src/modifications';
+import { processRNA } from '../../src/processing';
 import { transcribe } from '../../src/transcription';
 import { translate } from '../../src/translation';
 import { transcribeSequence } from '../../src/sequence';

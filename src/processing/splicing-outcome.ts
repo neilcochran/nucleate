@@ -1,5 +1,5 @@
 import type { SpliceVariant } from '../variants/index.js';
-import type { MRNA } from '../modifications/MRNA.js';
+import type { MRNA } from '../modifications/index.js';
 
 /**
  * Outcome of processing a single splice variant: the mature mRNA it produces plus the

@@ -9,7 +9,7 @@
 
 import { parseGene } from '../../src/gene';
 import { transcribe } from '../../src/transcription';
-import { processRNA } from '../../src/modifications';
+import { processRNA } from '../../src/processing';
 import { translate } from '../../src/translation';
 import { replicate } from '../../src/replication';
 import { parseDNA, doubleStrandedDNA } from '../../src/sequence';

@@ -12,7 +12,8 @@ import { RNA } from '../../src/sequence/RNA';
 import { parseNucleotidePattern } from '../../src/pattern';
 import { at } from '../utils/test-utils';
 import { transcribe } from '../../src/transcription';
-import { processRNA, parseMRNA } from '../../src/modifications';
+import { parseMRNA } from '../../src/modifications';
+import { processRNA } from '../../src/processing';
 import { translate } from '../../src/translation';
 
 describe('Validation Scenarios Integration Tests', () => {

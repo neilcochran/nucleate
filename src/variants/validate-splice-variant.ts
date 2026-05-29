@@ -1,9 +1,31 @@
 import { Result, success, failure } from '../result/index.js';
 import { CODON_LENGTH, START_CODON, isStopCodon, transcribeSequence } from '../sequence/index.js';
-import type { Gene } from '../gene/Gene.js';
+import type { DNA } from '../sequence/index.js';
 import type { SpliceVariant, AlternativeSplicingOptions } from './splice-variant.js';
 import { DEFAULT_ALTERNATIVE_SPLICING_OPTIONS } from './splice-variant.js';
 import type { VariantValidationError } from './errors.js';
+
+/**
+ * The minimal structural slice of a gene that {@link validateSpliceVariant} reads: the exon
+ * count and the per-variant DNA assembler.
+ *
+ * The `Gene` class (in `gene/`) satisfies this interface structurally, so callers pass a `Gene`
+ * directly. Defining the slice here lets `variants/` validate against a gene without importing
+ * `gene/`, which would otherwise form a dependency cycle between `gene/` and `variants/`.
+ */
+export interface VariantSourceGene {
+  /** Exon regions in gene-relative order; only the count (`length`) is read. */
+  readonly exons: readonly unknown[];
+
+  /**
+   * Assembles the DNA-level mature sequence for a splice variant by concatenating its included
+   * exons in gene-position order.
+   *
+   * @param variant - The splice variant whose mature sequence to assemble
+   * @returns The variant's concatenated exon sequence as DNA
+   */
+  getVariantSequence(variant: SpliceVariant): DNA;
+}
 
 /**
  * Validates a splice variant against a gene's exon structure and the supplied
@@ -25,7 +47,7 @@ import type { VariantValidationError } from './errors.js';
  */
 export function validateSpliceVariant(
   variant: SpliceVariant,
-  gene: Gene,
+  gene: VariantSourceGene,
   options: AlternativeSplicingOptions = DEFAULT_ALTERNATIVE_SPLICING_OPTIONS,
 ): Result<void, VariantValidationError> {
   const opts = { ...DEFAULT_ALTERNATIVE_SPLICING_OPTIONS, ...options };

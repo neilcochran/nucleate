@@ -2,18 +2,18 @@ import { Result, success, failure } from '../result/index.js';
 import { transcribeSequence, type RNA } from '../sequence/index.js';
 import type { Gene } from '../gene/index.js';
 import type { PreMRNA } from '../transcription/index.js';
-import type { MRNA } from '../modifications/MRNA.js';
-import { processSpliced, type RNAProcessingOptions } from '../modifications/process-rna.js';
-import type { ProcessingError } from '../modifications/errors.js';
-import { translate } from '../translation/translate.js';
-import { SplicingOutcome } from './splicing-outcome.js';
+import type { MRNA } from '../modifications/index.js';
+import { translate } from '../translation/index.js';
 import {
   validateSpliceVariant,
   DEFAULT_ALTERNATIVE_SPLICING_OPTIONS,
   type SpliceVariant,
   type AlternativeSplicingOptions,
+  type VariantValidationError,
 } from '../variants/index.js';
-import type { SplicingError } from './errors.js';
+import { processSpliced, type RNAProcessingOptions } from './process-rna.js';
+import { SplicingOutcome } from './splicing-outcome.js';
+import type { ProcessingError, SpliceVariantSelectionError } from './errors.js';
 
 /**
  * Combined option shape for variant-aware processing: governs both the variant-validation
@@ -37,13 +37,13 @@ export type SpliceVariantProcessingOptions = AlternativeSplicingOptions & RNAPro
  * @param preMRNA - The pre-mRNA whose source gene the variant references
  * @param variant - The splice variant to apply
  * @param options - Variant validation options (defaults applied where omitted)
- * @returns `Result<RNA, SplicingError>` carrying the spliced RNA on success
+ * @returns `Result<RNA, VariantValidationError>` carrying the spliced RNA on success
  */
 export function spliceRNAWithVariant(
   preMRNA: PreMRNA,
   variant: SpliceVariant,
   options: AlternativeSplicingOptions = DEFAULT_ALTERNATIVE_SPLICING_OPTIONS,
-): Result<RNA, SplicingError> {
+): Result<RNA, VariantValidationError> {
   const sourceGene = preMRNA.sourceGene;
   const validation = validateSpliceVariant(variant, sourceGene, options);
   if (!validation.success) {
@@ -93,13 +93,13 @@ export function processSpliceVariant(
  *
  * @param preMRNA - The pre-mRNA whose source gene supplies the splicing profile
  * @param options - Combined validation and processing options
- * @returns `Result<SplicingOutcome[], SplicingError>` listing every successfully-processed
- * variant, or `no-splicing-profile` on failure
+ * @returns `Result<SplicingOutcome[], SpliceVariantSelectionError>` listing every
+ * successfully-processed variant, or `no-splicing-profile` on failure
  */
 export function processAllSplicingVariants(
   preMRNA: PreMRNA,
   options: SpliceVariantProcessingOptions = {},
-): Result<SplicingOutcome[], SplicingError> {
+): Result<SplicingOutcome[], SpliceVariantSelectionError> {
   const sourceGene = preMRNA.sourceGene;
   const profile = sourceGene.splicingProfile;
   if (!profile) {
@@ -128,13 +128,13 @@ export function processAllSplicingVariants(
  *
  * @param preMRNA - The pre-mRNA whose source gene supplies the default variant
  * @param options - Combined validation and processing options applied to the default variant
- * @returns `Result<MRNA, ProcessingError | SplicingError>` carrying the mature mRNA on
- * success; `no-default-variant` when the source gene has no default
+ * @returns `Result<MRNA, ProcessingError | SpliceVariantSelectionError>` carrying the mature
+ * mRNA on success; `no-default-variant` when the source gene has no default
  */
 export function processDefaultSpliceVariant(
   preMRNA: PreMRNA,
   options: SpliceVariantProcessingOptions = {},
-): Result<MRNA, ProcessingError | SplicingError> {
+): Result<MRNA, ProcessingError | SpliceVariantSelectionError> {
   const sourceGene = preMRNA.sourceGene;
   const defaultVariant = sourceGene.getDefaultSplicingVariant();
   if (!defaultVariant) {

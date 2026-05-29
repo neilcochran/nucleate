@@ -8,8 +8,8 @@
 import { parseGene } from '../../src/gene';
 import { parseDNA, parseRNA } from '../../src/sequence';
 import { at } from '../utils/test-utils';
-import { parseMRNA, processRNA } from '../../src/modifications';
-import { enumerateSpliceVariants, processSpliceVariant } from '../../src/splicing';
+import { parseMRNA } from '../../src/modifications';
+import { processRNA, enumerateSpliceVariants, processSpliceVariant } from '../../src/processing';
 import { translate } from '../../src/translation';
 import { parsePreMRNA } from '../../src/transcription';
 import { transcribe } from '../../src/transcription';

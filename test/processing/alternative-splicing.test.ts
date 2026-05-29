@@ -3,7 +3,7 @@ import {
   processAllSplicingVariants,
   processDefaultSpliceVariant,
   enumerateSpliceVariants,
-} from '../../src/splicing';
+} from '../../src/processing';
 import {
   validateSpliceVariant,
   exonSkippingVariant,

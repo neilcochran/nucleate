@@ -2,7 +2,7 @@ import {
   processRNA,
   DEFAULT_RNA_PROCESSING_OPTIONS,
   type RNAProcessingOptions,
-} from '../../src/modifications';
+} from '../../src/processing';
 import { DEFAULT_POLY_A_TAIL_LENGTH } from '../../src/polyadenylation';
 import { parseGene } from '../../src/gene';
 import { parsePreMRNA } from '../../src/transcription';
