@@ -1,7 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    // Check-only config spanning src + test + jest.config.ts. The base config's `rootDir` is
+    // `src` (for the `dist` build); broaden it to the repo root here so the included test tree
+    // is not reported as outside `rootDir` (TS6059). Never emits, so output layout is moot.
+    "rootDir": "."
   },
   "include": [
     "src/**/*",

@@ -75,6 +75,7 @@
   "scripts": {
     "lint": "eslint --ext .ts --fix . && cspell lint --unique --words-only \"src/**/*\"",
     "lint:fix": "eslint --ext .ts --fix .",
+    "typecheck": "tsc -p tsconfig.eslint.json",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
