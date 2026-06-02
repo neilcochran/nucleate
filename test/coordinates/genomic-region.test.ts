@@ -3,6 +3,7 @@ import {
   validateGenomicRegion,
   describeRegionError,
   regionsOverlap,
+  findFirstOverlap,
   validateNonOverlappingRegions,
   deriveIntronsFromExons,
 } from '../../src/coordinates';
@@ -111,6 +112,49 @@ describe('GenomicRegion utilities', () => {
       const region1: GenomicRegion = { start: 0, end: 6 };
       const region2: GenomicRegion = { start: 5, end: 10 };
       expect(regionsOverlap(region1, region2)).toBe(true);
+    });
+  });
+
+  describe('findFirstOverlap', () => {
+    test('returns undefined for empty and single-region inputs', () => {
+      expect(findFirstOverlap([])).toBeUndefined();
+      expect(findFirstOverlap([{ start: 0, end: 10 }])).toBeUndefined();
+    });
+
+    test('returns undefined when regions are non-overlapping', () => {
+      const regions: GenomicRegion[] = [
+        { start: 0, end: 5 },
+        { start: 10, end: 15 },
+        { start: 20, end: 25 },
+      ];
+      expect(findFirstOverlap(regions)).toBeUndefined();
+    });
+
+    test('treats touching boundaries as non-overlapping', () => {
+      const regions: GenomicRegion[] = [
+        { start: 0, end: 5 },
+        { start: 5, end: 10 },
+      ];
+      expect(findFirstOverlap(regions)).toBeUndefined();
+    });
+
+    test('reports the first overlapping pair ordered by start, with original indices', () => {
+      const regions: GenomicRegion[] = [
+        { start: 0, end: 50 },
+        { start: 40, end: 90 },
+        { start: 100, end: 150 },
+      ];
+      expect(findFirstOverlap(regions)).toEqual({ indices: [0, 1], at: 40 });
+    });
+
+    test('preserves original indices when the input is unsorted', () => {
+      const regions: GenomicRegion[] = [
+        { start: 10, end: 20 },
+        { start: 0, end: 15 }, // overlaps the first once sorted by start
+        { start: 25, end: 30 },
+      ];
+      // Earlier-starting region (index 1) reported first; later-starting (index 0) at its start.
+      expect(findFirstOverlap(regions)).toEqual({ indices: [1, 0], at: 10 });
     });
   });
 

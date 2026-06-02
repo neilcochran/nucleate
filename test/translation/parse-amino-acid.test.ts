@@ -95,5 +95,8 @@ describe('parseAminoAcid', () => {
         codonLength: 3,
       }),
     ).toContain('not a multiple');
+    expect(describeTranslationError({ kind: 'no-coding-sequence' })).toContain(
+      'no coding sequence',
+    );
   });
 });

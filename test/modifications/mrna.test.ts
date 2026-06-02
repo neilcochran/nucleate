@@ -1,5 +1,6 @@
 import { parseMRNA } from '../../src/modifications';
 import { MRNA } from '../../src/modifications/MRNA';
+import { requireCodingSequence } from '../utils/test-utils';
 
 describe('MRNA', () => {
   describe('parseMRNA', () => {
@@ -10,7 +11,7 @@ describe('MRNA', () => {
         const mRNA = result.data;
         expect(mRNA).toBeInstanceOf(MRNA);
         expect(mRNA.sequence.sequence).toBe('AUGAAACCCGGGUAA');
-        expect(mRNA.codingSequence.sequence).toBe('AUGAAACCCGGGUAA');
+        expect(requireCodingSequence(mRNA).sequence).toBe('AUGAAACCCGGGUAA');
         expect(mRNA.codingStart).toBe(0);
         expect(mRNA.codingEnd).toBe(15);
         expect(mRNA.fivePrimeCap).toBe(true);
@@ -31,7 +32,7 @@ describe('MRNA', () => {
       const result = parseMRNA('GGGAUGAAACCCGGGUAA', 3, 18);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.codingSequence.sequence).toBe('AUGAAACCCGGGUAA');
+        expect(requireCodingSequence(result.data).sequence).toBe('AUGAAACCCGGGUAA');
       }
     });
 
@@ -102,6 +103,38 @@ describe('MRNA', () => {
         expect(result.error.kind).toBe('invalid-coding-boundaries');
       }
     });
+
+    test('constructs a non-coding mRNA when both boundaries are omitted', () => {
+      const result = parseMRNA('AAACCCGGGUUU');
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.codingStart).toBeUndefined();
+        expect(result.data.codingEnd).toBeUndefined();
+        expect(result.data.codingSequence).toBeUndefined();
+      }
+    });
+
+    test('rejects supplying only codingStart with kind incomplete-coding-boundaries', () => {
+      const result = parseMRNA('AUGAAACCCGGG', 0);
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'incomplete-coding-boundaries') {
+        expect(result.error.codingStart).toBe(0);
+        expect(result.error.codingEnd).toBeUndefined();
+      } else {
+        throw new Error(`expected incomplete-coding-boundaries, got ${JSON.stringify(result)}`);
+      }
+    });
+
+    test('rejects supplying only codingEnd with kind incomplete-coding-boundaries', () => {
+      const result = parseMRNA('AUGAAACCCGGG', undefined, 12);
+      expect(!result.success).toBe(true);
+      if (!result.success && result.error.kind === 'incomplete-coding-boundaries') {
+        expect(result.error.codingStart).toBeUndefined();
+        expect(result.error.codingEnd).toBe(12);
+      } else {
+        throw new Error(`expected incomplete-coding-boundaries, got ${JSON.stringify(result)}`);
+      }
+    });
   });
 
   describe('MRNA fields and helpers', () => {
@@ -133,6 +166,17 @@ describe('MRNA', () => {
     test('toString omits cap suffix when uncapped', () => {
       const mRNA = parseMRNA('AUGAAACCCGGG', 0, 12, false, 0).unwrap();
       expect(mRNA.toString()).toBe('MRNA(12nt, CDS 0-12, polyA 0)');
+    });
+
+    test('getFivePrimeUTR and getThreePrimeUTR are undefined for a non-coding mRNA', () => {
+      const mRNA = parseMRNA('AAACCCGGGUUU').unwrap();
+      expect(mRNA.getFivePrimeUTR()).toBeUndefined();
+      expect(mRNA.getThreePrimeUTR()).toBeUndefined();
+    });
+
+    test('toString reports no CDS for a non-coding mRNA', () => {
+      const mRNA = parseMRNA('AAACCCGGGUUUAA', undefined, undefined, true, 2).unwrap();
+      expect(mRNA.toString()).toBe('MRNA(14nt, no CDS, polyA 2, capped)');
     });
   });
 });

@@ -8,7 +8,7 @@ import { parseGene } from '../../src/gene';
 import { transcribe } from '../../src/transcription';
 import { processRNA } from '../../src/processing';
 import { findPolyadenylationSites } from '../../src/polyadenylation';
-import { at } from '../utils/test-utils';
+import { at, requireCodingSequence } from '../utils/test-utils';
 
 describe('Polyadenylation Integration Tests', () => {
   test('basic polyadenylation integration with RNA processing', () => {
@@ -43,7 +43,7 @@ describe('Polyadenylation Integration Tests', () => {
         expect(mRNA.polyATailLength).toBeGreaterThanOrEqual(0); // Allow for any poly-A tail length
 
         // Verify coding sequence is intact
-        const codingSeq = mRNA.codingSequence.sequence;
+        const codingSeq = requireCodingSequence(mRNA).sequence;
         expect(codingSeq.startsWith('AUG')).toBe(true);
         expect(codingSeq.endsWith('UAG')).toBe(true);
       }

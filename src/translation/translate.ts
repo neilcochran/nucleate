@@ -12,9 +12,10 @@ import type { TranslationError } from './errors.js';
  * Walks the coding sequence in codon-sized steps. Each codon is looked up directly in the
  * codon table (no `try`/`catch` on construction as control flow); stop codons terminate the
  * walk and the polypeptide carries every amino acid translated before the stop. The function
- * fails when the coding sequence length is not a multiple of {@link CODON_LENGTH} or when a
- * codon is reached that neither codes for an amino acid nor is a stop codon (the latter is
- * unreachable when the mRNA was produced by `parseMRNA` / `processRNA`, since both ensure
+ * fails with `no-coding-sequence` when the mRNA has no CDS (its `codingSequence` is
+ * `undefined`), when the coding sequence length is not a multiple of {@link CODON_LENGTH}, or
+ * when a codon is reached that neither codes for an amino acid nor is a stop codon (the latter
+ * is unreachable when the mRNA was produced by `parseMRNA` / `processRNA`, since both ensure
  * the sequence belongs to the RNA alphabet).
  *
  * @param mRNA - The mature mRNA to translate
@@ -31,6 +32,9 @@ import type { TranslationError } from './errors.js';
  * ```
  */
 export function translate(mRNA: MRNA): Result<Polypeptide, TranslationError> {
+  if (mRNA.codingSequence === undefined) {
+    return failure({ kind: 'no-coding-sequence' });
+  }
   const codingSequence = mRNA.codingSequence.sequence;
   if (codingSequence.length % CODON_LENGTH !== 0) {
     return failure({

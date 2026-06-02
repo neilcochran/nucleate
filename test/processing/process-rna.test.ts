@@ -8,6 +8,7 @@ import { parseGene } from '../../src/gene';
 import { parsePreMRNA } from '../../src/transcription';
 import { GenomicRegion } from '../../src/coordinates';
 import { SIMPLE_TWO_EXON_GENE, SINGLE_EXON_GENE, INVALID_SPLICE_GENE } from '../test-genes';
+import { requireCodingSequence } from '../utils/test-utils';
 
 describe('processRNA', () => {
   test('processes a two-exon gene into a mature mRNA', () => {
@@ -21,7 +22,7 @@ describe('processRNA', () => {
       const mRNA = result.data;
       expect(mRNA.fivePrimeCap).toBe(true);
       expect(mRNA.polyATailLength).toBe(DEFAULT_POLY_A_TAIL_LENGTH);
-      expect(mRNA.codingSequence.sequence).toContain('AUG');
+      expect(requireCodingSequence(mRNA).sequence).toContain('AUG');
     }
   });
 
@@ -31,7 +32,7 @@ describe('processRNA', () => {
     const result = processRNA(preMRNA);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.codingSequence.sequence).toBe('AUGAAACCCGGGUAG');
+      expect(requireCodingSequence(result.data).sequence).toBe('AUGAAACCCGGGUAG');
     }
   });
 
@@ -99,6 +100,33 @@ describe('processRNA', () => {
       const mRNA = result.data;
       expect(mRNA.fivePrimeCap).toBe(true);
       expect(mRNA.polyATailLength).toBe(DEFAULT_POLY_A_TAIL_LENGTH);
+    }
+  });
+
+  test('tolerates a missing CDS when validateCodons is false (non-coding mRNA)', () => {
+    const exons: GenomicRegion[] = [{ start: 0, end: 12, name: 'exon1' }];
+    const gene = parseGene('AAACCCGGGTAA', exons).unwrap();
+    const preMRNA = parsePreMRNA('AAACCCGGGUAA', gene, 0).unwrap();
+    const result = processRNA(preMRNA, { validateCodons: false, addPolyATail: false });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.codingStart).toBeUndefined();
+      expect(result.data.codingEnd).toBeUndefined();
+      expect(result.data.codingSequence).toBeUndefined();
+    }
+  });
+
+  test('uses the real CDS, not a fabricated full-length span, when validateCodons is false', () => {
+    const exons: GenomicRegion[] = [{ start: 0, end: 18, name: 'exon1' }];
+    const gene = parseGene('GGGATGAAACCCTAGCCC', exons).unwrap();
+    const preMRNA = parsePreMRNA('GGGAUGAAACCCUAGCCC', gene, 0).unwrap();
+    const result = processRNA(preMRNA, { validateCodons: false, addPolyATail: false });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      // The real AUG..UAG span at [3, 15), not the old fabricated [0, len) span.
+      expect(result.data.codingStart).toBe(3);
+      expect(result.data.codingEnd).toBe(15);
+      expect(requireCodingSequence(result.data).sequence).toBe('AUGAAACCCUAG');
     }
   });
 });

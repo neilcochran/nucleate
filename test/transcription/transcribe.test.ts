@@ -63,7 +63,7 @@ describe('transcribe', () => {
       if (result.success) {
         const preMRNA = result.data;
         expect(preMRNA.exonRegions.length).toBe(testGene.exons.length);
-        expect(preMRNA.getCodingSequence().sequence.length).toBeLessThan(
+        expect(preMRNA.getSplicedSequence().sequence.length).toBeLessThan(
           preMRNA.sequence.sequence.length,
         );
       }

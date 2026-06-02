@@ -1,5 +1,9 @@
 import { MIN_EXON_SIZE, MAX_EXON_SIZE, MIN_INTRON_SIZE, MAX_INTRON_SIZE } from './biology.js';
-import { type GenomicRegion, validateGenomicRegion } from '../coordinates/index.js';
+import {
+  type GenomicRegion,
+  validateGenomicRegion,
+  findFirstOverlap,
+} from '../coordinates/index.js';
 import { Result, success, failure, at } from '../result/index.js';
 import type { GeneError } from './errors.js';
 
@@ -11,7 +15,7 @@ import type { GeneError } from './errors.js';
  * - each exon must have non-negative coordinates with `start < end`
  * - no exon's `end` may extend past `sequenceLength`
  * - each exon must fall within `[MIN_EXON_SIZE, MAX_EXON_SIZE]` base pairs
- * - exons must be pairwise non-overlapping (detected via a sweep-line scan)
+ * - exons must be pairwise non-overlapping (detected via the shared {@link findFirstOverlap})
  * - introns implied by adjacent exons must fall within `[MIN_INTRON_SIZE, MAX_INTRON_SIZE]`
  *
  * Returns the first failure encountered as a structured {@link GeneError} so callers can branch
@@ -71,58 +75,14 @@ export function validateExons(
     }
   }
 
-  // Overlap detection via sweep-line over (position, end-before-start) events.
-  if (exons.length > 1) {
-    interface SweepEvent {
-      position: number;
-      type: 'start' | 'end';
-      exonIndex: number;
-    }
-
-    const events: SweepEvent[] = [];
-    for (let i = 0; i < exons.length; i++) {
-      const exon = at(exons, i);
-      events.push({ position: exon.start, type: 'start', exonIndex: i });
-      events.push({ position: exon.end, type: 'end', exonIndex: i });
-    }
-    events.sort((a, b) => {
-      if (a.position !== b.position) {
-        return a.position - b.position;
-      }
-      // End events before start events at the same position so adjacent exons that touch
-      // (prev.end === next.start) are not flagged as overlapping.
-      if (a.type === 'end' && b.type === 'start') {
-        return -1;
-      }
-      if (a.type === 'start' && b.type === 'end') {
-        return 1;
-      }
-      return 0;
+  // Overlap detection via the shared coordinates primitive.
+  const overlap = findFirstOverlap(exons);
+  if (overlap !== undefined) {
+    return failure({
+      kind: 'exons-overlap',
+      indices: overlap.indices,
+      at: overlap.at,
     });
-
-    let activeExons = 0;
-    for (const event of events) {
-      if (event.type === 'start') {
-        if (activeExons > 0) {
-          const overlapping: number[] = [];
-          for (let i = 0; i < exons.length; i++) {
-            const exon = at(exons, i);
-            if (exon.start <= event.position && exon.end > event.position) {
-              overlapping.push(i);
-            }
-          }
-          overlapping.push(event.exonIndex);
-          return failure({
-            kind: 'exons-overlap',
-            indices: overlapping,
-            at: event.position,
-          });
-        }
-        activeExons++;
-      } else {
-        activeExons--;
-      }
-    }
   }
 
   // Intron-size validation against sorted-by-start exons.

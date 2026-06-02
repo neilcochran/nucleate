@@ -77,16 +77,19 @@ export class PreMRNA {
   }
 
   /**
-   * Returns the coding-portion (exons only) of the transcript by concatenating the substrings
-   * named by `exonRegions`.
+   * Returns the spliced transcript: every exon region joined in order, with the introns
+   * removed.
    *
-   * The returned RNA is the spliced sequence that downstream processing produces; if the
-   * transcript starts inside the first exon (TSS downstream of the exon start) the partial
-   * exon is included.
+   * This is the full exonic sequence (5' UTR, coding region, and 3' UTR alike), not the coding
+   * sequence - the name denotes the spliced join, not a CDS (for the validated CDS see
+   * `MRNA.codingSequence`). Partial exons are clamped to the transcript bounds, so a transcript
+   * that starts inside its first exon (TSS downstream of the exon start) contributes only its
+   * in-transcript portion. This performs no splice-site validation; use {@link spliceRNA} for
+   * the validated splice that downstream processing relies on.
    *
    * @returns Joined exon sequence as RNA
    */
-  getCodingSequence(): RNA {
+  getSplicedSequence(): RNA {
     const sequence = this.sequence.sequence;
     const joined = this.exonRegions
       .map(exon => {
@@ -174,7 +177,7 @@ export function unsafePreMRNA(
  * The TSS-relative start is `exon.start - tss`. Exons that fall entirely upstream of the TSS
  * (transformed `end <= 0`) or entirely past the transcript end (transformed `start >= length`)
  * are dropped; partial exons are kept with their out-of-range bound preserved (negative start
- * or oversized end) so downstream consumers (`getCodingSequence`, splicing) can clamp.
+ * or oversized end) so downstream consumers (`getSplicedSequence`, splicing) can clamp.
  */
 function translateExonsToTranscript(
   exons: readonly GenomicRegion<GeneCoord>[],

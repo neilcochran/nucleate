@@ -31,9 +31,11 @@ export interface RNAProcessingOptions {
   readonly polyATailLength?: number;
 
   /**
-   * Whether to validate that the spliced sequence contains a start codon followed by an
-   * in-frame stop codon. Disable for mutation modeling that intentionally disrupts the
-   * coding sequence.
+   * Whether a coding sequence is required. The pipeline always searches for a CDS (the first
+   * start codon followed by an in-frame stop). When `true`, a spliced sequence with no such CDS
+   * is rejected. When `false`, it is tolerated: the resulting mRNA carries no coding boundaries
+   * (`codingStart` / `codingEnd` / `codingSequence` are `undefined`). Disable for mutation
+   * modeling that intentionally disrupts the coding sequence.
    */
   readonly validateCodons?: boolean;
 
@@ -65,10 +67,10 @@ export const DEFAULT_RNA_PROCESSING_OPTIONS: Required<RNAProcessingOptions> = {
  * 2. Locate the strongest polyadenylation signal and compute the cleavage site (when
  *    polyadenylation is enabled).
  * 3. Cleave the spliced sequence at the cleavage site and append the poly-A tail.
- * 4. Identify coding-sequence boundaries (when codon validation is enabled): the first
- *    `AUG` plus the next in-frame stop codon.
- * 5. Wrap the result in an `MRNA` carrying the cap flag, coding boundaries, and tail
- *    length.
+ * 4. Identify coding-sequence boundaries: the first `AUG` plus the next in-frame stop codon.
+ *    When none is found, fail if `validateCodons` is set, otherwise produce a no-CDS mRNA.
+ * 5. Wrap the result in an `MRNA` carrying the cap flag, coding boundaries (or `undefined`
+ *    when no CDS), and tail length.
  *
  * @param preMRNA - The pre-mRNA to process
  * @param options - Optional processing configuration (defaults applied where omitted)
@@ -100,8 +102,8 @@ export function processRNA(
 /**
  * Runs the post-splicing portion of the {@link processRNA} pipeline on an already-spliced
  * RNA. Adds the 5' cap (metadata), locates the polyadenylation site (when enabled), appends
- * the poly-A tail, identifies coding-sequence boundaries (when codon validation is enabled),
- * and wraps the result in a mature {@link MRNA}.
+ * the poly-A tail, identifies coding-sequence boundaries (failing or tolerating a missing CDS
+ * per `validateCodons`), and wraps the result in a mature {@link MRNA}.
  *
  * Use this directly when the splicing step happened elsewhere (e.g. variant-driven splicing
  * via `spliceRNAWithVariant`). For the full pre-mRNA -\> mature mRNA pipeline, use
@@ -140,23 +142,21 @@ export function processSpliced(
     finalSequence += 'A'.repeat(polyATailLength);
   }
 
-  let codingStart = 0;
-  let codingEnd = finalSequence.length - polyATailLength;
-
-  if (opts.validateCodons) {
-    const boundaries = findCodingBoundaries(finalSequence, polyATailLength);
-    if (!boundaries.success) {
-      return failure(boundaries.error);
-    }
-    codingStart = boundaries.data.codingStart;
-    codingEnd = boundaries.data.codingEnd;
+  // Always look for a real CDS. When found, the mRNA carries the true coding boundaries. When
+  // none is found, `validateCodons: true` rejects the mRNA, while `validateCodons: false`
+  // tolerates it and leaves the coding boundaries undefined - a legal no-CDS mRNA, rather than a
+  // fabricated full-length [0, len - tail) span.
+  const boundaries = findCodingBoundaries(finalSequence, polyATailLength);
+  if (!boundaries.success && opts.validateCodons) {
+    return failure(boundaries.error);
   }
+  const coding = boundaries.success ? boundaries.data : undefined;
 
   return success(
     unsafeMRNA(
       unsafeRNA(finalSequence),
-      mRNACoord(codingStart),
-      mRNACoord(codingEnd),
+      coding ? mRNACoord(coding.codingStart) : undefined,
+      coding ? mRNACoord(coding.codingEnd) : undefined,
       opts.addFivePrimeCap,
       polyATailLength,
     ),

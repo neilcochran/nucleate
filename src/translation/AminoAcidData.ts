@@ -18,7 +18,7 @@ export interface AminoAcidData {
   /** Standard one-letter code (e.g. `'A'`). */
   readonly singleLetterCode: string;
 
-  /** Monoisotopic molecular weight in Daltons. */
+  /** Average molecular weight of the free amino acid, in Daltons. */
   readonly molecularWeight: number;
 
   /** Side-chain polarity classification. */

@@ -62,6 +62,12 @@ const RNA_BASES = ['A', 'U', 'G', 'C'] as const;
  * keeps the parental forward strand; {@link ReplicationOutput.daughters | daughters[1]} keeps
  * the parental reverse strand. The event log narrates how each new strand was built.
  *
+ * Model scope (single-fork simplification): this simulates exactly one unidirectional replication
+ * fork on a linear template. It does not model origin firing, bidirectional forks, multiple
+ * origins with fork fusion, or circular templates. Even for organism profiles whose genome is
+ * biologically circular (e.g. `E_COLI`), the template is treated as linear and replicated by a
+ * single fork. A richer origin- and fork-aware model is future work.
+ *
  * @param template - The parental duplex to replicate
  * @param options - Optional organism profile and RNG
  * @returns `Result.success` containing a {@link ReplicationOutput} when the template is long

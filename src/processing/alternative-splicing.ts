@@ -12,7 +12,7 @@ import {
   type VariantValidationError,
 } from '../variants/index.js';
 import { processSpliced, type RNAProcessingOptions } from './process-rna.js';
-import { SplicingOutcome } from './splicing-outcome.js';
+import type { SpliceVariantResult } from './splice-variant-result.js';
 import type { ProcessingError, SpliceVariantSelectionError } from './errors.js';
 
 /**
@@ -82,44 +82,58 @@ export function processSpliceVariant(
 
 /**
  * Processes every splice variant in a gene's splicing profile through the full
- * splicing-plus-processing-plus-translation pipeline, producing a {@link SplicingOutcome}
+ * splicing-plus-processing-plus-translation pipeline, producing one {@link SpliceVariantResult}
  * per variant.
  *
- * Variants that fail validation, processing, or translation are skipped silently in the
- * output; if every variant fails (and at least one was tried), the function still returns
- * success with an empty array. The `polypeptideLength` carried on each outcome is the real
- * post-translation length (terminating at the first in-frame stop codon), not a
- * codingLength/3 estimate.
+ * No variant is dropped: each profile variant yields exactly one tagged result - `translated`
+ * (a {@link Polypeptide} was produced), `no-protein` (a mature mRNA with no coding sequence), or
+ * `invalid` (could not be spliced/processed). This makes the protein-abolishing variants - the
+ * interesting ones in a mutation context - visible rather than silently skipped, and removes the
+ * empty-array ambiguity: an empty array means only that the profile had zero variants.
+ *
+ * Defaults `validateCodons` to `false` (tolerate), so a variant that disrupts the coding sequence
+ * surfaces as `no-protein` instead of `invalid`. This is a deliberate divergence from
+ * {@link processRNA} / {@link processSpliceVariant}, which keep `validateCodons: true` (strict);
+ * enumerating a profile is inherently exploratory. Callers can override by passing
+ * `validateCodons: true`.
  *
  * @param preMRNA - The pre-mRNA whose source gene supplies the splicing profile
- * @param options - Combined validation and processing options
- * @returns `Result<SplicingOutcome[], SpliceVariantSelectionError>` listing every
- * successfully-processed variant, or `no-splicing-profile` on failure
+ * @param options - Combined validation and processing options; `validateCodons` defaults to
+ * `false` here
+ * @returns `Result<SpliceVariantResult[], SpliceVariantSelectionError>` with one entry per profile
+ * variant, or `no-splicing-profile` when the gene has no profile
  */
 export function processAllSplicingVariants(
   preMRNA: PreMRNA,
   options: SpliceVariantProcessingOptions = {},
-): Result<SplicingOutcome[], SpliceVariantSelectionError> {
+): Result<SpliceVariantResult[], SpliceVariantSelectionError> {
   const sourceGene = preMRNA.sourceGene;
   const profile = sourceGene.splicingProfile;
   if (!profile) {
     return failure({ kind: 'no-splicing-profile' });
   }
 
-  const outcomes: SplicingOutcome[] = [];
+  const opts: SpliceVariantProcessingOptions = { validateCodons: false, ...options };
+
+  const results: SpliceVariantResult[] = [];
   for (const variant of profile.variants) {
-    const processResult = processSpliceVariant(preMRNA, variant, options);
+    const processResult = processSpliceVariant(preMRNA, variant, opts);
     if (!processResult.success) {
+      results.push({ kind: 'invalid', variant, error: processResult.error });
       continue;
     }
     const matureMRNA = processResult.data;
     const translateResult = translate(matureMRNA);
-    if (!translateResult.success) {
-      continue;
+    if (translateResult.success) {
+      results.push({ kind: 'translated', variant, matureMRNA, polypeptide: translateResult.data });
+    } else {
+      // A processed mRNA fails translation only when it has no CDS (the `no-coding-sequence`
+      // failure): a CDS located during processing always has a whole-codon reading frame, and the
+      // sequence is already valid RNA. So the variant yielded an mRNA but no protein.
+      results.push({ kind: 'no-protein', variant, matureMRNA });
     }
-    outcomes.push(new SplicingOutcome(variant, matureMRNA, translateResult.data.aminoAcids.length));
   }
-  return success(outcomes);
+  return success(results);
 }
 
 /**

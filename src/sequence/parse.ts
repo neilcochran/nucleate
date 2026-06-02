@@ -97,6 +97,8 @@ export function parseDoubleStrandedDNA(
     });
   }
   const expected = forward.getReverseComplement().sequence;
+  // Fast-path guard: the native compare gates the common valid duplex; the char loop below runs
+  // only on mismatch, solely to locate the first differing index for the error payload.
   if (expected !== reverse.sequence) {
     for (let i = 0; i < expected.length; i++) {
       const expectedChar = expected.charAt(i);

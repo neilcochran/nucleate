@@ -12,6 +12,7 @@ import { processRNA } from '../../src/processing';
 import { transcribe } from '../../src/transcription';
 import { translate } from '../../src/translation';
 import { transcribeSequence } from '../../src/sequence';
+import { requireCodingSequence } from '../utils/test-utils';
 
 describe('Biological Scenarios Integration Tests', () => {
   describe('Human Gene Models', () => {
@@ -57,7 +58,7 @@ describe('Biological Scenarios Integration Tests', () => {
 
         if (processingResult.success) {
           const mRNA = processingResult.data;
-          const codingSeq = mRNA.codingSequence.sequence;
+          const codingSeq = requireCodingSequence(mRNA).sequence;
 
           // Verify exact biological properties
           expect(codingSeq.startsWith('AUG')).toBe(true);
@@ -127,7 +128,7 @@ describe('Biological Scenarios Integration Tests', () => {
           const polypeptide = translate(mRNA).unwrap();
 
           // Get actual coding sequence to verify
-          const codingSeq = mRNA.codingSequence.sequence;
+          const codingSeq = requireCodingSequence(mRNA).sequence;
 
           // Verify coding sequence properties
           expect(codingSeq.startsWith('AUG')).toBe(true);
@@ -190,7 +191,7 @@ describe('Biological Scenarios Integration Tests', () => {
           expect(preMRNASeq.length).toBe(66);
         } else {
           const mRNA = processingResult.data;
-          const codingSeq = mRNA.codingSequence.sequence;
+          const codingSeq = requireCodingSequence(mRNA).sequence;
 
           expect(codingSeq.startsWith('AUG')).toBe(true);
           expect(codingSeq.endsWith('UAG')).toBe(true);
@@ -290,8 +291,8 @@ describe('Biological Scenarios Integration Tests', () => {
         const altProcessed = processRNA(altResult.data);
 
         if (normalProcessed.success && altProcessed.success) {
-          const normalCoding = normalProcessed.data.codingSequence.sequence;
-          const altCoding = altProcessed.data.codingSequence.sequence;
+          const normalCoding = requireCodingSequence(normalProcessed.data).sequence;
+          const altCoding = requireCodingSequence(altProcessed.data).sequence;
 
           // Alternative should be exactly 27bp shorter (skipped exon 2)
           expect(normalCoding.length - altCoding.length).toBe(27);
@@ -356,7 +357,7 @@ describe('Biological Scenarios Integration Tests', () => {
           const polypeptide = translate(mRNA).unwrap();
 
           // Multi-domain protein with corrected structure
-          const codingSeq = mRNA.codingSequence.sequence;
+          const codingSeq = requireCodingSequence(mRNA).sequence;
           expect(codingSeq.length).toBe(72); // Actual length from splicing
           expect(codingSeq.startsWith('AUG')).toBe(true);
           expect(codingSeq.endsWith('UAG')).toBe(true);

@@ -75,9 +75,12 @@ export type GeneError =
   | {
       /** Discriminator naming the failure mode. */
       readonly kind: 'exons-overlap';
-      /** Indices of the overlapping exons. */
-      readonly indices: readonly number[];
-      /** Gene-relative position where the overlap was detected. */
+      /**
+       * Indices (into the caller's exon array) of the first overlapping pair, ordered by gene
+       * start position; the exon at `indices[1]` starts at {@link at}.
+       */
+      readonly indices: readonly [number, number];
+      /** Gene-relative position where the overlap was detected (the later exon's start). */
       readonly at: number;
     }
   | {

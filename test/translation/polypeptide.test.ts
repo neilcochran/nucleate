@@ -1,4 +1,4 @@
-import { translate } from '../../src/translation';
+import { translate, AminoAcidSideChainType, WATER_AVERAGE_MASS } from '../../src/translation';
 import type { Polypeptide } from '../../src/translation';
 import { parseMRNA } from '../../src/modifications';
 import {
@@ -19,6 +19,11 @@ describe('Polypeptide', () => {
     expect(at(poly.aminoAcids, 0).data.singleLetterCode).toBe('M');
     expect(at(poly.aminoAcids, 1).data.singleLetterCode).toBe('K');
     expect(at(poly.aminoAcids, 2).data.singleLetterCode).toBe('P');
+  });
+
+  test('length reports the amino-acid count, terminating at the first stop', () => {
+    expect(poly('AUGAAACCCUAG').length).toBe(3); // M, K, P then UAG stop
+    expect(poly('UAGAAACCC').length).toBe(0); // immediate stop codon
   });
 
   describe('getSequence', () => {
@@ -87,6 +92,55 @@ describe('Polypeptide', () => {
       const ref = poly.aminoAcids;
       expect(poly.aminoAcids).toBe(ref);
       expect(poly.mRNA).toBe(MRNA_ALL_AMINO_ACIDS_1);
+    });
+  });
+
+  describe('biochemical aggregates', () => {
+    test('molecularWeight sums residue masses minus one water per peptide bond', () => {
+      // M + K + P, joined by two peptide bonds (two waters lost).
+      const expected = 149.208 + 146.189 + 115.132 - 2 * WATER_AVERAGE_MASS;
+      expect(poly('AUGAAACCCUAG').molecularWeight()).toBeCloseTo(expected, 5);
+    });
+
+    test('molecularWeight of a single residue is the free amino-acid mass', () => {
+      expect(poly('AUGUAA').molecularWeight()).toBeCloseTo(149.208, 5); // M only, no water lost
+    });
+
+    test('molecularWeight of an empty polypeptide is 0', () => {
+      expect(poly('UAGAAACCC').molecularWeight()).toBe(0);
+    });
+
+    test('meanHydrophobicity averages the Kyte-Doolittle scores', () => {
+      // M 1.9, K -3.9, P -1.6 -> mean -1.2
+      expect(poly('AUGAAACCCUAG').meanHydrophobicity()).toBeCloseTo(-1.2, 5);
+    });
+
+    test('meanHydrophobicity of an empty polypeptide is 0', () => {
+      expect(poly('UAGAAACCC').meanHydrophobicity()).toBe(0);
+    });
+
+    test('netChargeAtPhysiologicalPH sums side-chain charges', () => {
+      expect(poly('AUGAAACCCUAG').netChargeAtPhysiologicalPH()).toBe(1); // K is +1
+      // M(0) D(-1) K(+1) E(-1) -> -1
+      expect(poly('AUGGAUAAAGAAUAA').netChargeAtPhysiologicalPH()).toBe(-1);
+    });
+
+    test('netChargeAtPhysiologicalPH of an empty polypeptide is 0', () => {
+      expect(poly('UAGAAACCC').netChargeAtPhysiologicalPH()).toBe(0);
+    });
+
+    test('composition counts residues by amino acid and side-chain class', () => {
+      const comp = poly('AUGAAACCCUAG').composition(); // MKP
+      expect(comp.byAminoAcid).toEqual({ M: 1, K: 1, P: 1 });
+      expect(comp.bySideChainType[AminoAcidSideChainType.SULFUR_CONTAINING]).toBe(1);
+      expect(comp.bySideChainType[AminoAcidSideChainType.BASIC]).toBe(1);
+      expect(comp.bySideChainType[AminoAcidSideChainType.IMINO]).toBe(1);
+    });
+
+    test('composition tallies repeated residues', () => {
+      const comp = poly('AUGAAAAAAUAA').composition(); // MKK
+      expect(comp.byAminoAcid).toEqual({ M: 1, K: 2 });
+      expect(comp.bySideChainType[AminoAcidSideChainType.BASIC]).toBe(2);
     });
   });
 });

@@ -7,7 +7,7 @@
 
 import { parseGene } from '../../src/gene';
 import { parseDNA, parseRNA } from '../../src/sequence';
-import { at } from '../utils/test-utils';
+import { at, requireCodingSequence } from '../utils/test-utils';
 import { parseMRNA } from '../../src/modifications';
 import { processRNA, enumerateSpliceVariants, processSpliceVariant } from '../../src/processing';
 import { translate } from '../../src/translation';
@@ -59,11 +59,11 @@ describe('Comprehensive Pipeline Integration Tests', () => {
       expect(aminoAcids.length).toBe(expectedAminoAcids);
 
       // MEANINGFUL: Verify reading frame maintenance
-      expect(mRNA.codingSequence.sequence.length % 3).toBe(0);
+      expect(requireCodingSequence(mRNA).sequence.length % 3).toBe(0);
 
       // MEANINGFUL: Verify specific start and stop codons (can catch conversion bugs)
-      expect(mRNA.codingSequence.sequence.startsWith('AUG')).toBe(true);
-      expect(mRNA.codingSequence.sequence.endsWith('UAG')).toBe(true);
+      expect(requireCodingSequence(mRNA).sequence.startsWith('AUG')).toBe(true);
+      expect(requireCodingSequence(mRNA).sequence.endsWith('UAG')).toBe(true);
 
       // MEANINGFUL: Verify first amino acid is methionine (can catch translation bugs)
       expect(aminoAcids[0]?.data.singleLetterCode).toBe('M');
@@ -213,7 +213,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
           expect(mRNA.sequence.sequence.length).toBe(27 + 27 + 200); // exons + poly-A tail
 
           // Verify coding sequence extraction
-          const codingSeq = mRNA.codingSequence.sequence;
+          const codingSeq = requireCodingSequence(mRNA).sequence;
           expect(codingSeq.startsWith('AUG')).toBe(true);
           expect(codingSeq.endsWith('UAG')).toBe(true);
         }
@@ -253,7 +253,9 @@ describe('Comprehensive Pipeline Integration Tests', () => {
           expect(polypeptide.aminoAcids[0]?.data.singleLetterCode).toBe('M');
 
           // MEANINGFUL: Verify exact protein length matches coding sequence
-          const expectedProteinLength = Math.floor((mRNA.codingSequence.sequence.length - 3) / 3); // -3 for stop codon
+          const expectedProteinLength = Math.floor(
+            (requireCodingSequence(mRNA).sequence.length - 3) / 3,
+          ); // -3 for stop codon
           expect(polypeptide.aminoAcids.length).toBe(expectedProteinLength);
 
           // MEANINGFUL: Verify specific amino acid properties
@@ -297,7 +299,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
           const polypeptide = translate(mRNA).unwrap();
 
           // MEANINGFUL: Verify expected protein size from sequence length
-          const codingLength = mRNA.codingSequence.sequence.length;
+          const codingLength = requireCodingSequence(mRNA).sequence.length;
           const expectedLength = Math.floor((codingLength - 3) / 3); // -3 for stop codon
           expect(polypeptide.aminoAcids.length).toBe(expectedLength);
         }
@@ -336,7 +338,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
           const mRNA = processingResult.data;
 
           // MEANINGFUL: Verify exact minimal coding sequence
-          expect(mRNA.codingSequence.sequence).toBe('AUGUAG');
+          expect(requireCodingSequence(mRNA).sequence).toBe('AUGUAG');
 
           const polypeptide = translate(mRNA).unwrap();
 
@@ -389,7 +391,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
           const mRNA = processingResult.data;
 
           // Verify splicing worked correctly - should have removed introns
-          const codingSequence = mRNA.codingSequence.sequence;
+          const codingSequence = requireCodingSequence(mRNA).sequence;
           expect(codingSequence.length).toBe(304 + 303 + 303); // Sum of exon lengths
 
           // Test translation of large mRNA
@@ -513,8 +515,8 @@ describe('Comprehensive Pipeline Integration Tests', () => {
           // if an in-frame stop occurs before the last exon ends.
           const expectedSpliced = gene.getVariantSequence(variant).sequence.replace(/T/g, 'U');
           expect(mRNA.sequence.sequence.startsWith(expectedSpliced)).toBe(true);
-          expect(expectedSpliced.startsWith(mRNA.codingSequence.sequence)).toBe(true);
-          expect(mRNA.codingSequence.sequence.startsWith('AUG')).toBe(true);
+          expect(expectedSpliced.startsWith(requireCodingSequence(mRNA).sequence)).toBe(true);
+          expect(requireCodingSequence(mRNA).sequence.startsWith('AUG')).toBe(true);
 
           // Step 3: Translate the mature mRNA
           const translateResult = translate(mRNA);

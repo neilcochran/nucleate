@@ -16,7 +16,7 @@ import {
 import { parseGene } from '../../src/gene';
 import { parsePreMRNA } from '../../src/transcription';
 import { FOUR_EXON_GENE } from '../test-genes';
-import { at } from '../utils/test-utils';
+import { at, requireCodingSequence } from '../utils/test-utils';
 
 const testSequence = FOUR_EXON_GENE.dnaSequence;
 const testExons = FOUR_EXON_GENE.exons;
@@ -154,7 +154,7 @@ describe('spliceRNAWithVariant', () => {
 });
 
 describe('processAllSplicingVariants', () => {
-  test('runs every variant in the splicing profile', () => {
+  test('surfaces every variant with its tagged outcome', () => {
     const profile: AlternativeSplicingProfile = {
       geneId: 'TEST_GENE',
       defaultVariant: 'full',
@@ -166,15 +166,32 @@ describe('processAllSplicingVariants', () => {
     };
     const gene = parseGene(testSequence, testExons, 'TEST_GENE', profile).unwrap();
     const preMRNA = parsePreMRNA(testSequence.replace(/T/g, 'U'), gene, 0).unwrap();
-    const result = processAllSplicingVariants(preMRNA, {
-      allowSkipLastExon: true,
-      validateCodons: false,
-    });
+    // validateCodons defaults to false here, so the CDS-abolishing 'short' variant surfaces as
+    // no-protein rather than being dropped.
+    const result = processAllSplicingVariants(preMRNA, { allowSkipLastExon: true });
     expect(result.success).toBe(true);
     if (result.success) {
+      // One entry per profile variant - nothing is dropped.
       expect(result.data).toHaveLength(3);
-      const names = result.data.map(outcome => outcome.variant.name).sort();
-      expect(names).toEqual(['full', 'short', 'skip-2']);
+
+      const full = result.data.find(r => r.variant.name === 'full');
+      expect(full?.kind).toBe('translated');
+      if (full?.kind === 'translated') {
+        expect(full.polypeptide.length).toBe(6);
+        expect(full.matureMRNA.codingSequence).toBeDefined();
+      }
+
+      const skip2 = result.data.find(r => r.variant.name === 'skip-2');
+      expect(skip2?.kind).toBe('translated');
+      if (skip2?.kind === 'translated') {
+        expect(skip2.polypeptide.length).toBe(4);
+      }
+
+      const short = result.data.find(r => r.variant.name === 'short');
+      expect(short?.kind).toBe('no-protein');
+      if (short?.kind === 'no-protein') {
+        expect(short.matureMRNA.codingSequence).toBeUndefined();
+      }
     }
   });
 
@@ -188,10 +205,7 @@ describe('processAllSplicingVariants', () => {
     }
   });
 
-  test('silently skips variants that fail validation', () => {
-    // Build a profile where one variant is intentionally invalid (skips first exon while
-    // default options forbid it) - it should be omitted from the output rather than
-    // surfaced as an error.
+  test('surfaces a variant that fails validation as invalid', () => {
     const profile: AlternativeSplicingProfile = {
       geneId: 'TEST_GENE',
       defaultVariant: 'full',
@@ -202,8 +216,18 @@ describe('processAllSplicingVariants', () => {
     const result = processAllSplicingVariants(preMRNA);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data).toHaveLength(1);
-      expect(at(result.data, 0).variant.name).toBe('full');
+      // Both variants are reported; the skip-first variant is surfaced, not silently dropped.
+      expect(result.data).toHaveLength(2);
+
+      const full = result.data.find(r => r.variant.name === 'full');
+      expect(full?.kind).toBe('translated');
+
+      const skipsFirst = result.data.find(r => r.variant.name === 'skips-first');
+      if (skipsFirst?.kind === 'invalid' && skipsFirst.error.kind === 'splicing-failed') {
+        expect(skipsFirst.error.cause.kind).toBe('variant-skips-first-exon');
+      } else {
+        throw new Error(`expected invalid/splicing-failed, got ${JSON.stringify(skipsFirst)}`);
+      }
     }
   });
 });
@@ -222,7 +246,7 @@ describe('processDefaultSpliceVariant', () => {
     if (result.success) {
       const mRNA = result.data;
       // The mature mRNA's coding sequence is the variant's spliced exons (AUG...UAG)
-      expect(mRNA.codingSequence.sequence).toBe('AUGAAACCCGGGGGGUUUUAG');
+      expect(requireCodingSequence(mRNA).sequence).toBe('AUGAAACCCGGGGGGUUUUAG');
       // A real mature mRNA: cap present, poly-A tail appended
       expect(mRNA.fivePrimeCap).toBe(true);
       expect(mRNA.polyATailLength).toBeGreaterThan(0);

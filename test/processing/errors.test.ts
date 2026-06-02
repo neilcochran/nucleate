@@ -22,6 +22,10 @@ describe('describeProcessingError', () => {
       expected: /Invalid coding-sequence boundaries.*start=-1.*end=5.*length=10/,
     },
     {
+      error: { kind: 'incomplete-coding-boundaries', codingStart: undefined, codingEnd: 9 },
+      expected: /Incomplete coding-sequence boundaries.*start=undefined.*end=9/,
+    },
+    {
       error: { kind: 'invalid-polya-tail-length', polyATailLength: 50, sequenceLength: 30 },
       expected: /Invalid poly-A tail length 50.*length \(30\)/,
     },

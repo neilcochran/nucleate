@@ -16,9 +16,8 @@ import { DEFAULT_CLEAVAGE_OFFSET } from './tuning.js';
  * appends a poly-A tail of the requested length.
  *
  * Returns the resulting sequence as a plain {@link RNA}; cap state is not tracked at the
- * RNA level. Callers building a mature mRNA should compose this with
- * {@link unsafeMRNA} / `processRNA` to record the tail length and other state on the
- * resulting `MRNA`.
+ * RNA level. Callers building a mature mRNA should compose this with `parseMRNA` /
+ * `processRNA` to record the tail length and other state on the resulting `MRNA`.
  *
  * @param rna - The RNA whose 3' end is being processed
  * @param cleavageSite - 0-based cleavage position (clamped to the sequence length on the

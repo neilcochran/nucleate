@@ -13,6 +13,9 @@ import { makeDescriber } from '../result/index.js';
  *   table (programmer-error path; should not be reachable with a validated RNA codon).
  * - `invalid-reading-frame`: the mRNA coding sequence length is not a positive multiple of
  *   the codon length.
+ * - `no-coding-sequence`: the mRNA carries no coding sequence (no CDS was identified, e.g. a
+ *   start-codon knockout processed with `validateCodons: false`), so there is nothing to
+ *   translate.
  */
 export type TranslationError =
   | {
@@ -58,6 +61,13 @@ export type TranslationError =
       readonly codingLength: number;
       /** The expected codon length (always 3 for the standard genetic code). */
       readonly codonLength: number;
+    }
+  | {
+      /**
+       * Discriminator naming the failure mode. The mRNA has no coding sequence to translate
+       * (its `codingSequence` is `undefined` - no CDS was identified during processing).
+       */
+      readonly kind: 'no-coding-sequence';
     };
 
 /** Renders a {@link TranslationError} as a human-readable message. */
@@ -70,4 +80,5 @@ export const describeTranslationError = makeDescriber<TranslationError>({
     `Codon '${e.codon}' at position ${e.position} does not code for any amino acid`,
   'invalid-reading-frame': e =>
     `Coding sequence length ${e.codingLength} is not a multiple of codon length ${e.codonLength}`,
+  'no-coding-sequence': () => 'mRNA has no coding sequence to translate',
 });

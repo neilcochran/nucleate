@@ -150,10 +150,50 @@ export function deriveIntronsFromExons<C extends number>(
 }
 
 /**
+ * Finds the first overlapping pair in a list of regions, scanning in ascending start order.
+ *
+ * Sorts a copy of the list by `start` and scans adjacent pairs; the first pair whose
+ * earlier-starting region's `end` exceeds the later-starting region's `start` is reported. A
+ * sorted adjacent scan suffices to find any overlap: once sorted by `start`, if no adjacent pair
+ * overlaps then `r[i].end <= r[i+1].start <= r[j].start` for every `j > i`, so no pair overlaps
+ * at all. Touching boundaries (`prev.end === next.start`) are allowed.
+ *
+ * The reported `indices` are positions in the caller's input array (preserved across the internal
+ * sort), ordered by genomic start: `indices[0]` is the earlier-starting region and `indices[1]`
+ * the later-starting one, whose `start` equals `at`.
+ *
+ * @param regions - The regions to check, in any single coordinate space; order does not matter
+ * @returns The first overlapping pair as `{ indices: [earlier, later], at }`, or `undefined` when
+ * the regions are pairwise non-overlapping
+ * @typeParam C - The coordinate-space brand (inferred)
+ */
+export function findFirstOverlap<C extends number>(
+  regions: readonly GenomicRegion<C>[],
+): { indices: [number, number]; at: number } | undefined {
+  if (regions.length <= 1) {
+    return undefined;
+  }
+
+  const sorted = regions
+    .map((region, index) => ({ region, index }))
+    .sort((a, b) => a.region.start - b.region.start);
+
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const current = at(sorted, i);
+    const next = at(sorted, i + 1);
+    if (current.region.end > next.region.start) {
+      return { indices: [current.index, next.index], at: next.region.start };
+    }
+  }
+
+  return undefined;
+}
+
+/**
  * Tests whether a list of regions are pairwise non-overlapping.
  *
- * Sorts a copy of the list by `start` and then scans adjacent pairs. Touching boundaries
- * (`prev.end === next.start`) are allowed.
+ * Thin wrapper over {@link findFirstOverlap}: the regions are non-overlapping exactly when no
+ * first overlap exists. Touching boundaries (`prev.end === next.start`) are allowed.
  *
  * @param regions - The regions to check
  * @returns `true` if no two regions overlap
@@ -162,19 +202,5 @@ export function deriveIntronsFromExons<C extends number>(
 export function validateNonOverlappingRegions<C extends number>(
   regions: GenomicRegion<C>[],
 ): boolean {
-  if (regions.length <= 1) {
-    return true;
-  }
-
-  const sorted = [...regions].sort((a, b) => a.start - b.start);
-
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const current = at(sorted, i);
-    const next = at(sorted, i + 1);
-    if (current.end > next.start) {
-      return false;
-    }
-  }
-
-  return true;
+  return findFirstOverlap(regions) === undefined;
 }

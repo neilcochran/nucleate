@@ -24,23 +24,30 @@ export class MRNA {
   /**
    * 0-based inclusive index where the coding sequence begins, relative to {@link sequence}.
    * Branded as {@link MatureMRNACoord} so it cannot be confused with gene-relative or
-   * transcript-relative positions.
+   * transcript-relative positions. `undefined` when the mRNA carries no CDS (see
+   * {@link codingSequence}).
    */
-  public readonly codingStart: MatureMRNACoord;
+  public readonly codingStart: MatureMRNACoord | undefined;
 
   /**
    * 0-based exclusive index where the coding sequence ends, relative to {@link sequence}.
-   * Branded as {@link MatureMRNACoord}; see {@link codingStart}.
+   * Branded as {@link MatureMRNACoord}; see {@link codingStart}. `undefined` when the mRNA
+   * carries no CDS.
    */
-  public readonly codingEnd: MatureMRNACoord;
+  public readonly codingEnd: MatureMRNACoord | undefined;
 
   /**
    * The subsequence `[codingStart, codingEnd)` of {@link sequence}, wrapped as a typed
    * {@link RNA}. Computed once at construction time, so downstream consumers (translation,
-   * splice-variant analysis) can read it as a plain field. `parseMRNA` enforces
-   * `codingStart < codingEnd`, so the coding region is guaranteed non-empty.
+   * splice-variant analysis) can read it as a plain field.
+   *
+   * `undefined` when the mRNA has no coding sequence - the honest representation of a transcript
+   * with no identifiable CDS (e.g. a start-codon knockout, or a stop-loss with no downstream
+   * in-frame stop, processed with `validateCodons: false`). When present, the coding region is
+   * non-empty (`codingStart < codingEnd`); `codingStart`, `codingEnd`, and `codingSequence` are
+   * always either all defined together or all `undefined` together.
    */
-  public readonly codingSequence: RNA;
+  public readonly codingSequence: RNA | undefined;
 
   /** Whether the mRNA carries the 5' methylguanosine cap. */
   public readonly fivePrimeCap: boolean;
@@ -53,8 +60,10 @@ export class MRNA {
    * `processRNA`.
    *
    * @param sequence - The validated RNA sequence backing this mature mRNA
-   * @param codingStart - Validated coding-sequence start (0-based inclusive)
-   * @param codingEnd - Validated coding-sequence end (0-based exclusive)
+   * @param codingStart - Validated coding-sequence start (0-based inclusive), or `undefined`
+   * for a no-CDS mRNA (must be paired with an `undefined` `codingEnd`)
+   * @param codingEnd - Validated coding-sequence end (0-based exclusive), or `undefined` for a
+   * no-CDS mRNA (must be paired with an `undefined` `codingStart`)
    * @param fivePrimeCap - Whether the mRNA carries a 5' cap
    * @param polyATailLength - Length of the 3' poly-A tail (0 means no tail)
    *
@@ -62,8 +71,8 @@ export class MRNA {
    */
   constructor(
     sequence: RNA,
-    codingStart: MatureMRNACoord,
-    codingEnd: MatureMRNACoord,
+    codingStart: MatureMRNACoord | undefined,
+    codingEnd: MatureMRNACoord | undefined,
     fivePrimeCap: boolean,
     polyATailLength: number,
   ) {
@@ -72,17 +81,20 @@ export class MRNA {
     this.codingEnd = codingEnd;
     this.fivePrimeCap = fivePrimeCap;
     this.polyATailLength = polyATailLength;
-    this.codingSequence = unsafeRNA(sequence.sequence.substring(codingStart, codingEnd));
+    this.codingSequence =
+      codingStart !== undefined && codingEnd !== undefined
+        ? unsafeRNA(sequence.sequence.substring(codingStart, codingEnd))
+        : undefined;
   }
 
   /**
    * Returns the 5' untranslated region: the {@link RNA} subsequence before {@link codingStart}.
    *
-   * @returns The 5'-UTR as RNA, or `undefined` when the coding sequence starts at position 0
-   * (the mRNA has no 5'-UTR)
+   * @returns The 5'-UTR as RNA, or `undefined` when the mRNA has no CDS, or when the coding
+   * sequence starts at position 0 (the mRNA has no 5'-UTR)
    */
   getFivePrimeUTR(): RNA | undefined {
-    if (this.codingStart === 0) {
+    if (this.codingStart === undefined || this.codingStart === 0) {
       return undefined;
     }
     return unsafeRNA(this.sequence.sequence.substring(0, this.codingStart));
@@ -92,10 +104,13 @@ export class MRNA {
    * Returns the 3' untranslated region: the {@link RNA} subsequence between {@link codingEnd}
    * and the start of the poly-A tail.
    *
-   * @returns The 3'-UTR as RNA, or `undefined` when the coding sequence ends right before the
-   * tail (or at the end of the sequence) - the mRNA has no 3'-UTR
+   * @returns The 3'-UTR as RNA, or `undefined` when the mRNA has no CDS, or when the coding
+   * sequence ends right before the tail (or at the end of the sequence) - the mRNA has no 3'-UTR
    */
   getThreePrimeUTR(): RNA | undefined {
+    if (this.codingEnd === undefined) {
+      return undefined;
+    }
     const length = this.sequence.sequence.length;
     const tailStart = length - this.polyATailLength;
     if (this.codingEnd >= tailStart) {
@@ -158,11 +173,16 @@ export class MRNA {
   /**
    * Returns a string representation of the mature mRNA.
    *
-   * @returns `'MRNA(Nnt, CDS s-e, polyA L[, capped])'`
+   * @returns `'MRNA(Nnt, CDS s-e, polyA L[, capped])'`, or the same with `no CDS` replacing the
+   * CDS segment when the mRNA has no coding sequence
    */
   toString(): string {
     const capStr = this.fivePrimeCap ? ', capped' : '';
-    return `MRNA(${this.sequence.sequence.length}nt, CDS ${this.codingStart}-${this.codingEnd}, polyA ${this.polyATailLength}${capStr})`;
+    const cdsStr =
+      this.codingStart !== undefined && this.codingEnd !== undefined
+        ? `CDS ${this.codingStart}-${this.codingEnd}`
+        : 'no CDS';
+    return `MRNA(${this.sequence.sequence.length}nt, ${cdsStr}, polyA ${this.polyATailLength}${capStr})`;
   }
 }
 
@@ -170,8 +190,10 @@ export class MRNA {
  * Constructs an {@link MRNA} without re-running validation.
  *
  * @param sequence - Validated RNA sequence
- * @param codingStart - Validated, branded coding-sequence start (0-based inclusive)
- * @param codingEnd - Validated, branded coding-sequence end (0-based exclusive)
+ * @param codingStart - Validated, branded coding-sequence start (0-based inclusive), or
+ * `undefined` for a no-CDS mRNA (paired with an `undefined` `codingEnd`)
+ * @param codingEnd - Validated, branded coding-sequence end (0-based exclusive), or `undefined`
+ * for a no-CDS mRNA (paired with an `undefined` `codingStart`)
  * @param fivePrimeCap - 5'-cap flag
  * @param polyATailLength - Poly-A tail length in nucleotides
  * @returns A new `MRNA`
@@ -180,8 +202,8 @@ export class MRNA {
  */
 export function unsafeMRNA(
   sequence: RNA,
-  codingStart: MatureMRNACoord,
-  codingEnd: MatureMRNACoord,
+  codingStart: MatureMRNACoord | undefined,
+  codingEnd: MatureMRNACoord | undefined,
   fivePrimeCap: boolean,
   polyATailLength: number,
 ): MRNA {

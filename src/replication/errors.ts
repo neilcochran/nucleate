@@ -34,7 +34,9 @@ export type RNAPrimerError =
     };
 
 /**
- * Tagged-union errors raised by {@link parseOkazakiFragment}.
+ * Tagged-union errors raised by the Okazaki-fragment parsers ({@link parsePrimerOnlyFragment},
+ * {@link parseSynthesizedFragment}, {@link parsePrimerRemovedFragment}, and
+ * {@link parseLigatedFragment}).
  *
  * - `empty-id`: the supplied identifier was an empty string.
  * - `invalid-position`: the start position was not a non-negative integer.

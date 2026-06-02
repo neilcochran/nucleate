@@ -9,13 +9,14 @@
  * `unsafeAminoAcidFromString` factories are likewise excluded from this barrel.
  */
 export type { AminoAcid } from './AminoAcid.js';
-export type { Polypeptide } from './Polypeptide.js';
+export type { Polypeptide, PolypeptideComposition } from './Polypeptide.js';
 export { parseAminoAcid } from './parse.js';
 export { translate } from './translate.js';
 export {
   AMINO_ACIDS,
   AMINO_ACID_BY_CODON,
   AMINO_ACID_BY_SINGLE_LETTER,
+  WATER_AVERAGE_MASS,
   getAminoAcidDataByCodon,
   getAminoAcidDataBySingleLetter,
 } from './amino-acids.js';

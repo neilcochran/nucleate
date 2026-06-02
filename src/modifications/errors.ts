@@ -19,6 +19,8 @@ import type { DescriberArms } from '../result/index.js';
  * - `invalid-sequence`: the supplied RNA-sequence string failed parsing.
  * - `invalid-coding-boundaries`: `codingStart` / `codingEnd` are not finite non-negative
  *   integers, are inverted, or extend past the sequence.
+ * - `incomplete-coding-boundaries`: exactly one of `codingStart` / `codingEnd` was supplied. A
+ *   CDS needs both; supply both for a coding mRNA or neither for a non-coding mRNA.
  * - `invalid-polya-tail-length`: tail length is negative or longer than the sequence.
  */
 export type MRNAError =
@@ -37,6 +39,17 @@ export type MRNAError =
       readonly codingEnd: number;
       /** Length of the underlying RNA sequence. */
       readonly sequenceLength: number;
+    }
+  | {
+      /**
+       * Discriminator naming the failure mode. A CDS requires both boundaries; this fires when
+       * exactly one of `codingStart` / `codingEnd` was supplied (the other left `undefined`).
+       */
+      readonly kind: 'incomplete-coding-boundaries';
+      /** `codingStart` as supplied, or `undefined` when it was the omitted boundary. */
+      readonly codingStart: number | undefined;
+      /** `codingEnd` as supplied, or `undefined` when it was the omitted boundary. */
+      readonly codingEnd: number | undefined;
     }
   | {
       /** Discriminator naming the failure mode. */
@@ -58,6 +71,8 @@ export const MRNA_ERROR_ARMS: DescriberArms<MRNAError> = {
   'invalid-sequence': e => `Invalid mRNA sequence: ${describeRNAError(e.cause)}`,
   'invalid-coding-boundaries': e =>
     `Invalid coding-sequence boundaries: start=${e.codingStart}, end=${e.codingEnd}, sequence length=${e.sequenceLength}`,
+  'incomplete-coding-boundaries': e =>
+    `Incomplete coding-sequence boundaries (start=${e.codingStart}, end=${e.codingEnd}): a CDS needs both codingStart and codingEnd; supply both for a coding mRNA or neither for a non-coding mRNA`,
   'invalid-polya-tail-length': e =>
     `Invalid poly-A tail length ${e.polyATailLength}: must be between 0 and the sequence length (${e.sequenceLength})`,
 };

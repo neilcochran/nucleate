@@ -1,30 +1,28 @@
 import { parseDNA, parseRNA } from '../../src/sequence';
+import type { RNA } from '../../src/sequence';
 import { AminoAcid } from '../../src/translation';
 import { parseMRNA } from '../../src/modifications';
+import type { MRNA } from '../../src/modifications';
+import { at } from '../../src/result';
+
+// Re-export the production `at` indexed-access helper so test modules can keep importing it from
+// this single test-utility entry point.
+export { at };
 
 /**
- * Indexed access helper for test code. With `noUncheckedIndexedAccess` enabled, `arr[i]` /
- * `rec[k]` widens to `T | undefined`; the test's contract is that the index exists, so this
- * helper throws with a precise out-of-bounds message rather than letting a downstream
- * `.field` access blow up with the generic `Cannot read properties of undefined`.
+ * Returns an mRNA's coding sequence, throwing when the mRNA has no CDS. For tests that build
+ * CDS-bearing mRNAs (the default `processRNA` path) and want a non-optional handle to assert on,
+ * now that {@link MRNA.codingSequence} is `RNA | undefined`.
  *
- * Two overloads cover the common cases: array-style numeric index, and record-style string
- * key.
- *
- * @param target - The array or record to index into
- * @param key - The numeric index (arrays) or string key (records)
- * @returns The element at `target[key]`
- * @throws If `target[key]` is `undefined`
+ * @param mRNA - The mRNA expected to carry a coding sequence
+ * @returns The coding sequence as RNA
+ * @throws If the mRNA has no coding sequence
  */
-export function at<T>(arr: readonly T[], i: number): T;
-export function at<T>(rec: Readonly<Record<string, T>>, key: string): T;
-export function at<T>(target: readonly T[] | Readonly<Record<string, T>>, key: number | string): T {
-  const value = (target as Readonly<Record<string | number, T | undefined>>)[key];
-  if (value === undefined) {
-    const length = Array.isArray(target) ? target.length : Object.keys(target).length;
-    throw new Error(`Test expected target[${String(key)}] to exist, but length is ${length}`);
+export function requireCodingSequence(mRNA: MRNA): RNA {
+  if (mRNA.codingSequence === undefined) {
+    throw new Error('Test expected mRNA to carry a coding sequence, but it has none');
   }
-  return value;
+  return mRNA.codingSequence;
 }
 
 //ensure RNA and DNA sequences are the same (excluding base differences) since some tests rely it

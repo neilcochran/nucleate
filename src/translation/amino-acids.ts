@@ -2,6 +2,14 @@ import type { AminoAcidData } from './AminoAcidData.js';
 import { AminoAcidCharge, AminoAcidPolarity, AminoAcidSideChainType } from './enums.js';
 
 /**
+ * Average molecular mass of water (H2O) in Daltons. One water molecule is released per peptide
+ * bond formed, so a polypeptide of `n` residues weighs the sum of its free amino-acid masses
+ * minus `(n - 1)` of these. Average mass (not monoisotopic), matching the average free-amino-acid
+ * masses carried by {@link AminoAcidData.molecularWeight}.
+ */
+export const WATER_AVERAGE_MASS = 18.01528;
+
+/**
  * Canonical list of the 20 proteinogenic amino acids with their biochemical properties and
  * the RNA codons that code for them. This is the single source of truth for the genetic
  * code: the codon-to-amino-acid and single-letter-to-amino-acid lookup maps are derived from

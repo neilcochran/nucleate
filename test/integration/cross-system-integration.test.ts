@@ -13,6 +13,7 @@ import { processRNA } from '../../src/processing';
 import { translate } from '../../src/translation';
 import { replicate } from '../../src/replication';
 import { parseDNA, doubleStrandedDNA } from '../../src/sequence';
+import { requireCodingSequence } from '../utils/test-utils';
 
 describe('Cross-System Integration Tests', () => {
   describe('Basic Gene-to-Protein Pipeline', () => {
@@ -121,8 +122,8 @@ describe('Cross-System Integration Tests', () => {
 
         if (processingResult.success) {
           const mRNA = processingResult.data;
-          expect(mRNA.codingSequence.sequence.length).toBe(66); // Should preserve exact coding sequence length
-          expect(mRNA.codingSequence.sequence.startsWith('AUG')).toBe(true);
+          expect(requireCodingSequence(mRNA).sequence.length).toBe(66); // Should preserve exact coding sequence length
+          expect(requireCodingSequence(mRNA).sequence.startsWith('AUG')).toBe(true);
         }
       }
     });

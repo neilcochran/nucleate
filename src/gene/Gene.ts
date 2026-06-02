@@ -80,7 +80,7 @@ export class Gene {
    * @param exonIndex - 0-based index into `exons`
    * @returns The exon DNA subsequence
    *
-   * @throws {@link RangeError} if `exonIndex` is out of bounds
+   * @throws `RangeError` if `exonIndex` is out of bounds
    */
   getExonSequence(exonIndex: number): DNA {
     if (exonIndex < 0 || exonIndex >= this.exons.length) {
@@ -98,7 +98,7 @@ export class Gene {
    * @param intronIndex - 0-based index into `introns`
    * @returns The intron DNA subsequence
    *
-   * @throws {@link RangeError} if `intronIndex` is out of bounds
+   * @throws `RangeError` if `intronIndex` is out of bounds
    */
   getIntronSequence(intronIndex: number): DNA {
     if (intronIndex < 0 || intronIndex >= this.introns.length) {
@@ -150,7 +150,7 @@ export class Gene {
    * @param variant - The splice variant whose mature sequence to assemble
    * @returns The variant's concatenated exon sequence as DNA
    *
-   * @throws {@link RangeError} if the variant references an exon index outside this gene
+   * @throws `RangeError` if the variant references an exon index outside this gene
    */
   getVariantSequence(variant: SpliceVariant): DNA {
     const selectedExons: GenomicRegion<GeneCoord>[] = [];

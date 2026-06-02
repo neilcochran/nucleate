@@ -13,9 +13,8 @@ import {
  * identify.
  *
  * `strength` is on an approximate 0-100 scale for the bare signal, with USE / DSE boosts
- * pushing strong sites above 100 (capped at the value defined by
- * `MAX_POLYA_SITE_STRENGTH_WITH_BOOST` in {@link polyadenylation}). Higher values indicate a
- * more biologically active site.
+ * pushing strong sites above 100 (capped at the internal `MAX_POLYA_SITE_STRENGTH_WITH_BOOST`
+ * value used by the site scorer). Higher values indicate a more biologically active site.
  */
 export interface PolyadenylationSite {
   /** Position of the polyadenylation signal in the sequence (0-based). */

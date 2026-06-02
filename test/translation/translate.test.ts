@@ -61,6 +61,15 @@ describe('translate', () => {
     }
   });
 
+  test('fails with no-coding-sequence when the mRNA has no CDS', () => {
+    const mRNA = parseMRNA('AAACCCGGGUUU').unwrap();
+    const result = translate(mRNA);
+    expect(!result.success).toBe(true);
+    if (!result.success) {
+      expect(result.error.kind).toBe('no-coding-sequence');
+    }
+  });
+
   test('preserves the source mRNA on the polypeptide', () => {
     const mRNA = parseMRNA('AUGAAACCCUAG', 0, 12).unwrap();
     const result = translate(mRNA).unwrap();

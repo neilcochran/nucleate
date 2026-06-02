@@ -16,6 +16,10 @@ describe('describeMRNAError', () => {
       expected: /Invalid coding-sequence boundaries.*start=-1.*end=5.*length=10/,
     },
     {
+      error: { kind: 'incomplete-coding-boundaries', codingStart: 0, codingEnd: undefined },
+      expected: /Incomplete coding-sequence boundaries.*start=0.*end=undefined/,
+    },
+    {
       error: { kind: 'invalid-polya-tail-length', polyATailLength: 50, sequenceLength: 30 },
       expected: /Invalid poly-A tail length 50.*length \(30\)/,
     },

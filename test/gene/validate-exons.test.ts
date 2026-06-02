@@ -36,6 +36,10 @@ describe('validateExons', () => {
     expect(!result.success).toBe(true);
     if (!result.success && result.error.kind === 'exons-overlap') {
       expect(result.error.at).toBe(40);
+      // First overlapping pair, ordered by gene start position.
+      expect(result.error.indices).toEqual([0, 1]);
+    } else {
+      throw new Error(`expected exons-overlap, got ${JSON.stringify(result)}`);
     }
   });
 

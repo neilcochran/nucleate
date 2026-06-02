@@ -54,7 +54,8 @@ export const DOWNSTREAM_PROMOTER_ELEMENT: PromoterElement = buildConsensusElemen
 );
 
 /**
- * CAAT box - common enhancer element ~70 bp upstream of the TSS. Consensus `GGCCAATCT`.
+ * CAAT box - common enhancer element typically -70 to -80 bp upstream of the TSS. Consensus
+ * `GGCCAATCT`.
  */
 export const CAAT_BOX: PromoterElement = buildConsensusElement('CAAT', 'GGCCAATCT', -75, 5);
 

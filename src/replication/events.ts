@@ -101,6 +101,11 @@ export interface ReplicationSnapshot {
  * reference and pairs it with a freshly-allocated forward strand. At the sequence level both
  * daughters are equal to the parent; the {@link ReplicationOutput.events | events} log
  * narrates how each new strand was built.
+ *
+ * Model scope: this is the output of a single-fork, linear-template simulation. {@link replicate}
+ * models one unidirectional fork with no origin firing, no bidirectional or multiple forks, and
+ * no circular templates - even for biologically circular genomes such as `E_COLI`. The two
+ * daughters are nonetheless the correct semiconservative products, which holds for any fork count.
  */
 export interface ReplicationOutput {
   /**

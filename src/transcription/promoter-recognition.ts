@@ -11,7 +11,6 @@ import {
   TSS_PROXIMITY_THRESHOLD,
   DEFAULT_MIN_PROMOTER_STRENGTH,
 } from './tuning.js';
-import { TATA_BOX_TYPICAL_POSITION, DPE_TYPICAL_POSITION } from '../gene/biology.js';
 
 /**
  * Configuration for {@link findPromoters}.
@@ -208,20 +207,14 @@ function groupElementsIntoPromoters(
 /**
  * Predicts a TSS position from a core-element match.
  *
+ * The TSS is the match position offset by the element's own TSS-relative position (Inr sits at
+ * the TSS with offset 0, TATA upstream, DPE downstream), mirroring {@link identifyTSS}.
+ *
  * @param match - A match for a core-promoter element
  * @returns The predicted TSS position for that match
  */
 function predictTSSFromCoreElement(match: ElementMatch): number {
-  switch (match.element.name) {
-    case 'Inr':
-      return match.position;
-    case 'TATA':
-      return match.position - TATA_BOX_TYPICAL_POSITION;
-    case 'DPE':
-      return match.position - DPE_TYPICAL_POSITION;
-    default:
-      return match.position;
-  }
+  return match.position - match.element.position;
 }
 
 /**
