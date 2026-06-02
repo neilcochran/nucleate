@@ -53,3 +53,19 @@ export const HIGH_DSE_SCORE = 0.8;
 
 /** Minimum total strength score required for a polyadenylation site to be reported. */
 export const MIN_POLYA_SITE_STRENGTH = 25;
+
+/** Window size (bp) upstream of a polyadenylation signal scanned for USE elements. */
+export const USE_SEARCH_UPSTREAM_BP = 60;
+
+/** Window size (bp) downstream of a polyadenylation signal scanned for DSE elements. */
+export const DSE_SEARCH_DOWNSTREAM_BP = 80;
+
+/**
+ * Upper cap applied to a polyadenylation site's strength score after USE / DSE boosts. Without
+ * this cap the scorer can exceed ~100 for strong canonical sites flanked by both regulatory
+ * elements.
+ */
+export const MAX_POLYA_SITE_STRENGTH_WITH_BOOST = 150;
+
+/** Default minimum strength used by `filterPolyadenylationSites` when no threshold is supplied. */
+export const DEFAULT_POLYA_FILTER_MIN_STRENGTH = 50;

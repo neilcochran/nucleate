@@ -14,10 +14,7 @@ import {
   removePrimer,
   synthesize,
   unsafePrimerOnlyFragment,
-  unsafeSynthesizedFragment,
-  type LigatedFragment,
   type OkazakiFragment,
-  type SynthesizedFragment,
 } from './OkazakiFragment.js';
 import { unsafeRNAPrimerFromString } from './RNAPrimer.js';
 import type { ReplicationError } from './errors.js';
@@ -93,93 +90,33 @@ export function replicate(
     return failure(planResult.error);
   }
   const plan = planResult.data;
+
+  // Drive the same step-by-step simulation `replicateSteps` exposes, accumulating the event
+  // timeline and the final (fully-ligated) fragment set from the snapshots it yields. Keeping the
+  // lifecycle walk in `simulate` alone means the eager and step-by-step entry points cannot drift.
   const events: ReplicationEvent[] = [];
-  const synthesizedFragments: SynthesizedFragment[] = [];
+  let finalFragments: readonly OkazakiFragment[] = [];
   let leadingStrandSynthesized = 0;
-
-  for (const fragmentPlan of plan.fragmentPlans) {
-    const fragmentSpan = fragmentPlan.endPosition - fragmentPlan.startPosition;
-
-    events.push({
-      kind: 'unwind',
-      position: fragmentPlan.startPosition,
-      strand: 'both',
-      basePairs: fragmentSpan,
-    });
-
-    events.push({
-      kind: 'leading-synthesis',
-      position: fragmentPlan.startPosition,
-      strand: 'leading',
-      basePairs: fragmentSpan,
-    });
-    leadingStrandSynthesized += fragmentSpan;
-
-    const primer = unsafeRNAPrimerFromString(
-      fragmentPlan.primerSequence,
-      fragmentPlan.startPosition,
-    );
-    events.push({
-      kind: 'primer-synthesis',
-      position: fragmentPlan.startPosition,
-      strand: 'lagging',
-      basePairs: primer.length(),
-      fragmentId: fragmentPlan.id,
-    });
-
-    const fragmentSequence = unsafeDNA(fragmentPlan.synthesizedDNA);
-    synthesizedFragments.push(
-      unsafeSynthesizedFragment(
-        fragmentPlan.id,
-        fragmentPlan.startPosition,
-        fragmentPlan.endPosition,
-        primer,
-        fragmentSequence,
-      ),
-    );
-    events.push({
-      kind: 'lagging-synthesis',
-      position: fragmentPlan.startPosition,
-      strand: 'lagging',
-      basePairs: fragmentSpan,
-      fragmentId: fragmentPlan.id,
-    });
+  for (const snapshot of simulate(plan)) {
+    if (snapshot.lastEvent !== undefined) {
+      events.push(snapshot.lastEvent);
+    }
+    finalFragments = snapshot.fragments;
+    leadingStrandSynthesized = snapshot.leadingStrandSynthesized;
   }
-
-  const primerRemovedFragments = synthesizedFragments.map(fragment => {
-    events.push({
-      kind: 'primer-removal',
-      position: fragment.startPosition,
-      strand: 'lagging',
-      basePairs: fragment.primer.length(),
-      fragmentId: fragment.id,
-    });
-    return removePrimer(fragment);
-  });
-
-  const ligatedFragments: readonly LigatedFragment[] = primerRemovedFragments.map(fragment => {
-    events.push({
-      kind: 'ligation',
-      position: fragment.startPosition,
-      strand: 'lagging',
-      basePairs: 0,
-      fragmentId: fragment.id,
-    });
-    return ligate(fragment);
-  });
 
   const daughters = buildDaughters(template);
   const statistics = computeStatistics({
     totalSteps: events.length,
     templateLength: plan.templateLength,
     leadingStrandLength: leadingStrandSynthesized,
-    fragments: ligatedFragments,
+    fragments: finalFragments,
     organism: plan.organism,
   });
 
   return success({
     daughters,
-    events: Object.freeze(events.map(freezeEvent)),
+    events: Object.freeze(events),
     statistics,
   });
 }
@@ -219,10 +156,10 @@ export function replicateSteps(
   if (planResult.success === false) {
     return failure(planResult.error);
   }
-  return success(yieldSnapshots(planResult.data));
+  return success(simulate(planResult.data));
 }
 
-function* yieldSnapshots(plan: ReplicationPlan): Generator<ReplicationSnapshot, void, void> {
+function* simulate(plan: ReplicationPlan): Generator<ReplicationSnapshot, void, void> {
   let step = 0;
   const fragments: OkazakiFragment[] = [];
   let forkPosition = 0;
@@ -460,10 +397,8 @@ function randomInRange(rng: () => number, min: number, max: number): number {
 function randomRNASequence(rng: () => number, length: number): string {
   let result = '';
   for (let i = 0; i < length; i++) {
-    const base = RNA_BASES[Math.floor(rng() * RNA_BASES.length)];
-    if (base !== undefined) {
-      result += base;
-    }
+    // rng() is contracted to [0, 1), so the index is always in [0, RNA_BASES.length).
+    result += at(RNA_BASES, Math.floor(rng() * RNA_BASES.length));
   }
   return result;
 }

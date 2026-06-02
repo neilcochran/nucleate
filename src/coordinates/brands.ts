@@ -9,6 +9,12 @@
  * The brand is purely type-level: at runtime the values are ordinary numbers. Construct via
  * the {@link geneCoord} / {@link transcriptCoord} assignment primitives, and translate between
  * spaces via the conversion helpers.
+ *
+ * Each primitive applies its brand with a single `as` cast. This is the one sanctioned use of a
+ * type assertion in the codebase: a phantom brand has no runtime representation to validate or
+ * narrow against, so the cast is the only way to attach it. The brand tags the coordinate
+ * *space*, not the value's range - positional sanity (non-negative, within sequence bounds) is
+ * enforced where coordinates enter the system (`parseGene`, `transcribe`, ...), not here.
  */
 
 /**

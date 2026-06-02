@@ -125,7 +125,7 @@ describe('remove3PrimePolyATail', () => {
     const result = remove3PrimePolyATail(rna('AUGAAACCCGGGCCC'));
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error).toBe('no-tail');
+      expect(result.error).toEqual({ kind: 'no-poly-a-tail' });
     }
   });
 });

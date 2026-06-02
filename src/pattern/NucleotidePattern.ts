@@ -1,3 +1,4 @@
+import { Result, success, failure } from '../result/index.js';
 import type { DNA, RNA } from '../sequence/index.js';
 import { complementIUPACSymbol, isIUPACSymbol } from './iupac-symbols.js';
 import type { IUPACSymbol } from './iupac-symbols.js';
@@ -160,11 +161,11 @@ export class NucleotidePattern {
       return true;
     }
     const rcOutcome = compilePatternRegexSource(reverseComplementPatternString(this.pattern));
-    if (!rcOutcome.ok) {
+    if (!rcOutcome.success) {
       return false;
     }
     try {
-      return new RegExp(rcOutcome.source).test(sequence.sequence);
+      return new RegExp(rcOutcome.data).test(sequence.sequence);
     } catch {
       return false;
     }
@@ -208,25 +209,16 @@ export class NucleotidePattern {
 }
 
 /**
- * Outcome shape used internally by {@link compilePatternRegexSource} so the parser and the
- * internal `complement` / `reverseComplement` helpers can share validation.
- *
- * @internal
- */
-export type CompiledPatternSource =
-  | { ok: true; source: string }
-  | { ok: false; error: PatternError };
-
-/**
  * Walks an IUPAC pattern string and produces the corresponding regex source. Non-alpha
  * characters (regex meta-characters, digits, escapes, whitespace) are preserved verbatim;
- * alpha characters must be IUPAC symbols (or part of a `\X` escape sequence).
+ * alpha characters must be IUPAC symbols (or part of a `\X` escape sequence). On success the
+ * `Result` carries the compiled regex source string.
  *
  * @internal
  */
-export function compilePatternRegexSource(pattern: string): CompiledPatternSource {
+export function compilePatternRegexSource(pattern: string): Result<string, PatternError> {
   if (pattern === '') {
-    return { ok: false, error: { kind: 'empty-pattern' } };
+    return failure({ kind: 'empty-pattern' });
   }
   let source = '';
   for (let i = 0; i < pattern.length; i++) {
@@ -239,17 +231,14 @@ export function compilePatternRegexSource(pattern: string): CompiledPatternSourc
       }
       const upper = character.toUpperCase();
       if (!isIUPACSymbol(upper)) {
-        return {
-          ok: false,
-          error: { kind: 'invalid-iupac-character', character, index: i },
-        };
+        return failure({ kind: 'invalid-iupac-character', character, index: i });
       }
       source += symbolRegexClassFor(upper);
     } else {
       source += character;
     }
   }
-  return { ok: true, source };
+  return success(source);
 }
 
 /**
@@ -262,11 +251,11 @@ export function compilePatternRegexSource(pattern: string): CompiledPatternSourc
  */
 export function unsafeCompilePattern(pattern: string): NucleotidePattern {
   const outcome = compilePatternRegexSource(pattern);
-  if (!outcome.ok) {
+  if (!outcome.success) {
     throw new Error(`unsafeCompilePattern called on invalid pattern '${pattern}'`);
   }
-  const basicRegex = new RegExp(outcome.source);
-  const globalRegex = new RegExp(outcome.source, 'g');
+  const basicRegex = new RegExp(outcome.data);
+  const globalRegex = new RegExp(outcome.data, 'g');
   return new NucleotidePattern(pattern, basicRegex, globalRegex);
 }
 

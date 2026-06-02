@@ -8,7 +8,6 @@ describe('OrganismProfile constants', () => {
       expect(E_COLI.polymeraseSpeed).toBe(1000);
       expect(E_COLI.fragmentSize).toEqual([1000, 2000]);
       expect(E_COLI.primerLength).toEqual([3, 10]);
-      expect(E_COLI.hasNucleosomes).toBe(false);
     });
 
     test('is frozen and rejects mutation', () => {
@@ -26,7 +25,6 @@ describe('OrganismProfile constants', () => {
       expect(HUMAN.polymeraseSpeed).toBe(50);
       expect(HUMAN.fragmentSize).toEqual([100, 200]);
       expect(HUMAN.primerLength).toEqual([3, 10]);
-      expect(HUMAN.hasNucleosomes).toBe(true);
     });
   });
 

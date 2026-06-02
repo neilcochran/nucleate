@@ -27,10 +27,10 @@ import { validateDNAString, validateRNAString } from './internal-validation.js';
  */
 export function parseDNA(input: string): Result<DNA, DNAError> {
   const outcome = validateDNAString(input);
-  if (!outcome.ok) {
+  if (!outcome.success) {
     return failure(outcome.error);
   }
-  return success(unsafeDNA(outcome.normalized));
+  return success(unsafeDNA(outcome.data));
 }
 
 /**
@@ -55,10 +55,10 @@ export function parseDNA(input: string): Result<DNA, DNAError> {
  */
 export function parseRNA(input: string): Result<RNA, RNAError> {
   const outcome = validateRNAString(input);
-  if (!outcome.ok) {
+  if (!outcome.success) {
     return failure(outcome.error);
   }
-  return success(unsafeRNA(outcome.normalized));
+  return success(unsafeRNA(outcome.data));
 }
 
 /**

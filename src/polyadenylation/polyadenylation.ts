@@ -21,6 +21,10 @@ import {
   HIGH_USE_SCORE,
   PERFECT_DSE_SCORE,
   MIN_POLYA_SITE_STRENGTH,
+  USE_SEARCH_UPSTREAM_BP,
+  DSE_SEARCH_DOWNSTREAM_BP,
+  MAX_POLYA_SITE_STRENGTH_WITH_BOOST,
+  DEFAULT_POLYA_FILTER_MIN_STRENGTH,
 } from './tuning.js';
 import type { GenomicRegion } from '../coordinates/index.js';
 import {
@@ -28,23 +32,6 @@ import {
   CleavageSiteOptions,
   DEFAULT_CLEAVAGE_OPTIONS,
 } from './polyadenylation-site.js';
-
-/**
- * Window size (in bp) upstream of a polyadenylation signal to scan for USE elements.
- */
-const USE_SEARCH_UPSTREAM_BP = 60;
-
-/**
- * Window size (in bp) downstream of a polyadenylation signal to scan for DSE elements.
- */
-const DSE_SEARCH_DOWNSTREAM_BP = 80;
-
-/**
- * Upper cap applied to a polyadenylation site's strength score after USE / DSE boosts.
- * Without this cap the scorer can produce values well above 100 for strong canonical sites
- * surrounded by both regulatory elements.
- */
-const MAX_POLYA_SITE_STRENGTH_WITH_BOOST = 150;
 
 /**
  * Static priority-ranked USE (upstream sequence element) patterns, compiled once at module
@@ -167,7 +154,7 @@ export function getStrongestPolyadenylationSite(
  */
 export function filterPolyadenylationSites(
   sites: PolyadenylationSite[],
-  minStrength: number = 50,
+  minStrength: number = DEFAULT_POLYA_FILTER_MIN_STRENGTH,
 ): PolyadenylationSite[] {
   return sites.filter(site => site.strength >= minStrength);
 }

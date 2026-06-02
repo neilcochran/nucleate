@@ -164,6 +164,11 @@ export function processDefaultSpliceVariant(
  * The iterator yields variants one at a time as the consumer pulls them, so callers can
  * `break` early, `take(n)`, or filter without paying for variants they never observe.
  *
+ * Cost: the generator walks all `2^n - 1` non-empty exon-inclusion subsets (`n` = exon count),
+ * so its worst-case length grows exponentially with the number of exons. Because it is lazy this
+ * is free for callers that stop early, but fully draining it for a gene with many exons (say,
+ * more than ~20) is intentionally expensive - prefer `break`/`take` or a bounded search there.
+ *
  * Filtering applies the structural rules (first/last exon presence, minimum exon count) and,
  * when enabled, the reading-frame and start/stop-codon checks. Variants that fail validation
  * are skipped (not surfaced as errors); the iterator never throws.

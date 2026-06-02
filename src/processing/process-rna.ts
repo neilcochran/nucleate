@@ -7,8 +7,9 @@ import { mRNACoord } from '../coordinates/index.js';
 import {
   findPolyadenylationSites,
   getStrongestPolyadenylationSite,
+  add3PrimePolyATail,
+  add3PrimePolyATailAtSite,
   DEFAULT_POLY_A_TAIL_LENGTH,
-  DEFAULT_CLEAVAGE_OFFSET,
 } from '../polyadenylation/index.js';
 import { type MRNA, unsafeMRNA } from '../modifications/MRNA.js';
 import { spliceRNA } from '../splicing/index.js';
@@ -120,26 +121,22 @@ export function processSpliced(
   const opts = { ...DEFAULT_RNA_PROCESSING_OPTIONS, ...options };
   const splicedSequence = splicedRNA.sequence;
 
-  let cleavageSite = splicedSequence.length;
-  if (opts.addPolyATail) {
-    const sites = findPolyadenylationSites(splicedRNA);
-    const strongest = getStrongestPolyadenylationSite(sites);
-    if (strongest) {
-      const candidate =
-        strongest.cleavageSite ??
-        strongest.position + strongest.signal.length + DEFAULT_CLEAVAGE_OFFSET;
-      cleavageSite = Math.min(candidate, splicedSequence.length);
-    }
-  }
-
   let finalSequence = splicedSequence;
   let polyATailLength = 0;
   if (opts.addPolyATail) {
-    if (cleavageSite < splicedSequence.length) {
-      finalSequence = splicedSequence.substring(0, cleavageSite);
-    }
     polyATailLength = opts.polyATailLength;
-    finalSequence += 'A'.repeat(polyATailLength);
+    // Reuse the polyadenylation tail helpers so cleavage-site resolution and the
+    // cleave-then-append logic live in one place (`polyadenylation/tail.ts`). With a detected
+    // signal, cleave at its site; with none, cleave at the sequence end (a no-op cleave) and
+    // still append the tail. The helpers also enforce the poly-A tail-length bounds.
+    const strongest = getStrongestPolyadenylationSite(findPolyadenylationSites(splicedRNA));
+    const tailed = strongest
+      ? add3PrimePolyATailAtSite(splicedRNA, strongest, polyATailLength)
+      : add3PrimePolyATail(splicedRNA, splicedSequence.length, polyATailLength);
+    if (!tailed.success) {
+      return failure({ kind: 'polyadenylation-failed', cause: tailed.error });
+    }
+    finalSequence = tailed.data.sequence;
   }
 
   // Always look for a real CDS. When found, the mRNA carries the true coding boundaries. When

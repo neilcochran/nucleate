@@ -73,13 +73,14 @@ export function add3PrimePolyATailAtSite(
  * (matches trailing `A+`). Returns a failure when no trailing A run is found.
  *
  * @param rna - The RNA to trim
- * @returns `Result<RNA, 'no-tail'>` carrying the tail-free RNA on success
+ * @returns `Result<RNA, PolyadenylationError>` carrying the tail-free RNA on success, or a
+ * `no-poly-a-tail` failure when there is no trailing poly-A run
  */
-export function remove3PrimePolyATail(rna: RNA): Result<RNA, 'no-tail'> {
+export function remove3PrimePolyATail(rna: RNA): Result<RNA, PolyadenylationError> {
   const sequence = rna.sequence;
   const trimmed = sequence.replace(POLY_A_TAIL_PATTERN, '');
   if (trimmed.length === sequence.length) {
-    return failure('no-tail');
+    return failure({ kind: 'no-poly-a-tail' });
   }
   return success(unsafeRNA(trimmed));
 }

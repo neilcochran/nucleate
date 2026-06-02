@@ -1,82 +1,51 @@
+import { Result, success, failure } from '../result/index.js';
 import type { DNAError, RNAError } from './errors.js';
 
 const VALID_DNA_BASES = new Set(['A', 'C', 'G', 'T']);
 const VALID_RNA_BASES = new Set(['A', 'C', 'G', 'U']);
 
 /**
- * Result of validating a candidate DNA sequence string.
- *
- * @internal
- */
-export type DNAValidationOutcome =
-  | { readonly ok: true; readonly normalized: string }
-  | { readonly ok: false; readonly error: DNAError };
-
-/**
- * Result of validating a candidate RNA sequence string.
- *
- * @internal
- */
-export type RNAValidationOutcome =
-  | { readonly ok: true; readonly normalized: string }
-  | { readonly ok: false; readonly error: RNAError };
-
-/**
- * Normalizes a candidate DNA string and returns a structured outcome describing whether it
- * was valid. On success the normalized sequence is upper-cased; on failure the offending
- * characters and the index of the first one are reported.
+ * Validates and normalizes a candidate DNA string. On success the `Result` carries the
+ * upper-cased sequence; on failure it carries the structured {@link DNAError} naming the
+ * offending characters and the index of the first one.
  *
  * @internal
  *
  * @param input - Candidate sequence string
- * @returns Structured outcome
+ * @returns `Result<string, DNAError>` carrying the normalized sequence on success
  */
-export function validateDNAString(input: string): DNAValidationOutcome {
+export function validateDNAString(input: string): Result<string, DNAError> {
   if (input.length === 0) {
-    return { ok: false, error: { kind: 'empty-sequence' } };
+    return failure({ kind: 'empty-sequence' });
   }
   const normalized = input.toUpperCase();
   const issue = findInvalidBases(normalized, VALID_DNA_BASES);
   if (issue !== undefined) {
-    return {
-      ok: false,
-      error: {
-        kind: 'invalid-characters',
-        chars: issue.chars,
-        firstAt: issue.firstAt,
-      },
-    };
+    return failure({ kind: 'invalid-characters', chars: issue.chars, firstAt: issue.firstAt });
   }
-  return { ok: true, normalized };
+  return success(normalized);
 }
 
 /**
- * Normalizes a candidate RNA string and returns a structured outcome describing whether it
- * was valid. On success the normalized sequence is upper-cased; on failure the offending
- * characters and the index of the first one are reported.
+ * Validates and normalizes a candidate RNA string. On success the `Result` carries the
+ * upper-cased sequence; on failure it carries the structured {@link RNAError} naming the
+ * offending characters and the index of the first one.
  *
  * @internal
  *
  * @param input - Candidate sequence string
- * @returns Structured outcome
+ * @returns `Result<string, RNAError>` carrying the normalized sequence on success
  */
-export function validateRNAString(input: string): RNAValidationOutcome {
+export function validateRNAString(input: string): Result<string, RNAError> {
   if (input.length === 0) {
-    return { ok: false, error: { kind: 'empty-sequence' } };
+    return failure({ kind: 'empty-sequence' });
   }
   const normalized = input.toUpperCase();
   const issue = findInvalidBases(normalized, VALID_RNA_BASES);
   if (issue !== undefined) {
-    return {
-      ok: false,
-      error: {
-        kind: 'invalid-characters',
-        chars: issue.chars,
-        firstAt: issue.firstAt,
-      },
-    };
+    return failure({ kind: 'invalid-characters', chars: issue.chars, firstAt: issue.firstAt });
   }
-  return { ok: true, normalized };
+  return success(normalized);
 }
 
 function findInvalidBases(

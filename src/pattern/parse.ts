@@ -33,14 +33,14 @@ import {
  */
 export function parseNucleotidePattern(input: string): Result<NucleotidePattern, PatternError> {
   const outcome = compilePatternRegexSource(input);
-  if (!outcome.ok) {
+  if (!outcome.success) {
     return failure(outcome.error);
   }
   let basicRegex: RegExp;
   let globalRegex: RegExp;
   try {
-    basicRegex = new RegExp(outcome.source);
-    globalRegex = new RegExp(outcome.source, 'g');
+    basicRegex = new RegExp(outcome.data);
+    globalRegex = new RegExp(outcome.data, 'g');
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
     return failure({ kind: 'invalid-regex-construction', pattern: input, cause: message });

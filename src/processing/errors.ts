@@ -20,6 +20,8 @@ import type { SplicingError } from '../splicing/index.js';
 import { SPLICING_ERROR_ARMS } from '../splicing/errors.js';
 import type { VariantValidationError } from '../variants/index.js';
 import { VARIANT_VALIDATION_ERROR_ARMS } from '../variants/errors.js';
+import type { PolyadenylationError } from '../polyadenylation/index.js';
+import { describePolyadenylationError } from '../polyadenylation/index.js';
 import { makeDescriber } from '../result/index.js';
 
 /**
@@ -44,6 +46,12 @@ type ProcessingPipelineError =
   | {
       /** Discriminator naming the failure mode. */
       readonly kind: 'no-in-frame-stop';
+    }
+  | {
+      /** Discriminator naming the failure mode. */
+      readonly kind: 'polyadenylation-failed';
+      /** Underlying poly-A tail failure (e.g. a tail length outside the allowed bounds). */
+      readonly cause: PolyadenylationError;
     };
 
 /**
@@ -74,6 +82,7 @@ export const describeProcessingError = makeDescriber<ProcessingError>({
   'splicing-failed': e => `Splicing failed: ${describeSplicingFailureCause(e.cause)}`,
   'no-start-codon': () => 'No start codon (AUG) found in spliced sequence',
   'no-in-frame-stop': () => 'No in-frame stop codon found after start codon',
+  'polyadenylation-failed': e => `Polyadenylation failed: ${describePolyadenylationError(e.cause)}`,
 });
 
 /**

@@ -24,14 +24,11 @@ export interface OrganismProfile {
 
   /** Inclusive `[min, max]` range of RNA primer lengths in nucleotides. */
   readonly primerLength: readonly [number, number];
-
-  /** Whether the organism's DNA is packaged in nucleosomes (eukaryotic feature). */
-  readonly hasNucleosomes: boolean;
 }
 
 /**
  * Replication parameters for *Escherichia coli*. Polymerase III speed ~1000 bp/s; Okazaki
- * fragments ~1000-2000 nt; RNA primers ~3-10 nt; no nucleosomes (prokaryotic).
+ * fragments ~1000-2000 nt; RNA primers ~3-10 nt (prokaryotic).
  */
 export const E_COLI: OrganismProfile = Object.freeze({
   name: 'E. coli',
@@ -39,12 +36,11 @@ export const E_COLI: OrganismProfile = Object.freeze({
   polymeraseSpeed: 1000,
   fragmentSize: Object.freeze([1000, 2000] as const),
   primerLength: Object.freeze([3, 10] as const),
-  hasNucleosomes: false,
 });
 
 /**
  * Replication parameters for human cells. Polymerase delta speed ~50 bp/s; Okazaki fragments
- * ~100-200 nt; RNA primers ~3-10 nt; DNA packaged in nucleosomes (eukaryotic).
+ * ~100-200 nt; RNA primers ~3-10 nt (eukaryotic).
  */
 export const HUMAN: OrganismProfile = Object.freeze({
   name: 'Human',
@@ -52,5 +48,4 @@ export const HUMAN: OrganismProfile = Object.freeze({
   polymeraseSpeed: 50,
   fragmentSize: Object.freeze([100, 200] as const),
   primerLength: Object.freeze([3, 10] as const),
-  hasNucleosomes: true,
 });
