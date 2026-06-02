@@ -1,21 +1,19 @@
 /**
- * Foundational splice-variant types and helpers: the {@link SpliceVariant} +
- * {@link AlternativeSplicingProfile} metadata interfaces, the validation rules
- * ({@link validateSpliceVariant} + {@link AlternativeSplicingOptions} +
- * {@link DEFAULT_ALTERNATIVE_SPLICING_OPTIONS}), the four free-function variant builders
- * ({@link exonSkippingVariant}, {@link truncationVariant}, {@link minimalVariant},
- * {@link fullLengthVariant}), and the {@link VariantValidationError} tagged union.
+ * Foundational splice-variant data types and helpers: the {@link SpliceVariant} +
+ * {@link AlternativeSplicingProfile} metadata interfaces, the {@link AlternativeSplicingOptions}
+ * validation-options shape with {@link DEFAULT_ALTERNATIVE_SPLICING_OPTIONS}, the four
+ * free-function variant builders ({@link exonSkippingVariant}, {@link truncationVariant},
+ * {@link minimalVariant}, {@link fullLengthVariant}), and the {@link VariantValidationError}
+ * tagged union.
  *
- * The `gene/` module imports the type interfaces (type-only) so that `Gene` can carry a
- * splicing profile; the processing modules import the values for runtime variant work.
- * {@link validateSpliceVariant} accepts the structural {@link VariantSourceGene} slice rather
- * than the `Gene` class, so this module does not import `gene/` (avoiding a dependency cycle).
+ * This module is a dependency-free leaf: it owns the variant *vocabulary* (data shapes, builders,
+ * error type) but not the gene-aware validator. Validating a variant requires a concrete `Gene`,
+ * so `validateSpliceVariant` lives in `gene/`; keeping it out of here means `variants/` never
+ * imports `gene/`, so there is no dependency cycle to break.
  */
 export type { SpliceVariant, AlternativeSplicingOptions } from './splice-variant.js';
 export { DEFAULT_ALTERNATIVE_SPLICING_OPTIONS } from './splice-variant.js';
 export type { AlternativeSplicingProfile } from './alternative-splicing-profile.js';
-export { validateSpliceVariant } from './validate-splice-variant.js';
-export type { VariantSourceGene } from './validate-splice-variant.js';
 export {
   exonSkippingVariant,
   truncationVariant,

@@ -1,11 +1,10 @@
 import { Result, success, failure } from '../result/index.js';
 import { transcribeSequence, type RNA } from '../sequence/index.js';
-import type { Gene } from '../gene/index.js';
+import { validateSpliceVariant, type Gene } from '../gene/index.js';
 import type { PreMRNA } from '../transcription/index.js';
 import type { MRNA } from '../modifications/index.js';
 import { translate } from '../translation/index.js';
 import {
-  validateSpliceVariant,
   DEFAULT_ALTERNATIVE_SPLICING_OPTIONS,
   type SpliceVariant,
   type AlternativeSplicingOptions,
@@ -49,8 +48,11 @@ export function spliceRNAWithVariant(
   if (!validation.success) {
     return failure(validation.error);
   }
-  const variantDNA = sourceGene.getVariantSequence(variant);
-  return success(transcribeSequence(variantDNA));
+  const variantDNAResult = sourceGene.getVariantSequence(variant);
+  if (!variantDNAResult.success) {
+    return failure(variantDNAResult.error);
+  }
+  return success(transcribeSequence(variantDNAResult.data));
 }
 
 /**

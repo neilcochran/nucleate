@@ -349,15 +349,17 @@ describe('Gene', () => {
   describe('getVariantSequence', () => {
     test('returns concatenation of included exons in gene-position order', () => {
       const gene = unwrapGene(SIMPLE_TWO_EXON_GENE.dnaSequence, [...SIMPLE_TWO_EXON_GENE.exons]);
-      const sequence = gene.getVariantSequence({ name: 'v', includedExons: [1, 0] });
+      const sequence = gene.getVariantSequence({ name: 'v', includedExons: [1, 0] }).unwrap();
       expect(sequence.sequence).toBe(gene.getMatureSequence().sequence);
     });
 
-    test('throws RangeError when the variant references an invalid exon index', () => {
+    test('fails when the variant references an invalid exon index', () => {
       const gene = unwrapGene(SIMPLE_TWO_EXON_GENE.dnaSequence, [...SIMPLE_TWO_EXON_GENE.exons]);
-      expect(() => gene.getVariantSequence({ name: 'bad', includedExons: [0, 5] })).toThrow(
-        RangeError,
-      );
+      const result = gene.getVariantSequence({ name: 'bad', includedExons: [0, 5] });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.kind).toBe('variant-invalid-exon-index');
+      }
     });
   });
 

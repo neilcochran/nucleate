@@ -1,8 +1,12 @@
-import { at } from '../result/index.js';
+import { Result, success, failure, at } from '../result/index.js';
 import type { DNA } from '../sequence/index.js';
 import { unsafeDNA } from '../sequence/DNA.js';
 import type { GeneCoord, GenomicRegion } from '../coordinates/index.js';
-import type { AlternativeSplicingProfile, SpliceVariant } from '../variants/index.js';
+import type {
+  AlternativeSplicingProfile,
+  SpliceVariant,
+  VariantValidationError,
+} from '../variants/index.js';
 
 /**
  * A gene: a `DNA` sequence together with its exon/intron structure, an optional name, and an
@@ -147,25 +151,33 @@ export class Gene {
    * Returns the DNA-level mature sequence for a specific splice variant by concatenating the
    * variant's included exons in gene-position order.
    *
-   * @param variant - The splice variant whose mature sequence to assemble
-   * @returns The variant's concatenated exon sequence as DNA
+   * A {@link SpliceVariant} is an inert DTO that may reference exon indices outside this gene, so
+   * this returns a {@link Result} rather than throwing: the failure branch carries a
+   * `variant-invalid-exon-index` {@link VariantValidationError}. Uses the same bounds-guard +
+   * {@link at} idiom as {@link getExonSequence} / {@link getIntronSequence}.
    *
-   * @throws `RangeError` if the variant references an exon index outside this gene
+   * @param variant - The splice variant whose mature sequence to assemble
+   * @returns `Result.success` with the concatenated exon sequence as DNA, or `Result.failure`
+   * when the variant references an exon index outside this gene
    */
-  getVariantSequence(variant: SpliceVariant): DNA {
+  getVariantSequence(variant: SpliceVariant): Result<DNA, VariantValidationError> {
     const selectedExons: GenomicRegion<GeneCoord>[] = [];
     for (const exonIndex of variant.includedExons) {
-      const exon = this.exons[exonIndex];
-      if (exon === undefined) {
-        throw new RangeError(
-          `Variant '${variant.name}' references invalid exon index ${exonIndex}. Gene has ${this.exons.length} exons.`,
-        );
+      if (exonIndex < 0 || exonIndex >= this.exons.length) {
+        return failure({
+          kind: 'variant-invalid-exon-index',
+          variantName: variant.name,
+          exonIndex,
+          totalExons: this.exons.length,
+        });
       }
-      selectedExons.push(exon);
+      selectedExons.push(at(this.exons, exonIndex));
     }
     selectedExons.sort((a, b) => a.start - b.start);
     const sequence = this.sequence.sequence;
-    return unsafeDNA(selectedExons.map(exon => sequence.substring(exon.start, exon.end)).join(''));
+    return success(
+      unsafeDNA(selectedExons.map(exon => sequence.substring(exon.start, exon.end)).join('')),
+    );
   }
 
   /**

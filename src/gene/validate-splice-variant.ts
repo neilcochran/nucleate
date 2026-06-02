@@ -1,43 +1,24 @@
 import { Result, success, failure } from '../result/index.js';
 import { CODON_LENGTH, START_CODON, isStopCodon, transcribeSequence } from '../sequence/index.js';
-import type { DNA } from '../sequence/index.js';
-import type { SpliceVariant, AlternativeSplicingOptions } from './splice-variant.js';
-import { DEFAULT_ALTERNATIVE_SPLICING_OPTIONS } from './splice-variant.js';
-import type { VariantValidationError } from './errors.js';
-
-/**
- * The minimal structural slice of a gene that {@link validateSpliceVariant} reads: the exon
- * count and the per-variant DNA assembler.
- *
- * The `Gene` class (in `gene/`) satisfies this interface structurally, so callers pass a `Gene`
- * directly. Defining the slice here lets `variants/` validate against a gene without importing
- * `gene/`, which would otherwise form a dependency cycle between `gene/` and `variants/`.
- */
-export interface VariantSourceGene {
-  /** Exon regions in gene-relative order; only the count (`length`) is read. */
-  readonly exons: readonly unknown[];
-
-  /**
-   * Assembles the DNA-level mature sequence for a splice variant by concatenating its included
-   * exons in gene-position order.
-   *
-   * @param variant - The splice variant whose mature sequence to assemble
-   * @returns The variant's concatenated exon sequence as DNA
-   */
-  getVariantSequence(variant: SpliceVariant): DNA;
-}
+import type { SpliceVariant, AlternativeSplicingOptions } from '../variants/index.js';
+import { DEFAULT_ALTERNATIVE_SPLICING_OPTIONS } from '../variants/index.js';
+import type { VariantValidationError } from '../variants/index.js';
+import type { Gene } from './Gene.js';
 
 /**
  * Validates a splice variant against a gene's exon structure and the supplied
  * {@link AlternativeSplicingOptions}.
  *
- * Checks performed (in order): empty-inclusion-list, duplicate exon indices, exon-index
- * range, first-exon presence, last-exon presence, minimum-exon count, reading-frame
- * divisibility, start/stop codons.
+ * Checks performed (in order): empty-inclusion-list, duplicate exon indices, exon-index range,
+ * first-exon presence, last-exon presence, minimum-exon count, reading-frame divisibility,
+ * start/stop codons.
  *
- * This validator is the single canonical home for per-variant rules. Both
- * `gene/parse.ts`'s splicing-profile validator and `splicing/alternative-splicing.ts`'s
- * enumerator delegate the per-variant checks here so the rules stay in one place.
+ * This validator is the single canonical home for per-variant rules. Both `gene/parse.ts`'s
+ * splicing-profile validator and the processing-layer splice orchestrators delegate the
+ * per-variant checks here so the rules stay in one place. It lives in `gene/` (rather than
+ * `variants/`) because it needs a concrete {@link Gene} to compute variant sequences and check
+ * index ranges; keeping it here lets `variants/` stay a dependency-free leaf of data types,
+ * builders, and error vocabulary.
  *
  * @param variant - The splice variant to validate
  * @param gene - The source gene
@@ -47,7 +28,7 @@ export interface VariantSourceGene {
  */
 export function validateSpliceVariant(
   variant: SpliceVariant,
-  gene: VariantSourceGene,
+  gene: Gene,
   options: AlternativeSplicingOptions = DEFAULT_ALTERNATIVE_SPLICING_OPTIONS,
 ): Result<void, VariantValidationError> {
   const opts = { ...DEFAULT_ALTERNATIVE_SPLICING_OPTIONS, ...options };
@@ -107,7 +88,11 @@ export function validateSpliceVariant(
   }
 
   if (opts.validateReadingFrames === true || opts.validateCodons === true) {
-    const variantDNA = gene.getVariantSequence(variant);
+    const variantDNAResult = gene.getVariantSequence(variant);
+    if (!variantDNAResult.success) {
+      return failure(variantDNAResult.error);
+    }
+    const variantDNA = variantDNAResult.data;
     const variantLength = variantDNA.sequence.length;
     if (opts.validateReadingFrames === true && variantLength % CODON_LENGTH !== 0) {
       return failure({

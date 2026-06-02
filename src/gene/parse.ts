@@ -7,11 +7,8 @@ import {
   type GenomicRegion,
 } from '../coordinates/index.js';
 import type { NucleotidePattern } from '../pattern/index.js';
-import {
-  type AlternativeSplicingProfile,
-  type AlternativeSplicingOptions,
-  validateSpliceVariant,
-} from '../variants/index.js';
+import type { AlternativeSplicingProfile, AlternativeSplicingOptions } from '../variants/index.js';
+import { validateSpliceVariant } from './validate-splice-variant.js';
 import { type Gene, unsafeGene } from './Gene.js';
 import { type Promoter, unsafePromoter } from './Promoter.js';
 import { type PromoterElement, unsafePromoterElement } from './PromoterElement.js';

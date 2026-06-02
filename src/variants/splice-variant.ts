@@ -1,10 +1,11 @@
 /**
- * `SpliceVariant`: a record of which exons of a gene are retained in a mature transcript,
- * plus the validation rules and option types that govern variant correctness.
+ * `SpliceVariant`: a record of which exons of a gene are retained in a mature transcript, plus
+ * the {@link AlternativeSplicingOptions} that govern how variants are validated.
  *
  * The interface is the foundational variant-metadata shape; gene-attached profiles
- * ({@link AlternativeSplicingProfile}) reference it, processing modules consume it, and the
- * validator below (`validateSpliceVariant`) enforces the per-variant biological rules.
+ * ({@link AlternativeSplicingProfile}) reference it and processing modules consume it. The
+ * per-variant rules are enforced by `validateSpliceVariant`, which lives in `gene/` because it
+ * needs a concrete `Gene`.
  */
 
 /**
@@ -13,6 +14,11 @@
  *
  * Indices reference the gene's `exons` array directly. Sets are treated as unordered;
  * downstream code always materializes them in gene-position order.
+ *
+ * This is an inert DTO: it is freely constructible (directly or via the builders) and is not
+ * validated at construction. Functions that act on it against a specific gene validate it and
+ * report problems through a `Result` (see `validateSpliceVariant` and `Gene.getVariantSequence`)
+ * rather than throwing.
  */
 export interface SpliceVariant {
   /** Unique name for this variant (e.g. `'variant-1'`, `'cardiac-specific'`). */

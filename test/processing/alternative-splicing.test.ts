@@ -5,7 +5,6 @@ import {
   enumerateSpliceVariants,
 } from '../../src/processing';
 import {
-  validateSpliceVariant,
   exonSkippingVariant,
   truncationVariant,
   fullLengthVariant,
@@ -13,7 +12,7 @@ import {
   type AlternativeSplicingProfile,
   type SpliceVariant,
 } from '../../src/variants';
-import { parseGene } from '../../src/gene';
+import { parseGene, validateSpliceVariant } from '../../src/gene';
 import { parsePreMRNA } from '../../src/transcription';
 import { FOUR_EXON_GENE } from '../test-genes';
 import { at, requireCodingSequence } from '../utils/test-utils';

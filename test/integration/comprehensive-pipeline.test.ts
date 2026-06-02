@@ -513,7 +513,10 @@ describe('Comprehensive Pipeline Integration Tests', () => {
           // body (the poly-A tail is appended after); the coding region is the AUG-to-stop
           // prefix of that transcript, which may be shorter than the full spliced sequence
           // if an in-frame stop occurs before the last exon ends.
-          const expectedSpliced = gene.getVariantSequence(variant).sequence.replace(/T/g, 'U');
+          const expectedSpliced = gene
+            .getVariantSequence(variant)
+            .unwrap()
+            .sequence.replace(/T/g, 'U');
           expect(mRNA.sequence.sequence.startsWith(expectedSpliced)).toBe(true);
           expect(expectedSpliced.startsWith(requireCodingSequence(mRNA).sequence)).toBe(true);
           expect(requireCodingSequence(mRNA).sequence.startsWith('AUG')).toBe(true);
@@ -563,7 +566,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
 
       // All variants should maintain reading frame
       strictVariants.forEach(variant => {
-        const sequence = biologyGene.getVariantSequence(variant);
+        const sequence = biologyGene.getVariantSequence(variant).unwrap();
         expect(sequence.sequence.length % 3).toBe(0);
         expect(variant.includedExons).toContain(0); // first exon
         expect(variant.includedExons).toContain(2); // last exon

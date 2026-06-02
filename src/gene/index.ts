@@ -13,6 +13,7 @@ export { PROMOTER_SYNERGY_MULTIPLIER } from './Promoter.js';
 export type { PromoterElement } from './PromoterElement.js';
 export { parseGene, parsePromoter, parsePromoterElement } from './parse.js';
 export { validateExons } from './validate-exons.js';
+export { validateSpliceVariant } from './validate-splice-variant.js';
 export type { GeneError, PromoterError, PromoterElementError } from './errors.js';
 export {
   describeGeneError,
