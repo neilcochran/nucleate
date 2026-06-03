@@ -69,7 +69,7 @@ export function parseGene(
 ): Result<Gene, GeneError> {
   const dnaResult = parseDNA(sequence);
   if (!dnaResult.success) {
-    return failure({ kind: 'invalid-sequence', cause: dnaResult.error });
+    return failure({ kind: 'gene/invalid-sequence', cause: dnaResult.error });
   }
   const dna = dnaResult.data;
 
@@ -115,7 +115,7 @@ export function parsePromoter(
   name?: string,
 ): Result<Promoter, PromoterError> {
   if (!Number.isInteger(transcriptionStartSite) || transcriptionStartSite < 0) {
-    return failure({ kind: 'invalid-tss', tss: transcriptionStartSite });
+    return failure({ kind: 'promoter/invalid-tss', tss: transcriptionStartSite });
   }
   return success(unsafePromoter(geneCoord(transcriptionStartSite), elements, name));
 }
@@ -138,13 +138,13 @@ export function parsePromoterElement(
   scoreWeight: number,
 ): Result<PromoterElement, PromoterElementError> {
   if (name.length === 0) {
-    return failure({ kind: 'empty-name' });
+    return failure({ kind: 'promoter-element/empty-name' });
   }
   if (!Number.isInteger(position)) {
-    return failure({ kind: 'invalid-position', position });
+    return failure({ kind: 'promoter-element/invalid-position', position });
   }
   if (!Number.isFinite(scoreWeight)) {
-    return failure({ kind: 'invalid-score-weight', scoreWeight });
+    return failure({ kind: 'promoter-element/invalid-score-weight', scoreWeight });
   }
   return success(unsafePromoterElement(name, pattern, position, scoreWeight));
 }
@@ -173,7 +173,7 @@ function validateSplicingProfile(
 ): Result<void, GeneError> {
   if (profile.variants.length === 0) {
     return failure({
-      kind: 'invalid-splicing-profile',
+      kind: 'gene/invalid-splicing-profile',
       reason: 'Splicing profile must contain at least one variant',
     });
   }
@@ -181,7 +181,7 @@ function validateSplicingProfile(
   const defaultExists = profile.variants.some(v => v.name === profile.defaultVariant);
   if (!defaultExists) {
     return failure({
-      kind: 'invalid-splicing-profile',
+      kind: 'gene/invalid-splicing-profile',
       reason: `Default variant '${profile.defaultVariant}' not found in variants list`,
     });
   }
@@ -189,7 +189,7 @@ function validateSplicingProfile(
   const variantNames = profile.variants.map(v => v.name);
   if (new Set(variantNames).size !== variantNames.length) {
     return failure({
-      kind: 'invalid-splicing-profile',
+      kind: 'gene/invalid-splicing-profile',
       reason: 'Splicing profile contains duplicate variant names',
     });
   }
@@ -197,7 +197,7 @@ function validateSplicingProfile(
   for (const variant of profile.variants) {
     const variantValidation = validateSpliceVariant(variant, gene, STRUCTURAL_VALIDATION_ONLY);
     if (!variantValidation.success) {
-      return failure({ kind: 'invalid-variant', cause: variantValidation.error });
+      return failure({ kind: 'gene/invalid-variant', cause: variantValidation.error });
     }
   }
 

@@ -24,14 +24,14 @@ describe('parseDNA', () => {
     const result = parseDNA('');
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.kind).toBe('empty-sequence');
+      expect(result.error.kind).toBe('dna/empty-sequence');
     }
   });
 
   test('returns invalid-characters failure with offending characters', () => {
     const result = parseDNA('ATCXYZ');
     expect(result.success).toBe(false);
-    if (!result.success && result.error.kind === 'invalid-characters') {
+    if (!result.success && result.error.kind === 'dna/invalid-characters') {
       expect(result.error.chars).toEqual(['X', 'Y', 'Z']);
       expect(result.error.firstAt).toBe(3);
     } else {
@@ -42,7 +42,7 @@ describe('parseDNA', () => {
   test('reports each distinct invalid character only once, in discovery order', () => {
     const result = parseDNA('AXTXG');
     expect(result.success).toBe(false);
-    if (!result.success && result.error.kind === 'invalid-characters') {
+    if (!result.success && result.error.kind === 'dna/invalid-characters') {
       expect(result.error.chars).toEqual(['X']);
       expect(result.error.firstAt).toBe(1);
     }
@@ -51,7 +51,7 @@ describe('parseDNA', () => {
   test('rejects RNA bases (U) in DNA input', () => {
     const result = parseDNA('AUCG');
     expect(result.success).toBe(false);
-    if (!result.success && result.error.kind === 'invalid-characters') {
+    if (!result.success && result.error.kind === 'dna/invalid-characters') {
       expect(result.error.chars).toContain('U');
     }
   });
@@ -79,14 +79,14 @@ describe('parseRNA', () => {
     const result = parseRNA('');
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.kind).toBe('empty-sequence');
+      expect(result.error.kind).toBe('rna/empty-sequence');
     }
   });
 
   test('returns invalid-characters failure with offending characters', () => {
     const result = parseRNA('AUCXYZ');
     expect(result.success).toBe(false);
-    if (!result.success && result.error.kind === 'invalid-characters') {
+    if (!result.success && result.error.kind === 'rna/invalid-characters') {
       expect(result.error.chars).toEqual(['X', 'Y', 'Z']);
       expect(result.error.firstAt).toBe(3);
     } else {
@@ -97,7 +97,7 @@ describe('parseRNA', () => {
   test('rejects DNA bases (T) in RNA input', () => {
     const result = parseRNA('ATCG');
     expect(result.success).toBe(false);
-    if (!result.success && result.error.kind === 'invalid-characters') {
+    if (!result.success && result.error.kind === 'rna/invalid-characters') {
       expect(result.error.chars).toContain('T');
     }
   });

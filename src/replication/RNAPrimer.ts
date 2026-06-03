@@ -77,16 +77,16 @@ export function parseRNAPrimer(
   position: number,
 ): Result<RNAPrimer, RNAPrimerError> {
   if (!Number.isInteger(position) || position < 0) {
-    return failure({ kind: 'invalid-position', position });
+    return failure({ kind: 'primer/invalid-position', position });
   }
   const rnaResult = parseRNA(sequence);
   if (!rnaResult.success) {
-    return failure({ kind: 'invalid-sequence', cause: rnaResult.error });
+    return failure({ kind: 'primer/invalid-sequence', cause: rnaResult.error });
   }
   const rna = rnaResult.data;
   if (rna.sequence.length < MIN_RNA_PRIMER_LENGTH || rna.sequence.length > MAX_RNA_PRIMER_LENGTH) {
     return failure({
-      kind: 'invalid-length',
+      kind: 'primer/invalid-length',
       length: rna.sequence.length,
       min: MIN_RNA_PRIMER_LENGTH,
       max: MAX_RNA_PRIMER_LENGTH,

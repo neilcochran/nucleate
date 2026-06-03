@@ -16,11 +16,6 @@ export { validateExons } from './validate-exons.js';
 export { validateSpliceVariant } from './validate-splice-variant.js';
 export type { GeneError, PromoterError, PromoterElementError } from './errors.js';
 export {
-  describeGeneError,
-  describePromoterError,
-  describePromoterElementError,
-} from './errors.js';
-export {
   TATA_BOX,
   INITIATOR,
   DOWNSTREAM_PROMOTER_ELEMENT,

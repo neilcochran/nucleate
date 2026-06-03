@@ -94,7 +94,7 @@ describe('replicate', () => {
       const result = replicate(parent);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('template-too-short');
+        expect(result.error.kind).toBe('replication/template-too-short');
         expect(result.error.length).toBe(8);
         expect(result.error.minimum).toBe(10);
       }
@@ -104,7 +104,7 @@ describe('replicate', () => {
       const parent = parentOf('ATG');
       const result = replicate(parent);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'template-too-short') {
+      if (!result.success && result.error.kind === 'replication/template-too-short') {
         expect(result.error.length).toBe(3);
       }
     });
@@ -119,7 +119,7 @@ describe('replicate', () => {
       const parent = parentOf('ATCGATCG');
       const result = replicate(parent, { organism: HUMAN });
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'template-too-short') {
+      if (!result.success && result.error.kind === 'replication/template-too-short') {
         expect(result.error.minimum).toBe(10);
       }
     });

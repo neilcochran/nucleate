@@ -324,7 +324,7 @@ function buildPlan(
   const minimum = organism.primerLength[1];
 
   if (templateLength < minimum) {
-    return failure({ kind: 'template-too-short', length: templateLength, minimum });
+    return failure({ kind: 'replication/template-too-short', length: templateLength, minimum });
   }
 
   const laggingTemplate = template.forward.sequence;

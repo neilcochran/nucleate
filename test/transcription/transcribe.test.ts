@@ -97,8 +97,8 @@ describe('transcribe', () => {
       const result = transcribe(nopromoterGene);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('no-promoter-found');
-        if (result.error.kind === 'no-promoter-found') {
+        expect(result.error.kind).toBe('transcription/no-promoter-found');
+        if (result.error.kind === 'transcription/no-promoter-found') {
           expect(result.error.minStrength).toBe(5);
         }
       }
@@ -110,14 +110,14 @@ describe('transcribe', () => {
       });
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('tss-out-of-bounds');
+        expect(result.error.kind).toBe('transcription/tss-out-of-bounds');
       }
     });
 
     test('returns no-promoter-found when the search window is too narrow', () => {
       const result = transcribe(testGene, { maxPromoterSearchDistance: 10 });
       if (!result.success) {
-        expect(result.error.kind).toBe('no-promoter-found');
+        expect(result.error.kind).toBe('transcription/no-promoter-found');
       }
     });
 
@@ -127,7 +127,7 @@ describe('transcribe', () => {
       const result = parseGene('ATGAAATTTGGG', []);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('no-exons');
+        expect(result.error.kind).toBe('gene/no-exons');
       }
     });
   });

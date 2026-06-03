@@ -13,4 +13,3 @@ export { validateSpliceSites, findPotentialSpliceSites } from './splice-sites.js
 export { SPLICE_CONSENSUS } from './splice-consensus.js';
 export { MIN_INTRON_LENGTH_FOR_SPLICING } from './biology.js';
 export type { SplicingError } from './errors.js';
-export { describeSplicingError } from './errors.js';

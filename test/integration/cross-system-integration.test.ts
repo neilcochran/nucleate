@@ -173,7 +173,7 @@ describe('Cross-System Integration Tests', () => {
             expect(sequence.length).toBeGreaterThanOrEqual(15); // Reasonable minimum protein length
           } else {
             // Or it should fail with a structured TranslationError naming the frame issue
-            expect(translateResult.error.kind).toBe('invalid-reading-frame');
+            expect(translateResult.error.kind).toBe('translation/invalid-reading-frame');
           }
         } else {
           // Processing failed - should have meaningful structured error

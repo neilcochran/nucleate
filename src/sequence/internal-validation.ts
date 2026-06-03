@@ -16,12 +16,12 @@ const VALID_RNA_BASES = new Set(['A', 'C', 'G', 'U']);
  */
 export function validateDNAString(input: string): Result<string, DNAError> {
   if (input.length === 0) {
-    return failure({ kind: 'empty-sequence' });
+    return failure({ kind: 'dna/empty-sequence' });
   }
   const normalized = input.toUpperCase();
   const issue = findInvalidBases(normalized, VALID_DNA_BASES);
   if (issue !== undefined) {
-    return failure({ kind: 'invalid-characters', chars: issue.chars, firstAt: issue.firstAt });
+    return failure({ kind: 'dna/invalid-characters', chars: issue.chars, firstAt: issue.firstAt });
   }
   return success(normalized);
 }
@@ -38,12 +38,12 @@ export function validateDNAString(input: string): Result<string, DNAError> {
  */
 export function validateRNAString(input: string): Result<string, RNAError> {
   if (input.length === 0) {
-    return failure({ kind: 'empty-sequence' });
+    return failure({ kind: 'rna/empty-sequence' });
   }
   const normalized = input.toUpperCase();
   const issue = findInvalidBases(normalized, VALID_RNA_BASES);
   if (issue !== undefined) {
-    return failure({ kind: 'invalid-characters', chars: issue.chars, firstAt: issue.firstAt });
+    return failure({ kind: 'rna/invalid-characters', chars: issue.chars, firstAt: issue.firstAt });
   }
   return success(normalized);
 }

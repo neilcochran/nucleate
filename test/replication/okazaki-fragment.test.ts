@@ -41,14 +41,14 @@ describe('OkazakiFragment', () => {
       const result = parsePrimerOnlyFragment('', 0, 100, PRIMER_AT_0);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('empty-id');
+        expect(result.error.kind).toBe('okazaki/empty-id');
       }
     });
 
     test('rejects negative start position', () => {
       const result = parsePrimerOnlyFragment('frag', -1, 100, PRIMER_AT_0);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-position') {
+      if (!result.success && result.error.kind === 'okazaki/invalid-position') {
         expect(result.error.position).toBe(-1);
       }
     });
@@ -57,14 +57,14 @@ describe('OkazakiFragment', () => {
       const result = parsePrimerOnlyFragment('frag', 1.5, 100, PRIMER_AT_0);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-position');
+        expect(result.error.kind).toBe('okazaki/invalid-position');
       }
     });
 
     test('rejects endPosition not strictly greater than startPosition', () => {
       const result = parsePrimerOnlyFragment('frag', 100, 100, PRIMER_AT_100);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-range') {
+      if (!result.success && result.error.kind === 'okazaki/invalid-range') {
         expect(result.error.startPosition).toBe(100);
         expect(result.error.endPosition).toBe(100);
       }
@@ -73,7 +73,7 @@ describe('OkazakiFragment', () => {
     test('rejects when primer position does not equal startPosition', () => {
       const result = parsePrimerOnlyFragment('frag', 50, 150, PRIMER_AT_0);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'primer-position-mismatch') {
+      if (!result.success && result.error.kind === 'okazaki/primer-position-mismatch') {
         expect(result.error.primerPosition).toBe(0);
         expect(result.error.startPosition).toBe(50);
       }
@@ -98,7 +98,7 @@ describe('OkazakiFragment', () => {
       const sequence = parseDNA('AT').unwrap();
       const result = parseSynthesizedFragment('frag', 0, 10, PRIMER_AT_0, sequence);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'sequence-length-mismatch') {
+      if (!result.success && result.error.kind === 'okazaki/sequence-length-mismatch') {
         expect(result.error.sequenceLength).toBe(2);
         expect(result.error.expectedLength).toBe(10);
       }
@@ -109,7 +109,7 @@ describe('OkazakiFragment', () => {
       const result = parseSynthesizedFragment('', 0, 4, PRIMER_AT_0, sequence);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('empty-id');
+        expect(result.error.kind).toBe('okazaki/empty-id');
       }
     });
   });
@@ -131,7 +131,7 @@ describe('OkazakiFragment', () => {
       const result = parsePrimerRemovedFragment('frag', 0, 10, PRIMER_AT_0, sequence);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('sequence-length-mismatch');
+        expect(result.error.kind).toBe('okazaki/sequence-length-mismatch');
       }
     });
   });

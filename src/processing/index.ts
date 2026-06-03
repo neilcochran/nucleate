@@ -22,4 +22,3 @@ export {
 export type { SpliceVariantProcessingOptions } from './alternative-splicing.js';
 export type { SpliceVariantResult } from './splice-variant-result.js';
 export type { ProcessingError, SpliceVariantSelectionError } from './errors.js';
-export { describeProcessingError, describeSpliceVariantSelectionError } from './errors.js';

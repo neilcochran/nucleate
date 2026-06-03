@@ -46,7 +46,7 @@ export function parseMRNA(
 ): Result<MRNA, MRNAError> {
   const rnaResult = parseRNA(sequence);
   if (!rnaResult.success) {
-    return failure({ kind: 'invalid-sequence', cause: rnaResult.error });
+    return failure({ kind: 'mrna/invalid-sequence', cause: rnaResult.error });
   }
   const rna = rnaResult.data;
   const sequenceLength = rna.sequence.length;
@@ -57,7 +57,7 @@ export function parseMRNA(
   // Coding boundaries are all-or-nothing: both present (a coding mRNA) or both absent (a
   // non-coding mRNA). Exactly one is a malformed request.
   if (hasCodingStart !== hasCodingEnd) {
-    return failure({ kind: 'incomplete-coding-boundaries', codingStart, codingEnd });
+    return failure({ kind: 'mrna/incomplete-coding-boundaries', codingStart, codingEnd });
   }
 
   if (
@@ -70,7 +70,7 @@ export function parseMRNA(
       codingStart >= codingEnd)
   ) {
     return failure({
-      kind: 'invalid-coding-boundaries',
+      kind: 'mrna/invalid-coding-boundaries',
       codingStart,
       codingEnd,
       sequenceLength,
@@ -83,7 +83,7 @@ export function parseMRNA(
     polyATailLength > sequenceLength
   ) {
     return failure({
-      kind: 'invalid-polya-tail-length',
+      kind: 'mrna/invalid-polya-tail-length',
       polyATailLength,
       sequenceLength,
     });

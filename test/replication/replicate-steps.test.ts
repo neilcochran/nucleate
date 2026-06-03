@@ -177,7 +177,7 @@ describe('replicateSteps', () => {
       const result = replicateSteps(parent);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('template-too-short');
+        expect(result.error.kind).toBe('replication/template-too-short');
       }
     });
   });

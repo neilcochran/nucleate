@@ -86,7 +86,10 @@ describe('Gene Expression Pipeline Integration', () => {
       expect(!transcriptionResult.success).toBe(true);
       if (!transcriptionResult.success) {
         const kind = transcriptionResult.error.kind;
-        expect(kind === 'no-promoter-found' || kind === 'tss-conflicts-with-exons').toBe(true);
+        expect(
+          kind === 'transcription/no-promoter-found' ||
+            kind === 'transcription/tss-conflicts-with-exons',
+        ).toBe(true);
       }
     });
 

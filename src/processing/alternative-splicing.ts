@@ -77,7 +77,7 @@ export function processSpliceVariant(
 ): Result<MRNA, ProcessingError> {
   const spliceResult = spliceRNAWithVariant(preMRNA, variant, options);
   if (!spliceResult.success) {
-    return failure({ kind: 'splicing-failed', cause: spliceResult.error });
+    return failure({ kind: 'processing/splicing-failed', cause: spliceResult.error });
   }
   return processSpliced(spliceResult.data, options);
 }
@@ -112,7 +112,7 @@ export function processAllSplicingVariants(
   const sourceGene = preMRNA.sourceGene;
   const profile = sourceGene.splicingProfile;
   if (!profile) {
-    return failure({ kind: 'no-splicing-profile' });
+    return failure({ kind: 'splice-selection/no-splicing-profile' });
   }
 
   const opts: SpliceVariantProcessingOptions = { validateCodons: false, ...options };
@@ -154,7 +154,7 @@ export function processDefaultSpliceVariant(
   const sourceGene = preMRNA.sourceGene;
   const defaultVariant = sourceGene.getDefaultSplicingVariant();
   if (!defaultVariant) {
-    return failure({ kind: 'no-default-variant' });
+    return failure({ kind: 'splice-selection/no-default-variant' });
   }
   return processSpliceVariant(preMRNA, defaultVariant, options);
 }

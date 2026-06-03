@@ -27,14 +27,14 @@ import type { TranslationError } from './errors.js';
 export function parseAminoAcid(codon: string): Result<AminoAcid, TranslationError> {
   const rnaResult = parseRNA(codon);
   if (!rnaResult.success) {
-    return failure({ kind: 'invalid-codon-sequence', codon, cause: rnaResult.error });
+    return failure({ kind: 'translation/invalid-codon-sequence', codon, cause: rnaResult.error });
   }
   const rna = rnaResult.data;
   const sequence = rna.sequence;
 
   if (sequence.length !== CODON_LENGTH) {
     return failure({
-      kind: 'invalid-codon-length',
+      kind: 'translation/invalid-codon-length',
       codon: sequence,
       length: sequence.length,
       expected: CODON_LENGTH,
@@ -42,12 +42,12 @@ export function parseAminoAcid(codon: string): Result<AminoAcid, TranslationErro
   }
 
   if (isStopCodon(sequence)) {
-    return failure({ kind: 'stop-codon', codon: sequence });
+    return failure({ kind: 'translation/stop-codon', codon: sequence });
   }
 
   const data = AMINO_ACID_BY_CODON[sequence];
   if (data === undefined) {
-    return failure({ kind: 'invalid-codon', codon: sequence, position: 0 });
+    return failure({ kind: 'translation/invalid-codon', codon: sequence, position: 0 });
   }
 
   return success(unsafeAminoAcid(unsafeCodon(rna), data));

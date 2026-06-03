@@ -33,10 +33,14 @@ export function add3PrimePolyATail(
   tailLength: number = DEFAULT_POLY_A_TAIL_LENGTH,
 ): Result<RNA, PolyadenylationError> {
   if (!Number.isInteger(cleavageSite) || cleavageSite < 0) {
-    return failure({ kind: 'invalid-cleavage-site', cleavageSite });
+    return failure({ kind: 'polyadenylation/invalid-cleavage-site', cleavageSite });
   }
   if (!Number.isInteger(tailLength) || tailLength < 0 || tailLength > MAX_POLY_A_TAIL_LENGTH) {
-    return failure({ kind: 'invalid-tail-length', tailLength, max: MAX_POLY_A_TAIL_LENGTH });
+    return failure({
+      kind: 'polyadenylation/invalid-tail-length',
+      tailLength,
+      max: MAX_POLY_A_TAIL_LENGTH,
+    });
   }
   const sequence = rna.sequence;
   const effectiveCleavage = Math.min(cleavageSite, sequence.length);
@@ -80,7 +84,7 @@ export function remove3PrimePolyATail(rna: RNA): Result<RNA, PolyadenylationErro
   const sequence = rna.sequence;
   const trimmed = sequence.replace(POLY_A_TAIL_PATTERN, '');
   if (trimmed.length === sequence.length) {
-    return failure({ kind: 'no-poly-a-tail' });
+    return failure({ kind: 'polyadenylation/no-poly-a-tail' });
   }
   return success(unsafeRNA(trimmed));
 }

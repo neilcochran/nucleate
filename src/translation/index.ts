@@ -23,4 +23,3 @@ export {
 export type { AminoAcidData } from './AminoAcidData.js';
 export { AminoAcidCharge, AminoAcidPolarity, AminoAcidSideChainType } from './enums.js';
 export type { TranslationError } from './errors.js';
-export { describeTranslationError } from './errors.js';

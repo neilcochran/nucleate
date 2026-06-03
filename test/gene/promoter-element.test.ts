@@ -43,7 +43,7 @@ describe('PromoterElement', () => {
       const result = parsePromoterElement('', pattern('AAAA'), 0, 0);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('empty-name');
+        expect(result.error.kind).toBe('promoter-element/empty-name');
       }
     });
 
@@ -51,7 +51,7 @@ describe('PromoterElement', () => {
       const result = parsePromoterElement('X', pattern('AAAA'), Number.NaN, 0);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-position');
+        expect(result.error.kind).toBe('promoter-element/invalid-position');
       }
     });
 
@@ -59,7 +59,7 @@ describe('PromoterElement', () => {
       const result = parsePromoterElement('X', pattern('AAAA'), 0, Number.POSITIVE_INFINITY);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-score-weight');
+        expect(result.error.kind).toBe('promoter-element/invalid-score-weight');
       }
     });
   });

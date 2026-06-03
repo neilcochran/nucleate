@@ -20,7 +20,7 @@ describe('splice-sites (DNA-side)', () => {
       const introns: GenomicRegion[] = [{ start: 3, end: 11 }]; // ATCCCAGT (AT donor)
       const result = validateSpliceSites(sequence, introns);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-donor-site') {
+      if (!result.success && result.error.kind === 'splicing/invalid-donor-site') {
         expect(result.error.position).toBe(3);
         expect(result.error.found).toBe('AT');
         expect(result.error.intronIndex).toBe(0);
@@ -32,7 +32,7 @@ describe('splice-sites (DNA-side)', () => {
       const introns: GenomicRegion[] = [{ start: 3, end: 11 }]; // GTCCCATT
       const result = validateSpliceSites(sequence, introns);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-acceptor-site') {
+      if (!result.success && result.error.kind === 'splicing/invalid-acceptor-site') {
         expect(result.error.found).toBe('TT');
         expect(result.error.position).toBe(9);
       }
@@ -43,7 +43,7 @@ describe('splice-sites (DNA-side)', () => {
       const introns: GenomicRegion[] = [{ start: 3, end: 5 }];
       const result = validateSpliceSites(sequence, introns);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'intron-too-short') {
+      if (!result.success && result.error.kind === 'splicing/intron-too-short') {
         expect(result.error.length).toBe(2);
         expect(result.error.min).toBe(4);
       }
@@ -65,7 +65,7 @@ describe('splice-sites (DNA-side)', () => {
       const result = validateSpliceSites(sequence, introns);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-donor-site');
+        expect(result.error.kind).toBe('splicing/invalid-donor-site');
       }
     });
   });

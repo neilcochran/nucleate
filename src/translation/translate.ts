@@ -33,12 +33,12 @@ import type { TranslationError } from './errors.js';
  */
 export function translate(mRNA: MRNA): Result<Polypeptide, TranslationError> {
   if (mRNA.codingSequence === undefined) {
-    return failure({ kind: 'no-coding-sequence' });
+    return failure({ kind: 'translation/no-coding-sequence' });
   }
   const codingSequence = mRNA.codingSequence.sequence;
   if (codingSequence.length % CODON_LENGTH !== 0) {
     return failure({
-      kind: 'invalid-reading-frame',
+      kind: 'translation/invalid-reading-frame',
       codingLength: codingSequence.length,
       codonLength: CODON_LENGTH,
     });
@@ -52,7 +52,7 @@ export function translate(mRNA: MRNA): Result<Polypeptide, TranslationError> {
     }
     const data = AMINO_ACID_BY_CODON[codonString];
     if (data === undefined) {
-      return failure({ kind: 'invalid-codon', codon: codonString, position: i });
+      return failure({ kind: 'translation/invalid-codon', codon: codonString, position: i });
     }
     aminoAcids.push(unsafeAminoAcidFromString(codonString, data));
   }

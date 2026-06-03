@@ -35,7 +35,7 @@ export function validateSpliceVariant(
   const totalExons = gene.exons.length;
 
   if (variant.includedExons.length === 0) {
-    return failure({ kind: 'variant-no-included-exons', variantName: variant.name });
+    return failure({ kind: 'variant/no-included-exons', variantName: variant.name });
   }
 
   const seen = new Set<number>();
@@ -51,7 +51,7 @@ export function validateSpliceVariant(
   }
   if (duplicates.length > 0) {
     return failure({
-      kind: 'variant-duplicate-exon-indices',
+      kind: 'variant/duplicate-exon-indices',
       variantName: variant.name,
       duplicateIndices: duplicates,
     });
@@ -60,7 +60,7 @@ export function validateSpliceVariant(
   for (const exonIndex of variant.includedExons) {
     if (exonIndex < 0 || exonIndex >= totalExons) {
       return failure({
-        kind: 'variant-invalid-exon-index',
+        kind: 'variant/invalid-exon-index',
         variantName: variant.name,
         exonIndex,
         totalExons,
@@ -69,17 +69,17 @@ export function validateSpliceVariant(
   }
 
   if (!opts.allowSkipFirstExon && !variant.includedExons.includes(0)) {
-    return failure({ kind: 'variant-skips-first-exon', variantName: variant.name });
+    return failure({ kind: 'variant/skips-first-exon', variantName: variant.name });
   }
   if (!opts.allowSkipLastExon && !variant.includedExons.includes(totalExons - 1)) {
-    return failure({ kind: 'variant-skips-last-exon', variantName: variant.name });
+    return failure({ kind: 'variant/skips-last-exon', variantName: variant.name });
   }
 
   if (opts.requireMinimumExons) {
     const minimum = opts.minimumExonCount ?? 1;
     if (variant.includedExons.length < minimum) {
       return failure({
-        kind: 'variant-below-minimum-exons',
+        kind: 'variant/below-minimum-exons',
         variantName: variant.name,
         included: variant.includedExons.length,
         minimum,
@@ -96,7 +96,7 @@ export function validateSpliceVariant(
     const variantLength = variantDNA.sequence.length;
     if (opts.validateReadingFrames === true && variantLength % CODON_LENGTH !== 0) {
       return failure({
-        kind: 'variant-not-in-frame',
+        kind: 'variant/not-in-frame',
         variantName: variant.name,
         length: variantLength,
       });
@@ -106,7 +106,7 @@ export function validateSpliceVariant(
       const startCodon = variantRNA.substring(0, CODON_LENGTH);
       if (startCodon !== START_CODON) {
         return failure({
-          kind: 'variant-missing-start-codon',
+          kind: 'variant/missing-start-codon',
           variantName: variant.name,
           found: startCodon,
         });
@@ -114,7 +114,7 @@ export function validateSpliceVariant(
       const lastCodon = variantRNA.substring(variantRNA.length - CODON_LENGTH);
       if (!isStopCodon(lastCodon)) {
         return failure({
-          kind: 'variant-missing-stop-codon',
+          kind: 'variant/missing-stop-codon',
           variantName: variant.name,
           found: lastCodon,
         });

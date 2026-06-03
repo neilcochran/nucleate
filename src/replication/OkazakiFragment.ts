@@ -126,24 +126,28 @@ function validateStructural(
   sequence: DNA | undefined,
 ): Result<void, OkazakiFragmentError> {
   if (id.length === 0) {
-    return failure({ kind: 'empty-id' });
+    return failure({ kind: 'okazaki/empty-id' });
   }
   if (!Number.isInteger(startPosition) || startPosition < 0) {
-    return failure({ kind: 'invalid-position', position: startPosition, field: 'startPosition' });
+    return failure({
+      kind: 'okazaki/invalid-position',
+      position: startPosition,
+      field: 'startPosition',
+    });
   }
   if (!Number.isInteger(endPosition) || endPosition <= startPosition) {
-    return failure({ kind: 'invalid-range', startPosition, endPosition });
+    return failure({ kind: 'okazaki/invalid-range', startPosition, endPosition });
   }
   if (primer.position !== startPosition) {
     return failure({
-      kind: 'primer-position-mismatch',
+      kind: 'okazaki/primer-position-mismatch',
       primerPosition: primer.position,
       startPosition,
     });
   }
   if (sequence !== undefined && sequence.sequence.length !== endPosition - startPosition) {
     return failure({
-      kind: 'sequence-length-mismatch',
+      kind: 'okazaki/sequence-length-mismatch',
       sequenceLength: sequence.sequence.length,
       expectedLength: endPosition - startPosition,
     });

@@ -89,7 +89,7 @@ describe('Gene', () => {
       const result = parseGene('ATGCCCGGG', []);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('no-exons');
+        expect(result.error.kind).toBe('gene/no-exons');
       }
     });
 
@@ -102,14 +102,14 @@ describe('Gene', () => {
       const result = parseGene(sequence, exons);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('exons-overlap');
+        expect(result.error.kind).toBe('gene/exons-overlap');
       }
     });
 
     test('rejects exon extending beyond sequence with kind=exon-out-of-bounds', () => {
       const result = parseGene('ATGCCCGGG', [{ start: 0, end: 15 }]);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'exon-out-of-bounds') {
+      if (!result.success && result.error.kind === 'gene/exon-out-of-bounds') {
         expect(result.error.exonEnd).toBe(15);
         expect(result.error.sequenceLength).toBe(9);
       } else {
@@ -121,7 +121,7 @@ describe('Gene', () => {
       const result = parseGene('ATGCCCGGG', [{ start: 5, end: 3 }]);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('exon-invalid-coordinates');
+        expect(result.error.kind).toBe('gene/exon-invalid-coordinates');
       }
     });
 
@@ -129,7 +129,7 @@ describe('Gene', () => {
       const result = parseGene('ATGCCCGGG', [{ start: -1, end: 3 }]);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('exon-invalid-coordinates');
+        expect(result.error.kind).toBe('gene/exon-invalid-coordinates');
       }
     });
 
@@ -137,7 +137,7 @@ describe('Gene', () => {
       const result = parseGene('ATXCCCGGG', [{ start: 0, end: 9 }]);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-sequence');
+        expect(result.error.kind).toBe('gene/invalid-sequence');
       }
     });
   });
@@ -234,7 +234,7 @@ describe('Gene', () => {
         },
       );
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-splicing-profile') {
+      if (!result.success && result.error.kind === 'gene/invalid-splicing-profile') {
         expect(result.error.reason).toBe('Splicing profile must contain at least one variant');
       } else {
         throw new Error(`expected invalid-splicing-profile, got ${JSON.stringify(result)}`);
@@ -253,9 +253,9 @@ describe('Gene', () => {
         },
       );
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-variant') {
-        expect(result.error.cause.kind).toBe('variant-no-included-exons');
-        if (result.error.cause.kind === 'variant-no-included-exons') {
+      if (!result.success && result.error.kind === 'gene/invalid-variant') {
+        expect(result.error.cause.kind).toBe('variant/no-included-exons');
+        if (result.error.cause.kind === 'variant/no-included-exons') {
           expect(result.error.cause.variantName).toBe('empty');
         }
       } else {
@@ -275,9 +275,9 @@ describe('Gene', () => {
         },
       );
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-variant') {
-        expect(result.error.cause.kind).toBe('variant-invalid-exon-index');
-        if (result.error.cause.kind === 'variant-invalid-exon-index') {
+      if (!result.success && result.error.kind === 'gene/invalid-variant') {
+        expect(result.error.cause.kind).toBe('variant/invalid-exon-index');
+        if (result.error.cause.kind === 'variant/invalid-exon-index') {
           expect(result.error.cause.exonIndex).toBe(5);
           expect(result.error.cause.totalExons).toBe(2);
         }
@@ -298,9 +298,9 @@ describe('Gene', () => {
         },
       );
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-variant') {
-        expect(result.error.cause.kind).toBe('variant-duplicate-exon-indices');
-        if (result.error.cause.kind === 'variant-duplicate-exon-indices') {
+      if (!result.success && result.error.kind === 'gene/invalid-variant') {
+        expect(result.error.cause.kind).toBe('variant/duplicate-exon-indices');
+        if (result.error.cause.kind === 'variant/duplicate-exon-indices') {
           expect(result.error.cause.duplicateIndices).toEqual([0]);
         }
       } else {
@@ -323,7 +323,7 @@ describe('Gene', () => {
         },
       );
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-splicing-profile') {
+      if (!result.success && result.error.kind === 'gene/invalid-splicing-profile') {
         expect(result.error.reason).toBe('Splicing profile contains duplicate variant names');
       }
     });
@@ -340,7 +340,7 @@ describe('Gene', () => {
         },
       );
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-splicing-profile') {
+      if (!result.success && result.error.kind === 'gene/invalid-splicing-profile') {
         expect(result.error.reason).toContain('Default variant');
       }
     });
@@ -358,7 +358,7 @@ describe('Gene', () => {
       const result = gene.getVariantSequence({ name: 'bad', includedExons: [0, 5] });
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.kind).toBe('variant-invalid-exon-index');
+        expect(result.error.kind).toBe('variant/invalid-exon-index');
       }
     });
   });
@@ -369,7 +369,7 @@ describe('Gene', () => {
       expect(!result.success).toBe(true);
       if (!result.success) {
         const error: GeneError = result.error;
-        expect(error.kind).toBe('no-exons');
+        expect(error.kind).toBe('gene/no-exons');
       }
     });
   });

@@ -14,7 +14,6 @@ export type { TranscriptionOptions } from './transcribe.js';
 export { findPromoters, identifyTSS } from './promoter-recognition.js';
 export type { PromoterSearchOptions } from './promoter-recognition.js';
 export type { TranscriptionError } from './errors.js';
-export { describeTranscriptionError } from './errors.js';
 export {
   MAX_PROMOTER_SEARCH_DISTANCE,
   DEFAULT_MAX_PROMOTER_SEARCH_DISTANCE,

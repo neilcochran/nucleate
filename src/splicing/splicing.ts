@@ -35,7 +35,7 @@ export function spliceRNA(
 ): Result<RNA, SplicingError> {
   const exonRegions = preMRNA.exonRegions;
   if (exonRegions.length === 0) {
-    return failure({ kind: 'no-exons' });
+    return failure({ kind: 'splicing/no-exons' });
   }
 
   const sequence = preMRNA.sequence.sequence;
@@ -45,7 +45,7 @@ export function spliceRNA(
     const exon = at(exonRegions, i);
     if (exon.start < 0 || exon.end > sequenceLength) {
       return failure({
-        kind: 'exon-out-of-bounds',
+        kind: 'splicing/exon-out-of-bounds',
         exonIndex: i,
         start: exon.start,
         end: exon.end,
@@ -85,7 +85,7 @@ export function validateTranscriptSpliceSites(preMRNA: PreMRNA): Result<void, Sp
       const donor = transcriptSequence.substring(intron.start, intron.start + 2);
       if (donor !== SPLICE_CONSENSUS.rna.donor) {
         return failure({
-          kind: 'invalid-donor-site',
+          kind: 'splicing/invalid-donor-site',
           intronIndex: i,
           position: intron.start,
           found: donor,
@@ -96,7 +96,7 @@ export function validateTranscriptSpliceSites(preMRNA: PreMRNA): Result<void, Sp
       const acceptor = transcriptSequence.substring(intron.end - 2, intron.end);
       if (acceptor !== SPLICE_CONSENSUS.rna.acceptor) {
         return failure({
-          kind: 'invalid-acceptor-site',
+          kind: 'splicing/invalid-acceptor-site',
           intronIndex: i,
           position: intron.end - 2,
           found: acceptor,

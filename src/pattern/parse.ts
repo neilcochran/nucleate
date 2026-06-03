@@ -43,7 +43,7 @@ export function parseNucleotidePattern(input: string): Result<NucleotidePattern,
     globalRegex = new RegExp(outcome.data, 'g');
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
-    return failure({ kind: 'invalid-regex-construction', pattern: input, cause: message });
+    return failure({ kind: 'pattern/invalid-regex-construction', pattern: input, cause: message });
   }
   return success(unsafeNucleotidePattern(input, basicRegex, globalRegex));
 }
@@ -71,11 +71,11 @@ export function parseNucleotidePatternSymbol(
   input: string,
 ): Result<NucleotidePatternSymbol, PatternError> {
   if (input === '') {
-    return failure({ kind: 'empty-symbol' });
+    return failure({ kind: 'pattern/empty-symbol' });
   }
   const upper = input.toUpperCase();
   if (!isIUPACSymbol(upper)) {
-    return failure({ kind: 'invalid-iupac-symbol', symbol: input });
+    return failure({ kind: 'pattern/invalid-iupac-symbol', symbol: input });
   }
   return success(unsafeNucleotidePatternSymbol(upper));
 }

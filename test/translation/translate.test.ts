@@ -55,7 +55,7 @@ describe('translate', () => {
     const mRNA = parseMRNA('AUGAA', 0, 5).unwrap();
     const result = translate(mRNA);
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'invalid-reading-frame') {
+    if (!result.success && result.error.kind === 'translation/invalid-reading-frame') {
       expect(result.error.codingLength).toBe(5);
       expect(result.error.codonLength).toBe(3);
     }
@@ -66,7 +66,7 @@ describe('translate', () => {
     const result = translate(mRNA);
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('no-coding-sequence');
+      expect(result.error.kind).toBe('translation/no-coding-sequence');
     }
   });
 

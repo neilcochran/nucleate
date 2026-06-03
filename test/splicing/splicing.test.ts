@@ -48,7 +48,7 @@ describe('spliceRNA', () => {
     const preMRNA = parsePreMRNA(INVALID_SPLICE_GENE.rnaSequence, gene, 0).unwrap();
     const result = spliceRNA(preMRNA);
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'invalid-donor-site') {
+    if (!result.success && result.error.kind === 'splicing/invalid-donor-site') {
       expect(result.error.intronIndex).toBe(0);
       expect(result.error.found).not.toBe('GU');
     }
@@ -66,7 +66,7 @@ describe('spliceRNA', () => {
     const result = spliceRNA(preMRNA);
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('invalid-acceptor-site');
+      expect(result.error.kind).toBe('splicing/invalid-acceptor-site');
     }
   });
 

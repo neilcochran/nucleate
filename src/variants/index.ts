@@ -21,4 +21,3 @@ export {
   fullLengthVariant,
 } from './builders.js';
 export type { VariantValidationError } from './errors.js';
-export { describeVariantValidationError } from './errors.js';

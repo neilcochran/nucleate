@@ -42,8 +42,3 @@ export type {
 export type { OrganismProfile } from './organism-profiles.js';
 export { E_COLI, HUMAN } from './organism-profiles.js';
 export type { RNAPrimerError, OkazakiFragmentError, ReplicationError } from './errors.js';
-export {
-  describeRNAPrimerError,
-  describeOkazakiFragmentError,
-  describeReplicationError,
-} from './errors.js';

@@ -7,7 +7,7 @@
  * work uniformly across coordinate spaces.
  */
 
-import { Result, success, failure, makeDescriber, at } from '../result/index.js';
+import { Result, success, failure, at } from '../result/index.js';
 
 /**
  * A region within a sequence, expressed in 0-based half-open coordinates `[start, end)`.
@@ -41,19 +41,19 @@ export interface GenomicRegion<C extends number = number> {
 export type RegionError =
   | {
       /** Discriminator naming the failure mode. */
-      readonly kind: 'negative-start';
+      readonly kind: 'region/negative-start';
       /** The `start` value the caller supplied. */
       readonly start: number;
     }
   | {
       /** Discriminator naming the failure mode. */
-      readonly kind: 'negative-end';
+      readonly kind: 'region/negative-end';
       /** The `end` value the caller supplied. */
       readonly end: number;
     }
   | {
       /** Discriminator naming the failure mode. */
-      readonly kind: 'start-not-before-end';
+      readonly kind: 'region/start-not-before-end';
       /** The `start` value the caller supplied. */
       readonly start: number;
       /** The `end` value the caller supplied. */
@@ -77,24 +77,16 @@ export function validateGenomicRegion<C extends number>(
   region: GenomicRegion<C>,
 ): Result<void, RegionError> {
   if (region.start < 0) {
-    return failure({ kind: 'negative-start', start: region.start });
+    return failure({ kind: 'region/negative-start', start: region.start });
   }
   if (region.end < 0) {
-    return failure({ kind: 'negative-end', end: region.end });
+    return failure({ kind: 'region/negative-end', end: region.end });
   }
   if (region.start >= region.end) {
-    return failure({ kind: 'start-not-before-end', start: region.start, end: region.end });
+    return failure({ kind: 'region/start-not-before-end', start: region.start, end: region.end });
   }
   return success(undefined);
 }
-
-/** Renders a {@link RegionError} as a human-readable message. */
-export const describeRegionError = makeDescriber<RegionError>({
-  'negative-start': e => `Region start ${e.start} must be non-negative`,
-  'negative-end': e => `Region end ${e.end} must be non-negative`,
-  'start-not-before-end': e =>
-    `Region start (${e.start}) must be strictly less than end (${e.end})`,
-});
 
 /**
  * Tests whether two regions in the same coordinate space overlap.

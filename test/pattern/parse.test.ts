@@ -21,7 +21,7 @@ describe('parseNucleotidePattern', () => {
     const result = parseNucleotidePattern('');
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error).toEqual({ kind: 'empty-pattern' });
+      expect(result.error).toEqual({ kind: 'pattern/empty-pattern' });
     }
   });
 
@@ -29,8 +29,8 @@ describe('parseNucleotidePattern', () => {
     const result = parseNucleotidePattern('TATAX');
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('invalid-iupac-character');
-      if (result.error.kind === 'invalid-iupac-character') {
+      expect(result.error.kind).toBe('pattern/invalid-iupac-character');
+      if (result.error.kind === 'pattern/invalid-iupac-character') {
         expect(result.error.character).toBe('X');
         expect(result.error.index).toBe(4);
       }
@@ -40,7 +40,7 @@ describe('parseNucleotidePattern', () => {
   test('reports the first invalid character, not all of them', () => {
     const result = parseNucleotidePattern('AXY');
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'invalid-iupac-character') {
+    if (!result.success && result.error.kind === 'pattern/invalid-iupac-character') {
       expect(result.error.character).toBe('X');
       expect(result.error.index).toBe(1);
     }
@@ -51,8 +51,8 @@ describe('parseNucleotidePattern', () => {
     const result = parseNucleotidePattern('A[');
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('invalid-regex-construction');
-      if (result.error.kind === 'invalid-regex-construction') {
+      expect(result.error.kind).toBe('pattern/invalid-regex-construction');
+      if (result.error.kind === 'pattern/invalid-regex-construction') {
         expect(result.error.pattern).toBe('A[');
         expect(typeof result.error.cause).toBe('string');
       }
@@ -101,7 +101,7 @@ describe('parseNucleotidePatternSymbol', () => {
     const result = parseNucleotidePatternSymbol('');
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error).toEqual({ kind: 'empty-symbol' });
+      expect(result.error).toEqual({ kind: 'pattern/empty-symbol' });
     }
   });
 
@@ -109,8 +109,8 @@ describe('parseNucleotidePatternSymbol', () => {
     const result = parseNucleotidePatternSymbol('Z');
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('invalid-iupac-symbol');
-      if (result.error.kind === 'invalid-iupac-symbol') {
+      expect(result.error.kind).toBe('pattern/invalid-iupac-symbol');
+      if (result.error.kind === 'pattern/invalid-iupac-symbol') {
         expect(result.error.symbol).toBe('Z');
       }
     }
@@ -120,7 +120,7 @@ describe('parseNucleotidePatternSymbol', () => {
     const result = parseNucleotidePatternSymbol('AT');
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('invalid-iupac-symbol');
+      expect(result.error.kind).toBe('pattern/invalid-iupac-symbol');
     }
   });
 });

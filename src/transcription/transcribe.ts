@@ -87,7 +87,7 @@ export function transcribe(
 
   if (tssValue < 0 || tssValue >= geneSequence.length) {
     return failure({
-      kind: 'tss-out-of-bounds',
+      kind: 'transcription/tss-out-of-bounds',
       tss: tssValue,
       sequenceLength: geneSequence.length,
     });
@@ -101,7 +101,7 @@ export function transcribe(
     return acc;
   }, []);
   if (conflictingExons.length > 0) {
-    return failure({ kind: 'tss-conflicts-with-exons', tss, conflictingExons });
+    return failure({ kind: 'transcription/tss-conflicts-with-exons', tss, conflictingExons });
   }
 
   const transcriptRNA = unsafeRNA(geneSequence.substring(tssValue).replaceAll('T', 'U'));
@@ -126,7 +126,7 @@ function findTranscriptionStartSite(
 ): Result<number, TranscriptionError> {
   const firstExon = gene.exons[0];
   if (firstExon === undefined) {
-    return failure({ kind: 'gene-has-no-exons' });
+    return failure({ kind: 'transcription/gene-has-no-exons' });
   }
   const searchStart = Math.max(0, firstExon.start - maxPromoterSearchDistance);
   const searchEnd = Math.min(
@@ -150,7 +150,7 @@ function findTranscriptionStartSite(
   const promoters = findPromoters(searchDNA, promoterOptions);
   if (promoters.length === 0) {
     return failure({
-      kind: 'no-promoter-found',
+      kind: 'transcription/no-promoter-found',
       searchedRegion: searchRegion,
       minStrength: minPromoterStrength,
     });
@@ -160,7 +160,7 @@ function findTranscriptionStartSite(
   const tssPositions = identifyTSS(bestPromoter, searchDNA);
   const firstTss = tssPositions[0];
   if (firstTss === undefined) {
-    return failure({ kind: 'tss-not-identifiable' });
+    return failure({ kind: 'transcription/tss-not-identifiable' });
   }
 
   return success(searchStart + firstTss);

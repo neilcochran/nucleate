@@ -22,7 +22,7 @@ describe('validateExons', () => {
     const result = validateExons([], 100);
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('no-exons');
+      expect(result.error.kind).toBe('gene/no-exons');
     }
   });
 
@@ -34,7 +34,7 @@ describe('validateExons', () => {
     ];
     const result = validateExons(exons, 200);
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'exons-overlap') {
+    if (!result.success && result.error.kind === 'gene/exons-overlap') {
       expect(result.error.at).toBe(40);
       // First overlapping pair, ordered by gene start position.
       expect(result.error.indices).toEqual([0, 1]);
@@ -51,7 +51,7 @@ describe('validateExons', () => {
     const result = validateExons(exons, 200);
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('exon-out-of-bounds');
+      expect(result.error.kind).toBe('gene/exon-out-of-bounds');
     }
   });
 
@@ -62,7 +62,7 @@ describe('validateExons', () => {
     ];
     const result = validateExons(exons, 150);
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'exon-too-small') {
+    if (!result.success && result.error.kind === 'gene/exon-too-small') {
       expect(result.error.length).toBe(2);
       expect(result.error.min).toBe(3);
     } else {
@@ -74,7 +74,7 @@ describe('validateExons', () => {
     const exons: GenomicRegion[] = [{ start: 0, end: 60000 }];
     const result = validateExons(exons, 70000);
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'exon-too-large') {
+    if (!result.success && result.error.kind === 'gene/exon-too-large') {
       expect(result.error.length).toBe(60000);
       expect(result.error.max).toBe(50000);
     } else {
@@ -89,7 +89,7 @@ describe('validateExons', () => {
     ];
     const result = validateExons(exons, 150);
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'intron-too-small') {
+    if (!result.success && result.error.kind === 'gene/intron-too-small') {
       expect(result.error.length).toBe(15);
       expect(result.error.min).toBe(MIN_INTRON_SIZE);
     } else {
@@ -104,7 +104,7 @@ describe('validateExons', () => {
     ];
     const result = validateExons(exons, 3050200);
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'intron-too-large') {
+    if (!result.success && result.error.kind === 'gene/intron-too-large') {
       expect(result.error.max).toBe(3000000);
     } else {
       throw new Error(`expected intron-too-large, got ${JSON.stringify(result)}`);
@@ -128,7 +128,7 @@ describe('validateExons', () => {
     const result = validateExons(exons, 100);
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('exon-invalid-coordinates');
+      expect(result.error.kind).toBe('gene/exon-invalid-coordinates');
     }
   });
 

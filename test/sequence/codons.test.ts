@@ -59,7 +59,7 @@ describe('validateReadingFrame', () => {
   test('fails with frame-misaligned when length is not divisible by 3', () => {
     const result = validateReadingFrame('AUGAA');
     expect(result.success).toBe(false);
-    if (!result.success && result.error.kind === 'frame-misaligned') {
+    if (!result.success && result.error.kind === 'reading-frame/frame-misaligned') {
       expect(result.error.codingLength).toBe(5);
       expect(result.error.codonLength).toBe(3);
     } else {
@@ -70,7 +70,7 @@ describe('validateReadingFrame', () => {
   test('fails with missing-start-codon when expectedStart=0 and prefix is not AUG', () => {
     const result = validateReadingFrame('CCCAAACCC');
     expect(result.success).toBe(false);
-    if (!result.success && result.error.kind === 'missing-start-codon') {
+    if (!result.success && result.error.kind === 'reading-frame/missing-start-codon') {
       expect(result.error.found).toBe('CCC');
       expect(result.error.position).toBe(0);
     } else {
@@ -86,7 +86,7 @@ describe('validateReadingFrame', () => {
   test('reports frame-misalignment relative to expectedStart', () => {
     const result = validateReadingFrame('AUGAAA', 1);
     expect(result.success).toBe(false);
-    if (!result.success && result.error.kind === 'frame-misaligned') {
+    if (!result.success && result.error.kind === 'reading-frame/frame-misaligned') {
       expect(result.error.codingLength).toBe(5);
     }
   });

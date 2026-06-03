@@ -1,9 +1,5 @@
-import {
-  doubleStrandedDNA,
-  parseDNA,
-  parseDoubleStrandedDNA,
-  describeDoubleStrandedError,
-} from '../../src/sequence';
+import { doubleStrandedDNA, parseDNA, parseDoubleStrandedDNA } from '../../src/sequence';
+import { describeError } from '../../src';
 import { unsafeDoubleStrandedDNA } from '../../src/sequence/DoubleStrandedDNA';
 
 describe('DoubleStrandedDNA', () => {
@@ -51,8 +47,8 @@ describe('DoubleStrandedDNA', () => {
       const result = parseDoubleStrandedDNA(forward, reverse);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('length-mismatch');
-        if (result.error.kind === 'length-mismatch') {
+        expect(result.error.kind).toBe('double-stranded/length-mismatch');
+        if (result.error.kind === 'double-stranded/length-mismatch') {
           expect(result.error.forwardLength).toBe(4);
           expect(result.error.reverseLength).toBe(3);
         }
@@ -65,8 +61,8 @@ describe('DoubleStrandedDNA', () => {
       const result = parseDoubleStrandedDNA(forward, reverse);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('not-complementary');
-        if (result.error.kind === 'not-complementary') {
+        expect(result.error.kind).toBe('double-stranded/not-complementary');
+        if (result.error.kind === 'double-stranded/not-complementary') {
           expect(result.error.firstMismatchAt).toBe(0);
           expect(result.error.expected).toBe('C');
           expect(result.error.actual).toBe('A');
@@ -79,7 +75,7 @@ describe('DoubleStrandedDNA', () => {
       const reverse = parseDNA('TTGT').unwrap();
       const result = parseDoubleStrandedDNA(forward, reverse);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'not-complementary') {
+      if (!result.success && result.error.kind === 'double-stranded/not-complementary') {
         expect(result.error.firstMismatchAt).toBe(2);
         expect(result.error.expected).toBe('T');
         expect(result.error.actual).toBe('G');
@@ -95,8 +91,8 @@ describe('DoubleStrandedDNA', () => {
 
   describe('describeDoubleStrandedError', () => {
     test('renders length-mismatch human-readably', () => {
-      const message = describeDoubleStrandedError({
-        kind: 'length-mismatch',
+      const message = describeError({
+        kind: 'double-stranded/length-mismatch',
         forwardLength: 5,
         reverseLength: 3,
       });
@@ -105,8 +101,8 @@ describe('DoubleStrandedDNA', () => {
     });
 
     test('renders not-complementary human-readably', () => {
-      const message = describeDoubleStrandedError({
-        kind: 'not-complementary',
+      const message = describeError({
+        kind: 'double-stranded/not-complementary',
         firstMismatchAt: 7,
         expected: 'A',
         actual: 'C',

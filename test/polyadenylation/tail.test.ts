@@ -60,7 +60,7 @@ describe('add3PrimePolyATail', () => {
   test('rejects a negative cleavage site', () => {
     const result = add3PrimePolyATail(rna('AUGAAACCCGGG'), -1);
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'invalid-cleavage-site') {
+    if (!result.success && result.error.kind === 'polyadenylation/invalid-cleavage-site') {
       expect(result.error.cleavageSite).toBe(-1);
     }
   });
@@ -69,14 +69,14 @@ describe('add3PrimePolyATail', () => {
     const result = add3PrimePolyATail(rna('AUGAAACCCGGG'), 12, -10);
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('invalid-tail-length');
+      expect(result.error.kind).toBe('polyadenylation/invalid-tail-length');
     }
   });
 
   test('rejects a tail length larger than MAX_POLY_A_TAIL_LENGTH', () => {
     const result = add3PrimePolyATail(rna('AUGAAACCCGGG'), 12, MAX_POLY_A_TAIL_LENGTH + 1);
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'invalid-tail-length') {
+    if (!result.success && result.error.kind === 'polyadenylation/invalid-tail-length') {
       expect(result.error.max).toBe(MAX_POLY_A_TAIL_LENGTH);
     }
   });
@@ -125,7 +125,7 @@ describe('remove3PrimePolyATail', () => {
     const result = remove3PrimePolyATail(rna('AUGAAACCCGGGCCC'));
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error).toEqual({ kind: 'no-poly-a-tail' });
+      expect(result.error).toEqual({ kind: 'polyadenylation/no-poly-a-tail' });
     }
   });
 });

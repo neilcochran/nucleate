@@ -16,6 +16,5 @@ export {
   compileLiteralPattern,
 } from './parse.js';
 export type { PatternError } from './errors.js';
-export { describePatternError } from './errors.js';
 export { NUCLEOTIDE_PATTERN_SYMBOLS } from './iupac-symbols.js';
 export type { IUPACSymbol } from './iupac-symbols.js';

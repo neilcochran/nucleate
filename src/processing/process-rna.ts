@@ -95,7 +95,7 @@ export function processRNA(
     skipSpliceSiteValidation: opts.skipSpliceSiteValidation,
   });
   if (!splicingResult.success) {
-    return failure({ kind: 'splicing-failed', cause: splicingResult.error });
+    return failure({ kind: 'processing/splicing-failed', cause: splicingResult.error });
   }
   return processSpliced(splicingResult.data, opts);
 }
@@ -134,7 +134,7 @@ export function processSpliced(
       ? add3PrimePolyATailAtSite(splicedRNA, strongest, polyATailLength)
       : add3PrimePolyATail(splicedRNA, splicedSequence.length, polyATailLength);
     if (!tailed.success) {
-      return failure({ kind: 'polyadenylation-failed', cause: tailed.error });
+      return failure({ kind: 'processing/polyadenylation-failed', cause: tailed.error });
     }
     finalSequence = tailed.data.sequence;
   }
@@ -172,7 +172,7 @@ function findCodingBoundaries(
 
   const startCodonIndex = searchSequence.indexOf(START_CODON);
   if (startCodonIndex === -1) {
-    return failure({ kind: 'no-start-codon' });
+    return failure({ kind: 'processing/no-start-codon' });
   }
 
   let stopCodonEnd = -1;
@@ -189,7 +189,7 @@ function findCodingBoundaries(
   }
 
   if (stopCodonEnd === -1) {
-    return failure({ kind: 'no-in-frame-stop' });
+    return failure({ kind: 'processing/no-in-frame-stop' });
   }
 
   return success({ codingStart: startCodonIndex, codingEnd: stopCodonEnd });

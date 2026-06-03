@@ -30,7 +30,7 @@ export function validateSpliceSites(
 
     if (intronSequence.length < MIN_INTRON_LENGTH_FOR_SPLICING) {
       return failure({
-        kind: 'intron-too-short',
+        kind: 'splicing/intron-too-short',
         intronIndex: i,
         length: intronSequence.length,
         min: MIN_INTRON_LENGTH_FOR_SPLICING,
@@ -40,7 +40,7 @@ export function validateSpliceSites(
     const donor = intronSequence.substring(0, 2);
     if (donor !== SPLICE_CONSENSUS.dna.donor) {
       return failure({
-        kind: 'invalid-donor-site',
+        kind: 'splicing/invalid-donor-site',
         intronIndex: i,
         position: intron.start,
         found: donor,
@@ -50,7 +50,7 @@ export function validateSpliceSites(
     const acceptor = intronSequence.substring(intronSequence.length - 2);
     if (acceptor !== SPLICE_CONSENSUS.dna.acceptor) {
       return failure({
-        kind: 'invalid-acceptor-site',
+        kind: 'splicing/invalid-acceptor-site',
         intronIndex: i,
         position: intron.end - 2,
         found: acceptor,

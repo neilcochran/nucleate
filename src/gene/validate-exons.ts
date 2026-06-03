@@ -31,7 +31,7 @@ export function validateExons(
   sequenceLength: number,
 ): Result<void, GeneError> {
   if (exons.length === 0) {
-    return failure({ kind: 'no-exons' });
+    return failure({ kind: 'gene/no-exons' });
   }
 
   // Per-exon validation: coordinates, bounds, size.
@@ -40,7 +40,7 @@ export function validateExons(
 
     if (!validateGenomicRegion(exon).success) {
       return failure({
-        kind: 'exon-invalid-coordinates',
+        kind: 'gene/exon-invalid-coordinates',
         exonIndex: i,
         start: exon.start,
         end: exon.end,
@@ -49,7 +49,7 @@ export function validateExons(
 
     if (exon.end > sequenceLength) {
       return failure({
-        kind: 'exon-out-of-bounds',
+        kind: 'gene/exon-out-of-bounds',
         exonIndex: i,
         exonEnd: exon.end,
         sequenceLength,
@@ -59,7 +59,7 @@ export function validateExons(
     const exonLength = exon.end - exon.start;
     if (exonLength < MIN_EXON_SIZE) {
       return failure({
-        kind: 'exon-too-small',
+        kind: 'gene/exon-too-small',
         exonIndex: i,
         length: exonLength,
         min: MIN_EXON_SIZE,
@@ -67,7 +67,7 @@ export function validateExons(
     }
     if (exonLength > MAX_EXON_SIZE) {
       return failure({
-        kind: 'exon-too-large',
+        kind: 'gene/exon-too-large',
         exonIndex: i,
         length: exonLength,
         max: MAX_EXON_SIZE,
@@ -79,7 +79,7 @@ export function validateExons(
   const overlap = findFirstOverlap(exons);
   if (overlap !== undefined) {
     return failure({
-      kind: 'exons-overlap',
+      kind: 'gene/exons-overlap',
       indices: overlap.indices,
       at: overlap.at,
     });
@@ -94,7 +94,7 @@ export function validateExons(
       const intronLength = next.start - current.end;
       if (intronLength < MIN_INTRON_SIZE) {
         return failure({
-          kind: 'intron-too-small',
+          kind: 'gene/intron-too-small',
           intronIndex: i,
           length: intronLength,
           min: MIN_INTRON_SIZE,
@@ -102,7 +102,7 @@ export function validateExons(
       }
       if (intronLength > MAX_INTRON_SIZE) {
         return failure({
-          kind: 'intron-too-large',
+          kind: 'gene/intron-too-large',
           intronIndex: i,
           length: intronLength,
           max: MAX_INTRON_SIZE,

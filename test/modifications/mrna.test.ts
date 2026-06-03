@@ -40,9 +40,9 @@ describe('MRNA', () => {
       const result = parseMRNA('AUGNNN', 0, 6);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-sequence');
-        if (result.error.kind === 'invalid-sequence') {
-          expect(result.error.cause.kind).toBe('invalid-characters');
+        expect(result.error.kind).toBe('mrna/invalid-sequence');
+        if (result.error.kind === 'mrna/invalid-sequence') {
+          expect(result.error.cause.kind).toBe('rna/invalid-characters');
         }
       }
     });
@@ -51,14 +51,14 @@ describe('MRNA', () => {
       const result = parseMRNA('', 0, 0);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-sequence');
+        expect(result.error.kind).toBe('mrna/invalid-sequence');
       }
     });
 
     test('rejects negative codingStart', () => {
       const result = parseMRNA('AUGAAACCCGGG', -1, 12);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-coding-boundaries') {
+      if (!result.success && result.error.kind === 'mrna/invalid-coding-boundaries') {
         expect(result.error.codingStart).toBe(-1);
       }
     });
@@ -66,7 +66,7 @@ describe('MRNA', () => {
     test('rejects codingEnd past sequence length', () => {
       const result = parseMRNA('AUGAAACCCGGG', 0, 15);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-coding-boundaries') {
+      if (!result.success && result.error.kind === 'mrna/invalid-coding-boundaries') {
         expect(result.error.codingEnd).toBe(15);
         expect(result.error.sequenceLength).toBe(12);
       }
@@ -76,14 +76,14 @@ describe('MRNA', () => {
       const result = parseMRNA('AUGAAACCCGGG', 10, 5);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-coding-boundaries');
+        expect(result.error.kind).toBe('mrna/invalid-coding-boundaries');
       }
     });
 
     test('rejects negative polyA tail length', () => {
       const result = parseMRNA('AUGAAACCCGGG', 0, 12, true, -1);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-polya-tail-length') {
+      if (!result.success && result.error.kind === 'mrna/invalid-polya-tail-length') {
         expect(result.error.polyATailLength).toBe(-1);
       }
     });
@@ -92,7 +92,7 @@ describe('MRNA', () => {
       const result = parseMRNA('AUGAAACCCGGG', 0, 12, true, 100);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-polya-tail-length');
+        expect(result.error.kind).toBe('mrna/invalid-polya-tail-length');
       }
     });
 
@@ -100,7 +100,7 @@ describe('MRNA', () => {
       const result = parseMRNA('AUGAAACCCGGG', 1.5, 12);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-coding-boundaries');
+        expect(result.error.kind).toBe('mrna/invalid-coding-boundaries');
       }
     });
 
@@ -117,7 +117,7 @@ describe('MRNA', () => {
     test('rejects supplying only codingStart with kind incomplete-coding-boundaries', () => {
       const result = parseMRNA('AUGAAACCCGGG', 0);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'incomplete-coding-boundaries') {
+      if (!result.success && result.error.kind === 'mrna/incomplete-coding-boundaries') {
         expect(result.error.codingStart).toBe(0);
         expect(result.error.codingEnd).toBeUndefined();
       } else {
@@ -128,7 +128,7 @@ describe('MRNA', () => {
     test('rejects supplying only codingEnd with kind incomplete-coding-boundaries', () => {
       const result = parseMRNA('AUGAAACCCGGG', undefined, 12);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'incomplete-coding-boundaries') {
+      if (!result.success && result.error.kind === 'mrna/incomplete-coding-boundaries') {
         expect(result.error.codingStart).toBeUndefined();
         expect(result.error.codingEnd).toBe(12);
       } else {

@@ -165,7 +165,7 @@ export class Gene {
     for (const exonIndex of variant.includedExons) {
       if (exonIndex < 0 || exonIndex >= this.exons.length) {
         return failure({
-          kind: 'variant-invalid-exon-index',
+          kind: 'variant/invalid-exon-index',
           variantName: variant.name,
           exonIndex,
           totalExons: this.exons.length,

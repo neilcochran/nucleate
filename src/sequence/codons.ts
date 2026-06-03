@@ -43,7 +43,7 @@ export type Codon = RNA & {
 export function parseCodon(rna: RNA): Result<Codon, CodonError> {
   if (rna.sequence.length !== CODON_LENGTH) {
     return failure({
-      kind: 'wrong-codon-length',
+      kind: 'codon/wrong-codon-length',
       length: rna.sequence.length,
       expected: CODON_LENGTH,
     });
@@ -125,7 +125,7 @@ export function validateReadingFrame(
   const codingLength = sequence.length - expectedStart;
   if (codingLength % CODON_LENGTH !== 0) {
     return failure({
-      kind: 'frame-misaligned',
+      kind: 'reading-frame/frame-misaligned',
       codingLength,
       codonLength: CODON_LENGTH,
     });
@@ -135,7 +135,7 @@ export function validateReadingFrame(
     const startCodon = sequence.substring(0, CODON_LENGTH);
     if (startCodon !== START_CODON) {
       return failure({
-        kind: 'missing-start-codon',
+        kind: 'reading-frame/missing-start-codon',
         found: startCodon,
         position: 0,
       });

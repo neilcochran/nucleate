@@ -87,10 +87,14 @@ describe('Validation Scenarios Integration Tests', () => {
         const processingResult = processRNA(preMRNA);
 
         expect(!processingResult.success).toBe(true);
-        if (!processingResult.success && processingResult.error.kind === 'splicing-failed') {
+        if (
+          !processingResult.success &&
+          processingResult.error.kind === 'processing/splicing-failed'
+        ) {
           const splicingKind = processingResult.error.cause.kind;
           expect(
-            splicingKind === 'invalid-donor-site' || splicingKind === 'invalid-acceptor-site',
+            splicingKind === 'splicing/invalid-donor-site' ||
+              splicingKind === 'splicing/invalid-acceptor-site',
           ).toBe(true);
         }
       }
@@ -234,13 +238,13 @@ describe('Validation Scenarios Integration Tests', () => {
       const invalidDNAResult = parseDNA('ATGXYZ');
       expect(!invalidDNAResult.success).toBe(true);
       if (!invalidDNAResult.success) {
-        expect(invalidDNAResult.error.kind).toBe('invalid-characters');
+        expect(invalidDNAResult.error.kind).toBe('dna/invalid-characters');
       }
 
       const invalidRNAResult = parseRNA('AUGXYZ');
       expect(!invalidRNAResult.success).toBe(true);
       if (!invalidRNAResult.success) {
-        expect(invalidRNAResult.error.kind).toBe('invalid-characters');
+        expect(invalidRNAResult.error.kind).toBe('rna/invalid-characters');
       }
     });
 
@@ -278,7 +282,7 @@ describe('Validation Scenarios Integration Tests', () => {
       const invalidDNAResult = parseDNA('ATGXYZ');
       expect(!invalidDNAResult.success).toBe(true);
       if (!invalidDNAResult.success) {
-        expect(invalidDNAResult.error.kind).toBe('invalid-characters');
+        expect(invalidDNAResult.error.kind).toBe('dna/invalid-characters');
       }
     });
 

@@ -11,3 +11,5 @@ export * from './modifications/index.js';
 export * from './processing/index.js';
 export * from './translation/index.js';
 export * from './replication/index.js';
+export { describeError } from './describe.js';
+export type { NucleateError } from './describe.js';

@@ -156,7 +156,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
       // Should fail due to TSS/exon conflict
       expect(!transcriptionResult.success).toBe(true);
       if (!transcriptionResult.success) {
-        expect(transcriptionResult.error.kind).toBe('tss-conflicts-with-exons');
+        expect(transcriptionResult.error.kind).toBe('transcription/tss-conflicts-with-exons');
       }
     });
   });

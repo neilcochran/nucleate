@@ -14,4 +14,3 @@
 export type { MRNA } from './MRNA.js';
 export { parseMRNA } from './parse.js';
 export type { MRNAError } from './errors.js';
-export { describeMRNAError } from './errors.js';

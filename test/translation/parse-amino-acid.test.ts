@@ -1,4 +1,5 @@
-import { parseAminoAcid, describeTranslationError } from '../../src/translation';
+import { parseAminoAcid } from '../../src/translation';
+import { describeError } from '../../src';
 import { STOP_CODONS } from '../../src/sequence';
 
 describe('parseAminoAcid', () => {
@@ -24,7 +25,7 @@ describe('parseAminoAcid', () => {
     const result = parseAminoAcid('');
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('invalid-codon-sequence');
+      expect(result.error.kind).toBe('translation/invalid-codon-sequence');
     }
   });
 
@@ -32,14 +33,14 @@ describe('parseAminoAcid', () => {
     const result = parseAminoAcid('ATG'); // T is DNA-only
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('invalid-codon-sequence');
+      expect(result.error.kind).toBe('translation/invalid-codon-sequence');
     }
   });
 
   test('rejects too-short codon with invalid-codon-length', () => {
     const result = parseAminoAcid('AU');
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'invalid-codon-length') {
+    if (!result.success && result.error.kind === 'translation/invalid-codon-length') {
       expect(result.error.length).toBe(2);
       expect(result.error.expected).toBe(3);
     }
@@ -48,7 +49,7 @@ describe('parseAminoAcid', () => {
   test('rejects too-long codon with invalid-codon-length', () => {
     const result = parseAminoAcid('AUGG');
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'invalid-codon-length') {
+    if (!result.success && result.error.kind === 'translation/invalid-codon-length') {
       expect(result.error.length).toBe(4);
       expect(result.error.expected).toBe(3);
     }
@@ -58,7 +59,7 @@ describe('parseAminoAcid', () => {
     for (const stop of STOP_CODONS) {
       const result = parseAminoAcid(stop);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'stop-codon') {
+      if (!result.success && result.error.kind === 'translation/stop-codon') {
         expect(result.error.codon).toBe(stop);
       }
     }
@@ -76,26 +77,26 @@ describe('parseAminoAcid', () => {
   });
 
   test('describeTranslationError renders each variant', () => {
-    expect(describeTranslationError({ kind: 'stop-codon', codon: 'UAA' })).toContain('UAA');
+    expect(describeError({ kind: 'translation/stop-codon', codon: 'UAA' })).toContain('UAA');
     expect(
-      describeTranslationError({
-        kind: 'invalid-codon-length',
+      describeError({
+        kind: 'translation/invalid-codon-length',
         codon: 'AU',
         length: 2,
         expected: 3,
       }),
     ).toContain('length 2');
     expect(
-      describeTranslationError({ kind: 'invalid-codon', codon: 'AUG', position: 9 }),
+      describeError({ kind: 'translation/invalid-codon', codon: 'AUG', position: 9 }),
     ).toContain('position 9');
     expect(
-      describeTranslationError({
-        kind: 'invalid-reading-frame',
+      describeError({
+        kind: 'translation/invalid-reading-frame',
         codingLength: 7,
         codonLength: 3,
       }),
     ).toContain('not a multiple');
-    expect(describeTranslationError({ kind: 'no-coding-sequence' })).toContain(
+    expect(describeError({ kind: 'translation/no-coding-sequence' })).toContain(
       'no coding sequence',
     );
   });

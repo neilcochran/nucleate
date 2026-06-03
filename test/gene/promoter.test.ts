@@ -78,7 +78,7 @@ describe('Promoter', () => {
       const result = parsePromoter(-100, [tataElement]);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-tss');
+        expect(result.error.kind).toBe('promoter/invalid-tss');
       }
     });
 
@@ -86,7 +86,7 @@ describe('Promoter', () => {
       const result = parsePromoter(Number.POSITIVE_INFINITY, [tataElement]);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-tss');
+        expect(result.error.kind).toBe('promoter/invalid-tss');
       }
     });
   });

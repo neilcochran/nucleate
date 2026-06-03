@@ -32,10 +32,3 @@ export type {
   DoubleStrandedError,
   CodonError,
 } from './errors.js';
-export {
-  describeDNAError,
-  describeRNAError,
-  describeReadingFrameError,
-  describeDoubleStrandedError,
-  describeCodonError,
-} from './errors.js';

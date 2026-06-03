@@ -59,7 +59,7 @@ describe('processRNA', () => {
     const result = processRNA(preMRNA);
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('no-start-codon');
+      expect(result.error.kind).toBe('processing/no-start-codon');
     }
   });
 
@@ -70,7 +70,7 @@ describe('processRNA', () => {
     const result = processRNA(preMRNA);
     expect(!result.success).toBe(true);
     if (!result.success) {
-      expect(result.error.kind).toBe('no-in-frame-stop');
+      expect(result.error.kind).toBe('processing/no-in-frame-stop');
     }
   });
 
@@ -81,8 +81,8 @@ describe('processRNA', () => {
     const preMRNA = parsePreMRNA(INVALID_SPLICE_GENE.rnaSequence, gene, 0).unwrap();
     const result = processRNA(preMRNA);
     expect(!result.success).toBe(true);
-    if (!result.success && result.error.kind === 'splicing-failed') {
-      expect(result.error.cause.kind).toBe('invalid-donor-site');
+    if (!result.success && result.error.kind === 'processing/splicing-failed') {
+      expect(result.error.cause.kind).toBe('splicing/invalid-donor-site');
     }
   });
 

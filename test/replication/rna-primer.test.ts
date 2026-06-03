@@ -28,8 +28,8 @@ describe('RNAPrimer', () => {
       const result = parseRNAPrimer('AU', 0);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-length');
-        if (result.error.kind === 'invalid-length') {
+        expect(result.error.kind).toBe('primer/invalid-length');
+        if (result.error.kind === 'primer/invalid-length') {
           expect(result.error.length).toBe(2);
           expect(result.error.min).toBe(3);
           expect(result.error.max).toBe(10);
@@ -40,7 +40,7 @@ describe('RNAPrimer', () => {
     test('rejects sequences longer than 10 nt', () => {
       const result = parseRNAPrimer('AUCGUACGAUC', 0);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-length') {
+      if (!result.success && result.error.kind === 'primer/invalid-length') {
         expect(result.error.length).toBe(11);
       }
     });
@@ -49,8 +49,8 @@ describe('RNAPrimer', () => {
       const result = parseRNAPrimer('AUCG', -1);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-position');
-        if (result.error.kind === 'invalid-position') {
+        expect(result.error.kind).toBe('primer/invalid-position');
+        if (result.error.kind === 'primer/invalid-position') {
           expect(result.error.position).toBe(-1);
         }
       }
@@ -59,7 +59,7 @@ describe('RNAPrimer', () => {
     test('rejects non-integer positions', () => {
       const result = parseRNAPrimer('AUCG', 1.5);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'invalid-position') {
+      if (!result.success && result.error.kind === 'primer/invalid-position') {
         expect(result.error.position).toBe(1.5);
       }
     });
@@ -68,7 +68,7 @@ describe('RNAPrimer', () => {
       const result = parseRNAPrimer('ATCG', 0);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-sequence');
+        expect(result.error.kind).toBe('primer/invalid-sequence');
       }
     });
 
@@ -76,9 +76,9 @@ describe('RNAPrimer', () => {
       const result = parseRNAPrimer('', 0);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('invalid-sequence');
-        if (result.error.kind === 'invalid-sequence') {
-          expect(result.error.cause.kind).toBe('empty-sequence');
+        expect(result.error.kind).toBe('primer/invalid-sequence');
+        if (result.error.kind === 'primer/invalid-sequence') {
+          expect(result.error.cause.kind).toBe('rna/empty-sequence');
         }
       }
     });

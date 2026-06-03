@@ -39,13 +39,13 @@ export function parsePreMRNA(
 ): Result<PreMRNA, TranscriptionError> {
   const rnaResult = parseRNA(sequence);
   if (!rnaResult.success) {
-    return failure({ kind: 'invalid-rna-sequence', cause: rnaResult.error });
+    return failure({ kind: 'transcription/invalid-rna-sequence', cause: rnaResult.error });
   }
   const rna = rnaResult.data;
 
   if (!Number.isInteger(transcriptionStartSite) || transcriptionStartSite < 0) {
     return failure({
-      kind: 'tss-out-of-bounds',
+      kind: 'transcription/tss-out-of-bounds',
       tss: transcriptionStartSite,
       sequenceLength: sourceGene.sequence.sequence.length,
     });

@@ -218,7 +218,7 @@ export class NucleotidePattern {
  */
 export function compilePatternRegexSource(pattern: string): Result<string, PatternError> {
   if (pattern === '') {
-    return failure({ kind: 'empty-pattern' });
+    return failure({ kind: 'pattern/empty-pattern' });
   }
   let source = '';
   for (let i = 0; i < pattern.length; i++) {
@@ -231,7 +231,7 @@ export function compilePatternRegexSource(pattern: string): Result<string, Patte
       }
       const upper = character.toUpperCase();
       if (!isIUPACSymbol(upper)) {
-        return failure({ kind: 'invalid-iupac-character', character, index: i });
+        return failure({ kind: 'pattern/invalid-iupac-character', character, index: i });
       }
       source += symbolRegexClassFor(upper);
     } else {

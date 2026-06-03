@@ -91,7 +91,7 @@ export function parseDoubleStrandedDNA(
 ): Result<DoubleStrandedDNA, DoubleStrandedError> {
   if (forward.sequence.length !== reverse.sequence.length) {
     return failure({
-      kind: 'length-mismatch',
+      kind: 'double-stranded/length-mismatch',
       forwardLength: forward.sequence.length,
       reverseLength: reverse.sequence.length,
     });
@@ -105,7 +105,7 @@ export function parseDoubleStrandedDNA(
       const actualChar = reverse.sequence.charAt(i);
       if (expectedChar !== actualChar) {
         return failure({
-          kind: 'not-complementary',
+          kind: 'double-stranded/not-complementary',
           firstMismatchAt: i,
           expected: expectedChar,
           actual: actualChar,

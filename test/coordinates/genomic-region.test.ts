@@ -1,12 +1,12 @@
 import {
   GenomicRegion,
   validateGenomicRegion,
-  describeRegionError,
   regionsOverlap,
   findFirstOverlap,
   validateNonOverlappingRegions,
   deriveIntronsFromExons,
 } from '../../src/coordinates';
+import { describeError } from '../../src';
 
 describe('GenomicRegion utilities', () => {
   describe('validateGenomicRegion', () => {
@@ -25,7 +25,7 @@ describe('GenomicRegion utilities', () => {
       const result = validateGenomicRegion(region);
       expect(!result.success).toBe(true);
       if (!result.success) {
-        expect(result.error.kind).toBe('start-not-before-end');
+        expect(result.error.kind).toBe('region/start-not-before-end');
       }
     });
 
@@ -33,7 +33,7 @@ describe('GenomicRegion utilities', () => {
       const region: GenomicRegion = { start: 10, end: 5 };
       const result = validateGenomicRegion(region);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'start-not-before-end') {
+      if (!result.success && result.error.kind === 'region/start-not-before-end') {
         expect(result.error.start).toBe(10);
         expect(result.error.end).toBe(5);
       }
@@ -43,7 +43,7 @@ describe('GenomicRegion utilities', () => {
       const region: GenomicRegion = { start: -1, end: 10 };
       const result = validateGenomicRegion(region);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'negative-start') {
+      if (!result.success && result.error.kind === 'region/negative-start') {
         expect(result.error.start).toBe(-1);
       }
     });
@@ -52,7 +52,7 @@ describe('GenomicRegion utilities', () => {
       const region: GenomicRegion = { start: 0, end: -5 };
       const result = validateGenomicRegion(region);
       expect(!result.success).toBe(true);
-      if (!result.success && result.error.kind === 'negative-end') {
+      if (!result.success && result.error.kind === 'region/negative-end') {
         expect(result.error.end).toBe(-5);
       }
     });
@@ -63,9 +63,9 @@ describe('GenomicRegion utilities', () => {
     });
 
     test('describeRegionError renders each variant', () => {
-      expect(describeRegionError({ kind: 'negative-start', start: -1 })).toContain('-1');
-      expect(describeRegionError({ kind: 'negative-end', end: -2 })).toContain('-2');
-      expect(describeRegionError({ kind: 'start-not-before-end', start: 10, end: 5 })).toContain(
+      expect(describeError({ kind: 'region/negative-start', start: -1 })).toContain('-1');
+      expect(describeError({ kind: 'region/negative-end', end: -2 })).toContain('-2');
+      expect(describeError({ kind: 'region/start-not-before-end', start: 10, end: 5 })).toContain(
         '10',
       );
     });

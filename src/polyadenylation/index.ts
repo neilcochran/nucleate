@@ -46,4 +46,3 @@ export {
   MIN_POLYA_SITE_STRENGTH,
 } from './tuning.js';
 export type { PolyadenylationError } from './errors.js';
-export { describePolyadenylationError } from './errors.js';
