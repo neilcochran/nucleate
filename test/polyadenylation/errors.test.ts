@@ -1,7 +1,7 @@
 import { describeError } from '../../src';
 import type { PolyadenylationError } from '../../src/polyadenylation';
 
-describe('describePolyadenylationError', () => {
+describe('describeError (PolyadenylationError)', () => {
   const cases: { error: PolyadenylationError; expected: RegExp }[] = [
     {
       error: { kind: 'polyadenylation/invalid-cleavage-site', cleavageSite: -1 },

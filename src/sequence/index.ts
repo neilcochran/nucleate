@@ -1,6 +1,6 @@
 /**
  * Sequence-level primitives: validated `DNA` / `RNA` sequence types, the `DoubleStrandedDNA`
- * duplex, parsers, complement helpers, sequence-level transcription / reverse-transcription,
+ * duplex, parsers, sequence-level transcription / reverse-transcription,
  * and codon primitives.
  *
  * The `DNA` / `RNA` / `DoubleStrandedDNA` classes are exported as types only, so construction
@@ -14,7 +14,6 @@ export type { DNA } from './DNA.js';
 export type { RNA } from './RNA.js';
 export type { DoubleStrandedDNA } from './DoubleStrandedDNA.js';
 export { parseDNA, parseRNA, parseDoubleStrandedDNA, doubleStrandedDNA } from './parse.js';
-export { complement, reverseComplement } from './complement.js';
 export { transcribeSequence, reverseTranscribeSequence } from './conversion.js';
 export {
   CODON_LENGTH,

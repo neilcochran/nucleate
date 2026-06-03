@@ -2,7 +2,7 @@ import { describeError } from '../../src';
 import type { ProcessingError, SpliceVariantSelectionError } from '../../src/processing';
 import type { MRNAError } from '../../src/modifications';
 
-describe('describeProcessingError', () => {
+describe('describeError (ProcessingError)', () => {
   const cases: { error: ProcessingError; expected: RegExp }[] = [
     {
       error: { kind: 'mrna/invalid-sequence', cause: { kind: 'rna/empty-sequence' } },
@@ -47,7 +47,7 @@ describe('describeProcessingError', () => {
     expect(describeError(error)).toMatch(/Splicing failed.*Variant 'v'.*start codon/);
   });
 
-  test('delegates the MRNAError subset to describeMRNAError', () => {
+  test('delegates the MRNAError subset to describeError (MRNAError)', () => {
     const mRNAError: MRNAError = {
       kind: 'mrna/invalid-sequence',
       cause: { kind: 'rna/empty-sequence' },
@@ -56,7 +56,7 @@ describe('describeProcessingError', () => {
   });
 });
 
-describe('describeSpliceVariantSelectionError', () => {
+describe('describeError (SpliceVariantSelectionError)', () => {
   const cases: { error: SpliceVariantSelectionError; expected: RegExp }[] = [
     {
       error: { kind: 'splice-selection/no-splicing-profile' },

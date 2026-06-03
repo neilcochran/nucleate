@@ -89,7 +89,7 @@ describe('DoubleStrandedDNA', () => {
     });
   });
 
-  describe('describeDoubleStrandedError', () => {
+  describe('describeError (DoubleStrandedError)', () => {
     test('renders length-mismatch human-readably', () => {
       const message = describeError({
         kind: 'double-stranded/length-mismatch',

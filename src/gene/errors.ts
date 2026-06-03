@@ -5,7 +5,7 @@
  */
 
 import type { DNAError } from '../sequence/index.js';
-import type { VariantValidationError } from '../variants/errors.js';
+import type { VariantValidationError } from '../variants/index.js';
 
 /**
  * Error variants produced by `parseGene` and the validators it composes.

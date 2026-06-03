@@ -1,7 +1,7 @@
 import { Result, success, failure } from '../result/index.js';
 import type { RNA } from '../sequence/index.js';
 import { START_CODON, CODON_LENGTH, isStopCodon } from '../sequence/index.js';
-import { unsafeRNA } from '../sequence/RNA.js';
+import { unsafeRNA } from '../sequence/internal.js';
 import type { PreMRNA } from '../transcription/index.js';
 import { mRNACoord } from '../coordinates/index.js';
 import {
@@ -11,7 +11,8 @@ import {
   add3PrimePolyATailAtSite,
   DEFAULT_POLY_A_TAIL_LENGTH,
 } from '../polyadenylation/index.js';
-import { type MRNA, unsafeMRNA } from '../modifications/MRNA.js';
+import type { MRNA } from '../modifications/index.js';
+import { unsafeMRNA } from '../modifications/internal.js';
 import { spliceRNA } from '../splicing/index.js';
 import type { ProcessingError } from './errors.js';
 

@@ -1,7 +1,6 @@
 import { Result, success, failure, at } from '../result/index.js';
 import type { DoubleStrandedDNA } from '../sequence/index.js';
-import { unsafeDNA } from '../sequence/DNA.js';
-import { unsafeDoubleStrandedDNA } from '../sequence/DoubleStrandedDNA.js';
+import { unsafeDNA, unsafeDoubleStrandedDNA } from '../sequence/internal.js';
 import type {
   ReplicationEvent,
   ReplicationOutput,

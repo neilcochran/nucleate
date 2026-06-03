@@ -1,7 +1,7 @@
 import { describeError } from '../../src';
 import type { DNAError, RNAError, ReadingFrameError } from '../../src/sequence';
 
-describe('describeDNAError', () => {
+describe('describeError (DNAError)', () => {
   test('renders empty-sequence', () => {
     const error: DNAError = { kind: 'dna/empty-sequence' };
     expect(describeError(error)).toContain('empty');
@@ -20,7 +20,7 @@ describe('describeDNAError', () => {
   });
 });
 
-describe('describeRNAError', () => {
+describe('describeError (RNAError)', () => {
   test('renders empty-sequence', () => {
     const error: RNAError = { kind: 'rna/empty-sequence' };
     expect(describeError(error)).toContain('empty');
@@ -38,7 +38,7 @@ describe('describeRNAError', () => {
   });
 });
 
-describe('describeReadingFrameError', () => {
+describe('describeError (ReadingFrameError)', () => {
   test('renders frame-misaligned with the lengths', () => {
     const error: ReadingFrameError = {
       kind: 'reading-frame/frame-misaligned',

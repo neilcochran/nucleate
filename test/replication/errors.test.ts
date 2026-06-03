@@ -1,7 +1,7 @@
 import { describeError } from '../../src';
 
 describe('replication error renderers', () => {
-  describe('describeRNAPrimerError', () => {
+  describe('describeError (RNAPrimerError)', () => {
     test('invalid-position mentions the offending value', () => {
       const message = describeError({ kind: 'primer/invalid-position', position: -7 });
       expect(message).toContain('-7');
@@ -28,7 +28,7 @@ describe('replication error renderers', () => {
     });
   });
 
-  describe('describeOkazakiFragmentError', () => {
+  describe('describeError (OkazakiFragmentError)', () => {
     test('empty-id message', () => {
       const message = describeError({ kind: 'okazaki/empty-id' });
       expect(message.toLowerCase()).toContain('empty');
@@ -75,7 +75,7 @@ describe('replication error renderers', () => {
     });
   });
 
-  describe('describeReplicationError', () => {
+  describe('describeError (ReplicationError)', () => {
     test('template-too-short mentions both the actual length and the minimum', () => {
       const message = describeError({
         kind: 'replication/template-too-short',

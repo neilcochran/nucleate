@@ -1,7 +1,7 @@
 import { describeError } from '../../src';
 import type { SplicingError } from '../../src/splicing';
 
-describe('describeSplicingError', () => {
+describe('describeError (SplicingError)', () => {
   const cases: { error: SplicingError; expected: RegExp }[] = [
     { error: { kind: 'splicing/no-exons' }, expected: /no exons/i },
     {

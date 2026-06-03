@@ -1,6 +1,5 @@
 import type { Codon } from '../sequence/index.js';
-import { unsafeCodon } from '../sequence/codons.js';
-import { unsafeRNA } from '../sequence/RNA.js';
+import { unsafeCodon, unsafeRNA } from '../sequence/internal.js';
 import type { AminoAcidData } from './AminoAcidData.js';
 
 /**

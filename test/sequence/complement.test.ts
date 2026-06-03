@@ -1,4 +1,4 @@
-import { parseDNA, parseRNA, complement, reverseComplement } from '../../src/sequence';
+import { parseDNA, parseRNA } from '../../src/sequence';
 import { DNA } from '../../src/sequence/DNA';
 import { RNA } from '../../src/sequence/RNA';
 
@@ -10,31 +10,31 @@ function rna(sequence: string) {
   return parseRNA(sequence).unwrap();
 }
 
-describe('complement (free function)', () => {
+describe('getComplement', () => {
   test('returns the complement of a DNA sequence', () => {
-    expect(complement(dna('ATCG')).sequence).toBe('TAGC');
+    expect(dna('ATCG').getComplement().sequence).toBe('TAGC');
   });
 
   test('returns the complement of an RNA sequence', () => {
-    expect(complement(rna('AUCG')).sequence).toBe('UAGC');
+    expect(rna('AUCG').getComplement().sequence).toBe('UAGC');
   });
 
   test('return type is the expected sibling class', () => {
-    expect(complement(dna('ATCG'))).toBeInstanceOf(DNA);
-    expect(complement(rna('AUCG'))).toBeInstanceOf(RNA);
+    expect(dna('ATCG').getComplement()).toBeInstanceOf(DNA);
+    expect(rna('AUCG').getComplement()).toBeInstanceOf(RNA);
   });
 });
 
-describe('reverseComplement (free function)', () => {
+describe('getReverseComplement', () => {
   test('returns the reverse complement of a DNA sequence', () => {
-    expect(reverseComplement(dna('ATCG')).sequence).toBe('CGAT');
+    expect(dna('ATCG').getReverseComplement().sequence).toBe('CGAT');
   });
 
   test('returns the reverse complement of an RNA sequence', () => {
-    expect(reverseComplement(rna('AUCG')).sequence).toBe('CGAU');
+    expect(rna('AUCG').getReverseComplement().sequence).toBe('CGAU');
   });
 
   test('palindromic restriction site equals its reverse complement', () => {
-    expect(reverseComplement(dna('GAATTC')).sequence).toBe('GAATTC');
+    expect(dna('GAATTC').getReverseComplement().sequence).toBe('GAATTC');
   });
 });

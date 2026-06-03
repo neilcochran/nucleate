@@ -12,4 +12,5 @@ export type { SpliceRNAOptions } from './splicing.js';
 export { validateSpliceSites, findPotentialSpliceSites } from './splice-sites.js';
 export { SPLICE_CONSENSUS } from './splice-consensus.js';
 export { MIN_INTRON_LENGTH_FOR_SPLICING } from './biology.js';
+export { DEFAULT_MAX_INTRON_SEARCH } from './tuning.js';
 export type { SplicingError } from './errors.js';

@@ -1,6 +1,6 @@
 import { Result, success, failure, at } from '../result/index.js';
 import type { DNA } from '../sequence/index.js';
-import { unsafeDNA } from '../sequence/DNA.js';
+import { unsafeDNA } from '../sequence/internal.js';
 import type { GeneCoord, GenomicRegion } from '../coordinates/index.js';
 import type {
   AlternativeSplicingProfile,

@@ -62,7 +62,7 @@ describe('GenomicRegion utilities', () => {
       expect(validateGenomicRegion(region).success).toBe(true);
     });
 
-    test('describeRegionError renders each variant', () => {
+    test('describeError (RegionError) renders each variant', () => {
       expect(describeError({ kind: 'region/negative-start', start: -1 })).toContain('-1');
       expect(describeError({ kind: 'region/negative-end', end: -2 })).toContain('-2');
       expect(describeError({ kind: 'region/start-not-before-end', start: 10, end: 5 })).toContain(

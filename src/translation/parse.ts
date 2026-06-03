@@ -1,6 +1,6 @@
 import { Result, success, failure } from '../result/index.js';
 import { parseRNA, CODON_LENGTH, isStopCodon } from '../sequence/index.js';
-import { unsafeCodon } from '../sequence/codons.js';
+import { unsafeCodon } from '../sequence/internal.js';
 import { type AminoAcid, unsafeAminoAcid } from './AminoAcid.js';
 import { AMINO_ACID_BY_CODON } from './amino-acids.js';
 import type { TranslationError } from './errors.js';

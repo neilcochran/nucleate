@@ -1,7 +1,7 @@
 import { describeError } from '../../src';
 import type { VariantValidationError } from '../../src/variants';
 
-describe('describeVariantValidationError', () => {
+describe('describeError (VariantValidationError)', () => {
   const cases: { error: VariantValidationError; expected: RegExp }[] = [
     {
       error: { kind: 'variant/no-included-exons', variantName: 'v' },

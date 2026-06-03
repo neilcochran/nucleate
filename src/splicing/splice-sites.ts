@@ -1,7 +1,7 @@
 import { Result, success, failure, at } from '../result/index.js';
 import type { GenomicRegion } from '../coordinates/index.js';
 import { MIN_INTRON_LENGTH_FOR_SPLICING } from './biology.js';
-import { DEFAULT_MAX_INTRON_SEARCH } from '../gene/tuning.js';
+import { DEFAULT_MAX_INTRON_SEARCH } from './tuning.js';
 import { SPLICE_CONSENSUS } from './splice-consensus.js';
 import type { SplicingError } from './errors.js';
 

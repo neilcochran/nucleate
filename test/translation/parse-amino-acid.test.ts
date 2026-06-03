@@ -76,7 +76,7 @@ describe('parseAminoAcid', () => {
     }
   });
 
-  test('describeTranslationError renders each variant', () => {
+  test('describeError (TranslationError) renders each variant', () => {
     expect(describeError({ kind: 'translation/stop-codon', codon: 'UAA' })).toContain('UAA');
     expect(
       describeError({

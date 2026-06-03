@@ -1,5 +1,5 @@
 import type { RNA } from '../sequence/index.js';
-import { unsafeRNA } from '../sequence/RNA.js';
+import { unsafeRNA } from '../sequence/internal.js';
 import type { MatureMRNACoord } from '../coordinates/index.js';
 import { MIN_POLY_A_DETECTION_LENGTH } from '../polyadenylation/biology.js';
 

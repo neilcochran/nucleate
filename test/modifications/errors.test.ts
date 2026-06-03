@@ -1,7 +1,7 @@
 import { describeError } from '../../src';
 import type { MRNAError } from '../../src/modifications';
 
-describe('describeMRNAError', () => {
+describe('describeError (MRNAError)', () => {
   const cases: { error: MRNAError; expected: RegExp }[] = [
     {
       error: { kind: 'mrna/invalid-sequence', cause: { kind: 'rna/empty-sequence' } },

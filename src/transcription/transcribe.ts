@@ -1,6 +1,5 @@
 import { Result, success, failure, at } from '../result/index.js';
-import { unsafeDNA } from '../sequence/DNA.js';
-import { unsafeRNA } from '../sequence/RNA.js';
+import { unsafeDNA, unsafeRNA } from '../sequence/internal.js';
 import type { Gene } from '../gene/index.js';
 import { geneCoord, type GeneCoord, type GenomicRegion } from '../coordinates/index.js';
 import type { TranscriptionError } from './errors.js';

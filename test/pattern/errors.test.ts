@@ -1,7 +1,7 @@
 import { describeError } from '../../src';
 import type { PatternError } from '../../src/pattern';
 
-describe('describePatternError', () => {
+describe('describeError (PatternError)', () => {
   test('renders empty-pattern', () => {
     const error: PatternError = { kind: 'pattern/empty-pattern' };
     expect(describeError(error)).toBe('Nucleotide pattern cannot be empty');

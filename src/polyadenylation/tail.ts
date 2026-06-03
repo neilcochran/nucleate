@@ -1,6 +1,6 @@
 import { Result, success, failure } from '../result/index.js';
 import type { RNA } from '../sequence/index.js';
-import { unsafeRNA } from '../sequence/RNA.js';
+import { unsafeRNA } from '../sequence/internal.js';
 import type { PolyadenylationSite } from './polyadenylation-site.js';
 import type { PolyadenylationError } from './errors.js';
 import {

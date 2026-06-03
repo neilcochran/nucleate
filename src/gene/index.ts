@@ -37,4 +37,3 @@ export {
   TATA_BOX_TYPICAL_POSITION,
   DPE_TYPICAL_POSITION,
 } from './biology.js';
-export { DEFAULT_MAX_INTRON_SEARCH } from './tuning.js';

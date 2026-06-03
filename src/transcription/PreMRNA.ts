@@ -1,5 +1,5 @@
 import type { RNA } from '../sequence/index.js';
-import { unsafeRNA } from '../sequence/RNA.js';
+import { unsafeRNA } from '../sequence/internal.js';
 import type { Gene } from '../gene/index.js';
 import {
   transcriptCoord,
