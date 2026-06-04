@@ -4,8 +4,7 @@
  * `validateExons`, and the canonical promoter-element consensus instances.
  *
  * The `Gene` / `Promoter` / `PromoterElement` classes are exported as types only, so
- * construction is reachable only through the parsers below. The module-private `unsafeGene` /
- * `unsafePromoter` / `unsafePromoterElement` factories are likewise excluded from this barrel.
+ * construction is reachable only through the parsers below.
  */
 export type { Gene } from './Gene.js';
 export type { Promoter } from './Promoter.js';

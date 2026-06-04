@@ -76,24 +76,3 @@ export class PromoterElement {
     );
   }
 }
-
-/**
- * Constructs a {@link PromoterElement} without re-running validation. Reserved for
- * `gene/`-internal callers (parsers, the consensus-table module).
- *
- * @param name - Validated element name
- * @param pattern - IUPAC nucleotide pattern
- * @param position - Validated TSS-relative position
- * @param scoreWeight - Validated score weight
- * @returns A new `PromoterElement`
- *
- * @internal
- */
-export function unsafePromoterElement(
-  name: string,
-  pattern: NucleotidePattern,
-  position: number,
-  scoreWeight: number,
-): PromoterElement {
-  return new PromoterElement(name, pattern, position, scoreWeight);
-}

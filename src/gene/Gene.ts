@@ -190,26 +190,3 @@ export class Gene {
     return `Gene${nameStr}(${this.sequence.getSequence().length}nt, ${this.exons.length} exons, ${this.introns.length} introns)`;
   }
 }
-
-/**
- * Constructs a {@link Gene} without re-running validation. Reserved for `gene/`-internal
- * callers.
- *
- * @param sequence - Validated DNA sequence
- * @param exons - Validated, branded exon regions
- * @param introns - Validated, branded intron regions
- * @param name - Optional gene name
- * @param splicingProfile - Optional, validated alternative-splicing profile
- * @returns A new `Gene`
- *
- * @internal
- */
-export function unsafeGene(
-  sequence: DNA,
-  exons: readonly GenomicRegion<GeneCoord>[],
-  introns: readonly GenomicRegion<GeneCoord>[],
-  name: string | undefined,
-  splicingProfile: AlternativeSplicingProfile | undefined,
-): Gene {
-  return new Gene(sequence, exons, introns, name, splicingProfile);
-}

@@ -4,21 +4,6 @@ import { complementIUPACSymbol, isIUPACSymbol } from './iupac-symbols.js';
 import type { IUPACSymbol } from './iupac-symbols.js';
 import type { PatternError } from './errors.js';
 
-/**
- * Constructs a {@link NucleotidePattern} from a pre-validated source string and its compiled
- * regex forms, skipping all IUPAC validation. Reserved for `pattern/`-internal callers
- * (the parser; the complement-pattern helper) that have already compiled the regex.
- *
- * @internal
- */
-export function unsafeNucleotidePattern(
-  pattern: string,
-  patternRegex: RegExp,
-  patternRegexGlobal: RegExp,
-): NucleotidePattern {
-  return new NucleotidePattern(pattern, patternRegex, patternRegexGlobal);
-}
-
 /** Acceptable input shape for pattern matching: a raw string or a validated `DNA` / `RNA`. */
 function asString(sequence: string | DNA | RNA): string {
   return typeof sequence === 'string' ? sequence : sequence.sequence;

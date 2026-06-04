@@ -1,15 +1,8 @@
 import { Result, success, failure } from '../result/index.js';
 import { isIUPACSymbol } from './iupac-symbols.js';
 import type { PatternError } from './errors.js';
-import {
-  NucleotidePattern,
-  compilePatternRegexSource,
-  unsafeNucleotidePattern,
-} from './NucleotidePattern.js';
-import {
-  NucleotidePatternSymbol,
-  unsafeNucleotidePatternSymbol,
-} from './NucleotidePatternSymbol.js';
+import { NucleotidePattern, compilePatternRegexSource } from './NucleotidePattern.js';
+import { NucleotidePatternSymbol } from './NucleotidePatternSymbol.js';
 
 /**
  * Parses an untrusted IUPAC pattern string into a {@link NucleotidePattern}.
@@ -45,7 +38,7 @@ export function parseNucleotidePattern(input: string): Result<NucleotidePattern,
     const message = cause instanceof Error ? cause.message : String(cause);
     return failure({ kind: 'pattern/invalid-regex-construction', pattern: input, cause: message });
   }
-  return success(unsafeNucleotidePattern(input, basicRegex, globalRegex));
+  return success(new NucleotidePattern(input, basicRegex, globalRegex));
 }
 
 /**
@@ -77,7 +70,7 @@ export function parseNucleotidePatternSymbol(
   if (!isIUPACSymbol(upper)) {
     return failure({ kind: 'pattern/invalid-iupac-symbol', symbol: input });
   }
-  return success(unsafeNucleotidePatternSymbol(upper));
+  return success(new NucleotidePatternSymbol(upper));
 }
 
 /**

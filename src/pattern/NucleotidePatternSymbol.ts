@@ -37,15 +37,6 @@ export class NucleotidePatternSymbol {
 }
 
 /**
- * Constructs a {@link NucleotidePatternSymbol} from a pre-validated, upper-cased IUPAC symbol.
- *
- * @internal
- */
-export function unsafeNucleotidePatternSymbol(symbol: IUPACSymbol): NucleotidePatternSymbol {
-  return new NucleotidePatternSymbol(symbol);
-}
-
-/**
  * Builds the case-insensitive regex character class for a set of bases. Each base contributes
  * both its upper- and lower-case forms (e.g. `['A', 'T']` produces `/[AaTt]/`).
  */

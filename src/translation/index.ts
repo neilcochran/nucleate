@@ -5,8 +5,7 @@
  * {@link TranslationError} tagged union.
  *
  * The `AminoAcid` / `Polypeptide` classes are exported as types only, so construction is
- * reachable only through `parseAminoAcid` / `translate`. The module-private `unsafeAminoAcid` /
- * `unsafeAminoAcidFromString` factories are likewise excluded from this barrel.
+ * reachable only through `parseAminoAcid` / `translate`.
  */
 export type { AminoAcid } from './AminoAcid.js';
 export type { Polypeptide, PolypeptideComposition } from './Polypeptide.js';

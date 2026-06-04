@@ -1,5 +1,5 @@
 import { parseNucleotidePattern } from '../pattern/index.js';
-import { type PromoterElement, unsafePromoterElement } from './PromoterElement.js';
+import { PromoterElement } from './PromoterElement.js';
 
 /**
  * Constructs a {@link PromoterElement} from a validated consensus-sequence string and a
@@ -25,7 +25,7 @@ function buildConsensusElement(
       `Failed to compile promoter-element consensus pattern '${patternString}' for ${name}: ${JSON.stringify(patternResult.error)}`,
     );
   }
-  return unsafePromoterElement(name, patternResult.data, position, scoreWeight);
+  return new PromoterElement(name, patternResult.data, position, scoreWeight);
 }
 
 /**

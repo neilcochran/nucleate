@@ -9,9 +9,9 @@ import {
 import type { NucleotidePattern } from '../pattern/index.js';
 import type { AlternativeSplicingProfile, AlternativeSplicingOptions } from '../variants/index.js';
 import { validateSpliceVariant } from './validate-splice-variant.js';
-import { type Gene, unsafeGene } from './Gene.js';
-import { type Promoter, unsafePromoter } from './Promoter.js';
-import { type PromoterElement, unsafePromoterElement } from './PromoterElement.js';
+import { Gene } from './Gene.js';
+import { Promoter } from './Promoter.js';
+import { PromoterElement } from './PromoterElement.js';
 import type { GeneError, PromoterError, PromoterElementError } from './errors.js';
 import { validateExons } from './validate-exons.js';
 
@@ -89,7 +89,7 @@ export function parseGene(
     name: `intron${i + 1}`,
   }));
 
-  const gene = unsafeGene(dna, brandedExons, brandedIntrons, name, splicingProfile);
+  const gene = new Gene(dna, brandedExons, brandedIntrons, name, splicingProfile);
 
   if (splicingProfile !== undefined) {
     const profileValidation = validateSplicingProfile(splicingProfile, gene);
@@ -117,7 +117,7 @@ export function parsePromoter(
   if (!Number.isInteger(transcriptionStartSite) || transcriptionStartSite < 0) {
     return failure({ kind: 'promoter/invalid-tss', tss: transcriptionStartSite });
   }
-  return success(unsafePromoter(geneCoord(transcriptionStartSite), elements, name));
+  return success(new Promoter(geneCoord(transcriptionStartSite), elements, name));
 }
 
 /**
@@ -146,7 +146,7 @@ export function parsePromoterElement(
   if (!Number.isFinite(scoreWeight)) {
     return failure({ kind: 'promoter-element/invalid-score-weight', scoreWeight });
   }
-  return success(unsafePromoterElement(name, pattern, position, scoreWeight));
+  return success(new PromoterElement(name, pattern, position, scoreWeight));
 }
 
 /**

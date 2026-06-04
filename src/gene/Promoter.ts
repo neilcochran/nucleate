@@ -123,22 +123,3 @@ export class Promoter {
     return `Promoter${nameStr} at TSS=${this.transcriptionStartSite} with elements: [${elementNames}]`;
   }
 }
-
-/**
- * Constructs a {@link Promoter} without re-running validation. Reserved for `gene/`-internal
- * callers.
- *
- * @param transcriptionStartSite - Validated, branded gene-coordinate TSS
- * @param elements - Validated promoter elements
- * @param name - Optional promoter name
- * @returns A new `Promoter`
- *
- * @internal
- */
-export function unsafePromoter(
-  transcriptionStartSite: GeneCoord,
-  elements: readonly PromoterElement[],
-  name: string | undefined,
-): Promoter {
-  return new Promoter(transcriptionStartSite, elements, name);
-}

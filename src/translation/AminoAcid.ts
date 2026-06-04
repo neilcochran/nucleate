@@ -103,21 +103,6 @@ export class AminoAcid {
 }
 
 /**
- * Constructs an {@link AminoAcid} without re-running validation. Reserved for
- * `translation/`-internal callers (the {@link parseAminoAcid} parser, the `translate`
- * pipeline).
- *
- * @param codon - The validated, codon-length RNA
- * @param data - The validated amino-acid data
- * @returns A new `AminoAcid`
- *
- * @internal
- */
-export function unsafeAminoAcid(codon: Codon, data: AminoAcidData): AminoAcid {
-  return new AminoAcid(codon, data);
-}
-
-/**
  * Constructs an {@link AminoAcid} from a trusted codon string and the matching data entry.
  * Skips RNA parsing, length validation, and codon-table lookup; the caller is asserting all
  * three are already known to be consistent.
@@ -129,5 +114,5 @@ export function unsafeAminoAcid(codon: Codon, data: AminoAcidData): AminoAcid {
  * @internal
  */
 export function unsafeAminoAcidFromString(codonString: string, data: AminoAcidData): AminoAcid {
-  return unsafeAminoAcid(unsafeCodon(unsafeRNA(codonString)), data);
+  return new AminoAcid(unsafeCodon(unsafeRNA(codonString)), data);
 }

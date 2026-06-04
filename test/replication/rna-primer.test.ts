@@ -1,5 +1,5 @@
 import { parseRNAPrimer } from '../../src/replication';
-import { unsafeRNAPrimer, unsafeRNAPrimerFromString } from '../../src/replication/RNAPrimer';
+import { RNAPrimer, unsafeRNAPrimerFromString } from '../../src/replication/RNAPrimer';
 import { parseRNA } from '../../src/sequence';
 
 describe('RNAPrimer', () => {
@@ -85,9 +85,9 @@ describe('RNAPrimer', () => {
   });
 
   describe('internal unsafe factories', () => {
-    test('unsafeRNAPrimer bypasses length validation', () => {
+    test('new RNAPrimer bypasses length validation', () => {
       const rna = parseRNA('A').unwrap();
-      const primer = unsafeRNAPrimer(rna, 5);
+      const primer = new RNAPrimer(rna, 5);
       expect(primer.sequence.sequence).toBe('A');
       expect(primer.position).toBe(5);
       expect(primer.length()).toBe(1);

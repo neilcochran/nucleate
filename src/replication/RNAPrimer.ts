@@ -92,22 +92,7 @@ export function parseRNAPrimer(
       max: MAX_RNA_PRIMER_LENGTH,
     });
   }
-  return success(unsafeRNAPrimer(rna, position));
-}
-
-/**
- * Constructs an {@link RNAPrimer} without re-validating the inputs. Reserved for
- * `replication/`-internal callers (the `replicate` pipeline) that already know the inputs
- * are well-formed.
- *
- * @internal
- *
- * @param sequence - Validated RNA sequence
- * @param position - Validated non-negative position
- * @returns A new `RNAPrimer`
- */
-export function unsafeRNAPrimer(sequence: RNA, position: number): RNAPrimer {
-  return new RNAPrimer(sequence, position);
+  return success(new RNAPrimer(rna, position));
 }
 
 /**
@@ -122,5 +107,5 @@ export function unsafeRNAPrimer(sequence: RNA, position: number): RNAPrimer {
  * @returns A new `RNAPrimer`
  */
 export function unsafeRNAPrimerFromString(sequence: string, position: number): RNAPrimer {
-  return unsafeRNAPrimer(unsafeRNA(sequence), position);
+  return new RNAPrimer(unsafeRNA(sequence), position);
 }
