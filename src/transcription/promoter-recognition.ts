@@ -15,7 +15,7 @@ import {
 /**
  * Configuration for {@link findPromoters}.
  *
- * All fields are optional; the {@link DEFAULT_SEARCH_OPTIONS} object holds the values used
+ * All fields are optional; the `DEFAULT_SEARCH_OPTIONS` object holds the values used
  * when a caller omits a field.
  */
 export interface PromoterSearchOptions {

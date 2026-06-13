@@ -26,8 +26,8 @@
  * }
  * ```
  */
-export function at<T>(arr: readonly T[], i: number): T;
-export function at<T>(rec: Readonly<Record<string, T>>, key: string): T;
+export function at<T>(target: readonly T[], key: number): T;
+export function at<T>(target: Readonly<Record<string, T>>, key: string): T;
 export function at<T>(target: readonly T[] | Readonly<Record<string, T>>, key: number | string): T {
   const value = (target as Readonly<Record<string | number, T | undefined>>)[key];
   if (value === undefined) {

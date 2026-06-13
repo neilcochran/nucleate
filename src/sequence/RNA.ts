@@ -13,7 +13,7 @@ const RNA_COMPLEMENT_MAP: Readonly<Record<string, string>> = Object.freeze({
  * Instances are immutable: the `sequence` field is `readonly` and every transformation
  * (`getSubsequence`, `getComplement`, `getReverseComplement`) returns a new `RNA`. All the
  * methods (substring / complement / containment / equality) come from the shared
- * {@link NucleicAcidImpl} base; `RNA` only contributes the alphabet-specific complement table.
+ * `NucleicAcidImpl` base; `RNA` only contributes the alphabet-specific complement table.
  *
  * Public callers construct instances via {@link parseRNA}; the constructor is module-private
  * and is not part of the package's public surface.

@@ -17,7 +17,7 @@ export const CODON_LENGTH = 3;
  * brand-on-an-entity (a length-refined `RNA`), not a third construction mechanism alongside the
  * parser-constructed classes and the factory-built branded records.
  *
- * Construct via {@link parseCodon} for untrusted input, or via {@link unsafeCodon} for in-tree
+ * Construct via {@link parseCodon} for untrusted input, or via `unsafeCodon` for in-tree
  * callers that have already verified the length invariant.
  */
 export type Codon = RNA & {
