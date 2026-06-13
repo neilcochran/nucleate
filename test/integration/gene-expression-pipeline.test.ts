@@ -2,20 +2,20 @@
  * Integration tests for the complete gene expression pipeline.
  *
  * These tests validate the entire workflow:
- * Gene → transcription → PreMRNA → RNA processing → mature mRNA
+ * Pipeline stages: Gene, transcription, PreMRNA, RNA processing, mature mRNA
  *
  * This catches integration issues that unit tests miss, particularly
  * coordinate transformation bugs between transcription and RNA processing.
  */
 
-import { Gene } from '../../src/model/nucleic-acids/Gene';
-import { Polypeptide } from '../../src/model/Polypeptide';
-import { transcribe } from '../../src/utils/transcription';
-import { processRNA } from '../../src/utils/mrna-processing';
-import { isSuccess, isFailure } from '../../src/types/validation-result';
+import { parseGene } from '../../src/gene';
+import { translate } from '../../src/translation';
+import { transcribe } from '../../src/transcription';
+import { processRNA } from '../../src/processing';
+import { requireCodingSequence } from '../utils/test-utils';
 
 describe('Gene Expression Pipeline Integration', () => {
-  describe('complete pipeline: Gene → transcription → RNA processing', () => {
+  describe('complete pipeline: Gene -> transcription -> RNA processing', () => {
     test('simple gene with TATA box processes correctly', () => {
       // Create a gene with biologically correct promoter structure
       // TATA box will be detected at position ~4, TSS will be at position ~29 (25bp downstream)
@@ -37,28 +37,28 @@ describe('Gene Expression Pipeline Integration', () => {
       ];
 
       // Step 1: Create gene
-      const gene = new Gene(geneSequence, exons, 'test-insulin-like');
-      expect(gene.getSequence().length).toBe(164);
-      expect(gene.getExons().length).toBe(3);
+      const gene = parseGene(geneSequence, exons, 'test-insulin-like').unwrap();
+      expect(gene.sequence.getSequence().length).toBe(164);
+      expect(gene.exons.length).toBe(3);
 
       // Step 2: Transcription
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
 
         // Verify successful transcription
 
         // Step 3: RNA Processing
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
 
           // Validate biological accuracy
-          const codingSeq = mRNA.getCodingSequence();
+          const codingSeq = requireCodingSequence(mRNA).sequence;
           expect(codingSeq.startsWith('AUG')).toBe(true); // Start codon
           expect(codingSeq.endsWith('UAG')).toBe(true); // Stop codon
           expect(codingSeq.length % 3).toBe(0); // Reading frame
@@ -79,18 +79,17 @@ describe('Gene Expression Pipeline Integration', () => {
         { start: 66, end: 91, name: 'exon2' },
       ];
 
-      const gene = new Gene(geneSequence, exons, 'no-promoter-gene');
+      const gene = parseGene(geneSequence, exons, 'no-promoter-gene').unwrap();
       const transcriptionResult = transcribe(gene);
 
       // Should fail transcription (either no promoter found or TSS/exon conflict)
-      expect(isFailure(transcriptionResult)).toBe(true);
-      if (isFailure(transcriptionResult)) {
-        // Accept either type of failure
-        const error = transcriptionResult.error;
-        const hasValidError =
-          error.includes('No promoters found') ||
-          error.includes('conflicts with gene exon structure');
-        expect(hasValidError).toBe(true);
+      expect(!transcriptionResult.success).toBe(true);
+      if (!transcriptionResult.success) {
+        const kind = transcriptionResult.error.kind;
+        expect(
+          kind === 'transcription/no-promoter-found' ||
+            kind === 'transcription/tss-conflicts-with-exons',
+        ).toBe(true);
       }
     });
 
@@ -106,26 +105,26 @@ describe('Gene Expression Pipeline Integration', () => {
         { start: 68, end: 93, name: 'exon2' }, // 25bp: 68-92 inclusive, 68-93 exclusive
       ];
 
-      const gene = new Gene(geneSequence, exons, 'forced-tss-gene');
+      const gene = parseGene(geneSequence, exons, 'forced-tss-gene').unwrap();
 
       // Force transcription to start at beginning of exon 1
       const transcriptionResult = transcribe(gene, {
         forceTranscriptionStartSite: 16,
       });
 
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
-        expect(preMRNA.getTranscriptionStartSite()).toBe(16);
+        expect(preMRNA.transcriptionStartSite).toBe(16);
 
         // Should be able to process RNA normally
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
-          const codingSeq = mRNA.getCodingSequence();
+          const codingSeq = requireCodingSequence(mRNA).sequence;
           expect(codingSeq.startsWith('AUG')).toBe(true);
         }
       }
@@ -140,22 +139,22 @@ describe('Gene Expression Pipeline Integration', () => {
 
       const exons = [{ start: 29, end: 45, name: 'exon1' }]; // Start at TSS, include ATG start codon, end-exclusive
 
-      const gene = new Gene(geneSequence, exons, 'single-exon-gene');
+      const gene = parseGene(geneSequence, exons, 'single-exon-gene').unwrap();
 
       // Full pipeline
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.hasIntrons()).toBe(false);
 
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
-          const codingSeq = mRNA.getCodingSequence();
+          const codingSeq = requireCodingSequence(mRNA).sequence;
           expect(codingSeq).toBe('AUGAAACCCGGGUAG');
         }
       }
@@ -181,18 +180,18 @@ describe('Gene Expression Pipeline Integration', () => {
         { start: 145, end: 172, name: 'exon3' }, // 27bp: 145-171 inclusive, 145-172 exclusive
       ];
 
-      const gene = new Gene(geneSequence, exons, 'coord-test-gene');
+      const gene = parseGene(geneSequence, exons, 'coord-test-gene').unwrap();
 
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
-        const tss = preMRNA.getTranscriptionStartSite();
+        const tss = preMRNA.transcriptionStartSite;
 
         // Verify exon transformation math
-        const originalExons = gene.getExons();
-        const transformedExons = preMRNA.getExonRegions();
+        const originalExons = gene.exons;
+        const transformedExons = preMRNA.exonRegions;
 
         originalExons.forEach((originalExon, i) => {
           const transformedExon = transformedExons[i];
@@ -224,30 +223,30 @@ describe('Gene Expression Pipeline Integration', () => {
       ];
 
       // Test normal splicing (all exons included)
-      const gene = new Gene(geneSequence, allExons, 'alternatively-spliced-gene');
+      const gene = parseGene(geneSequence, allExons, 'alternatively-spliced-gene').unwrap();
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
 
         // Processing might fail due to invalid splice sites, accept either outcome
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
 
           // Should include all exons: AUGAAACCCGGGIIUAG (with U conversion)
-          const codingSeq = mRNA.getCodingSequence();
+          const codingSeq = requireCodingSequence(mRNA).sequence;
           expect(codingSeq).toBe('AUGAAACCCGGGUUUUAG');
 
           // Create protein and verify
-          const polypeptide = new Polypeptide(mRNA);
-          expect(polypeptide.aminoAcidSequence.length).toBe(5); // M-K-P-G-F
-          expect(polypeptide.aminoAcidSequence[0]?.singleLetterCode).toBe('M');
-          expect(polypeptide.aminoAcidSequence[1]?.singleLetterCode).toBe('K');
+          const polypeptide = translate(mRNA).unwrap();
+          expect(polypeptide.aminoAcids.length).toBe(5); // M-K-P-G-F
+          expect(polypeptide.aminoAcids[0]?.data.singleLetterCode).toBe('M');
+          expect(polypeptide.aminoAcids[1]?.data.singleLetterCode).toBe('K');
         } else {
           // If processing fails due to splice site issues, that's okay
-          expect(isFailure(processingResult)).toBe(true);
+          expect(!processingResult.success).toBe(true);
           expect(processingResult.error).toBeTruthy();
         }
       }
@@ -258,31 +257,35 @@ describe('Gene Expression Pipeline Integration', () => {
         { start: 105, end: 111, name: 'exon3' }, // Skip exon2
       ];
 
-      const alternativeGene = new Gene(geneSequence, alternativeExons, 'alternative-isoform');
+      const alternativeGene = parseGene(
+        geneSequence,
+        alternativeExons,
+        'alternative-isoform',
+      ).unwrap();
       const altTranscriptionResult = transcribe(alternativeGene);
-      expect(isSuccess(altTranscriptionResult)).toBe(true);
+      expect(altTranscriptionResult.success).toBe(true);
 
-      if (isSuccess(altTranscriptionResult)) {
+      if (altTranscriptionResult.success) {
         const altPreMRNA = altTranscriptionResult.data;
         const altProcessingResult = processRNA(altPreMRNA);
 
         // Processing might fail due to invalid splice sites, accept either outcome
-        if (isSuccess(altProcessingResult)) {
+        if (altProcessingResult.success) {
           const altMRNA = altProcessingResult.data;
 
           // Should skip exon2: AUGAAAUUUUAG
-          const altCodingSeq = altMRNA.getCodingSequence();
+          const altCodingSeq = requireCodingSequence(altMRNA).sequence;
           expect(altCodingSeq).toBe('AUGAAAUUUUAG');
 
           // Create protein and verify different result
-          const altPolypeptide = new Polypeptide(altMRNA);
-          expect(altPolypeptide.aminoAcidSequence.length).toBe(3); // M-K-F
-          expect(altPolypeptide.aminoAcidSequence[0]?.singleLetterCode).toBe('M');
-          expect(altPolypeptide.aminoAcidSequence[1]?.singleLetterCode).toBe('K');
-          expect(altPolypeptide.aminoAcidSequence[2]?.singleLetterCode).toBe('F');
+          const altPolypeptide = translate(altMRNA).unwrap();
+          expect(altPolypeptide.aminoAcids.length).toBe(3); // M-K-F
+          expect(altPolypeptide.aminoAcids[0]?.data.singleLetterCode).toBe('M');
+          expect(altPolypeptide.aminoAcids[1]?.data.singleLetterCode).toBe('K');
+          expect(altPolypeptide.aminoAcids[2]?.data.singleLetterCode).toBe('F');
         } else {
           // If processing fails due to splice site issues, that's okay
-          expect(isFailure(altProcessingResult)).toBe(true);
+          expect(!altProcessingResult.success).toBe(true);
           expect(altProcessingResult.error).toBeTruthy();
         }
       }
@@ -309,9 +312,9 @@ describe('Gene Expression Pipeline Integration', () => {
         { start: 113, end: 119, name: 'exon3' },
       ];
 
-      const gene1 = new Gene(complexGeneSeq, isoform1Exons, 'isoform1');
+      const gene1 = parseGene(complexGeneSeq, isoform1Exons, 'isoform1').unwrap();
       const result1 = transcribe(gene1);
-      expect(isSuccess(result1)).toBe(true);
+      expect(result1.success).toBe(true);
 
       // Isoform 2: exon1 -> exonB -> exon3
       const isoform2Exons = [
@@ -320,142 +323,29 @@ describe('Gene Expression Pipeline Integration', () => {
         { start: 113, end: 119, name: 'exon3' },
       ];
 
-      const gene2 = new Gene(complexGeneSeq, isoform2Exons, 'isoform2');
+      const gene2 = parseGene(complexGeneSeq, isoform2Exons, 'isoform2').unwrap();
       const result2 = transcribe(gene2);
-      expect(isSuccess(result2)).toBe(true);
+      expect(result2.success).toBe(true);
 
       // Both isoforms should produce valid but different proteins
-      if (isSuccess(result1) && isSuccess(result2)) {
+      if (result1.success && result2.success) {
         const processing1 = processRNA(result1.data);
         const processing2 = processRNA(result2.data);
 
-        expect(isSuccess(processing1)).toBe(true);
-        expect(isSuccess(processing2)).toBe(true);
+        expect(processing1.success).toBe(true);
+        expect(processing2.success).toBe(true);
 
-        if (isSuccess(processing1) && isSuccess(processing2)) {
-          const protein1 = new Polypeptide(processing1.data);
-          const protein2 = new Polypeptide(processing2.data);
+        if (processing1.success && processing2.success) {
+          const protein1 = translate(processing1.data).unwrap();
+          const protein2 = translate(processing2.data).unwrap();
 
           // Should produce different proteins
-          expect(protein1.aminoAcidSequence.length).toBe(protein2.aminoAcidSequence.length);
+          expect(protein1.aminoAcids.length).toBe(protein2.aminoAcids.length);
 
           // Same length but different sequence due to different exon choice
-          const seq1 = protein1.aminoAcidSequence.map(aa => aa.singleLetterCode).join('');
-          const seq2 = protein2.aminoAcidSequence.map(aa => aa.singleLetterCode).join('');
-          expect(seq1).not.toBe(seq2);
+          expect(protein1.getSequence()).not.toBe(protein2.getSequence());
         }
       }
     });
   });
-
-  // TODO: Replication and Transcription Integration tests (requires replication system implementation)
-  /*describe('Replication and Transcription Integration', () => {
-    test('replicated DNA can be transcribed correctly', () => {
-      // Create a complete gene for replication and transcription
-      const originalDNA = new DNA('GCGCTATAAAAGGCGCGGGGGGGGGGGGGATGAAACCCAAATAA');
-      const exons = [{ start: 29, end: 44, name: 'single-exon' }];
-
-      // Step 1: Replicate the DNA
-      const replicationResult = replicateDNA(originalDNA);
-      expect(isSuccess(replicationResult)).toBe(true);
-
-      if (isSuccess(replicationResult)) {
-        const [strand1, strand2] = replicationResult.data.replicatedStrands;
-
-        // Both strands should be identical to original
-        expect(strand1.getSequence()).toBe(originalDNA.getSequence());
-        expect(strand2.getSequence()).toBe(originalDNA.getSequence());
-
-        // Step 2: Create genes from both replicated strands
-        const gene1 = new Gene(strand1, exons, 'replicated-gene-1');
-        const gene2 = new Gene(strand2, exons, 'replicated-gene-2');
-
-        // Step 3: Transcribe both genes
-        const transcription1 = transcribe(gene1);
-        const transcription2 = transcribe(gene2);
-
-        expect(isSuccess(transcription1)).toBe(true);
-        expect(isSuccess(transcription2)).toBe(true);
-
-        if (isSuccess(transcription1) && isSuccess(transcription2)) {
-          // Both should produce identical transcripts
-          expect(transcription1.data.getSequence()).toBe(transcription2.data.getSequence());
-
-          // Step 4: Process both transcripts
-          const processing1 = processRNA(transcription1.data);
-          const processing2 = processRNA(transcription2.data);
-
-          expect(isSuccess(processing1)).toBe(true);
-          expect(isSuccess(processing2)).toBe(true);
-
-          if (isSuccess(processing1) && isSuccess(processing2)) {
-            // Should produce identical mature mRNAs
-            expect(processing1.data.getCodingSequence()).toBe(processing2.data.getCodingSequence());
-
-            // Step 5: Translate both mRNAs
-            const protein1 = new Polypeptide(processing1.data);
-            const protein2 = new Polypeptide(processing2.data);
-
-            // Should produce identical proteins
-            expect(protein1.aminoAcidSequence.length).toBe(protein2.aminoAcidSequence.length);
-
-            protein1.aminoAcidSequence.forEach((aa, i) => {
-              expect(aa.singleLetterCode).toBe(protein2.aminoAcidSequence[i]?.singleLetterCode);
-            });
-          }
-        }
-      }
-    });
-
-    test('replication preserves gene structure and expression capability', () => {
-      // Test with a multi-exon gene
-      const geneSequence = 'GCGCTATAAAAGGCGCGGGGGGGGGGGG' + // Promoter
-                          'GATGAAA' +    // Exon 1
-                          'GTCCCAG' +    // Intron 1
-                          'CCCAAA' +     // Exon 2
-                          'GTAAACCCCCCCAG' + // Intron 2
-                          'TTTTAGAAAAAAAAAAAAAAAAAA'; // Exon 3 + poly-A
-
-      const originalDNA = new DNA(geneSequence);
-      const exons = [
-        { start: 28, end: 35, name: 'exon1' },
-        { start: 42, end: 48, name: 'exon2' },
-        { start: 62, end: 68, name: 'exon3' },
-      ];
-
-      // Replicate
-      const replicationResult = replicateDNA(originalDNA);
-      expect(isSuccess(replicationResult)).toBe(true);
-
-      if (isSuccess(replicationResult)) {
-        const [replicatedStrand] = replicationResult.data.replicatedStrands;
-
-        // Create gene from replicated DNA
-        const replicatedGene = new Gene(replicatedStrand, exons, 'replicated-multi-exon');
-
-        // Full expression pipeline
-        const transcriptionResult = transcribe(replicatedGene);
-        expect(isSuccess(transcriptionResult)).toBe(true);
-
-        if (isSuccess(transcriptionResult)) {
-          const preMRNA = transcriptionResult.data;
-          expect(preMRNA.hasIntrons()).toBe(true);
-
-          const processingResult = processRNA(preMRNA);
-          expect(isSuccess(processingResult)).toBe(true);
-
-          if (isSuccess(processingResult)) {
-            const mRNA = processingResult.data;
-
-            // Should have properly spliced sequence
-            const codingSeq = mRNA.getCodingSequence();
-            expect(codingSeq).toBe('AUGAAACCCAAAUUUUAG'); // Exons joined
-
-            const polypeptide = new Polypeptide(mRNA);
-            expect(polypeptide.aminoAcidSequence.length).toBe(5); // M-K-P-K-F
-          }
-        }
-      }
-    });
-  });*/
 });

@@ -2,18 +2,18 @@
  * Simplified cross-system integration tests
  *
  * These tests validate basic data flow between major systems:
- * - Gene expression → Translation → Polypeptide analysis
- * - Replication → Transcription coordination
+ * - Gene-expression pipeline: transcription, translation, polypeptide analysis
+ * - Coordination between replication and transcription
  * - Error propagation across system boundaries
  */
 
-import { Gene } from '../../src/model/nucleic-acids/Gene';
-import { transcribe } from '../../src/utils/transcription';
-import { processRNA } from '../../src/utils/mrna-processing';
-import { Polypeptide } from '../../src/model/Polypeptide';
-import { replicateDNA } from '../../src/utils/replication/simple-replication';
-import { isSuccess, isFailure } from '../../src/types/validation-result';
-import { DNA } from '../../src/model/nucleic-acids/DNA';
+import { parseGene } from '../../src/gene';
+import { transcribe } from '../../src/transcription';
+import { processRNA } from '../../src/processing';
+import { translate } from '../../src/translation';
+import { replicate } from '../../src/replication';
+import { parseDNA, doubleStrandedDNA } from '../../src/sequence';
+import { requireCodingSequence } from '../utils/test-utils';
 
 describe('Cross-System Integration Tests', () => {
   describe('Basic Gene-to-Protein Pipeline', () => {
@@ -27,40 +27,44 @@ describe('Cross-System Integration Tests', () => {
         'AATAAAGCTAATTCAACCCCAAAAAAAAA'; // 3'UTR
 
       const exons = [{ start: 29, end: 92, name: 'single-exon' }];
-      const gene = new Gene(geneSequence, exons, 'simple-test');
+      const gene = parseGene(geneSequence, exons, 'simple-test').unwrap();
 
       // Step 1: Transcription
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
-        // Transcript should contain the exact expected length (exon + 3'UTR)
-        expect(preMRNA.getSequence().length).toBe(72);
-        expect(preMRNA.getSequence().startsWith('AUG')).toBe(true);
+        // Transcript runs from TSS (gene position 29) through the gene end (124),
+        // length 95. Polyadenylation cleavage is modeled at processing time, not
+        // here; transcription itself does not truncate.
+        expect(preMRNA.sequence.sequence.length).toBe(95);
+        expect(preMRNA.sequence.sequence.startsWith('AUG')).toBe(true);
         // Should contain stop codon but might not end with it due to 3'UTR
-        expect(preMRNA.getSequence()).toContain('UAG');
+        expect(preMRNA.sequence.sequence).toContain('UAG');
 
         // Step 2: RNA Processing (should succeed or fail gracefully)
         const processingResult = processRNA(preMRNA);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
           expect(mRNA.isFullyProcessed()).toBe(true);
 
           // Step 3: Translation
-          const protein = new Polypeptide(mRNA);
+          const protein = translate(mRNA).unwrap();
           // Should produce exactly 21 amino acids from 66bp sequence (minus stop codon = 63bp = 21 AA)
-          expect(protein.aminoAcidSequence.length).toBe(21);
+          expect(protein.aminoAcids.length).toBe(21);
 
-          const sequence = protein.aminoAcidSequence.map(aa => aa.singleLetterCode).join('');
+          const sequence = protein.getSequence();
           expect(sequence.startsWith('M')).toBe(true);
           // Verify it's a valid protein sequence (no stop codons in middle)
           expect(sequence).not.toContain('*');
         } else {
-          // If processing fails, should have meaningful error
-          expect(typeof processingResult.error).toBe('string');
-          expect(processingResult.error).toMatch(/processing|splice|frame|codon|splicing/i);
+          // If processing fails, should have meaningful structured error
+          expect(typeof processingResult.error.kind).toBe('string');
+          expect(processingResult.error.kind).toMatch(
+            /splicing-failed|no-start-codon|no-in-frame-stop|invalid-/i,
+          );
         }
       }
     });
@@ -68,20 +72,23 @@ describe('Cross-System Integration Tests', () => {
     test('replication produces identical DNA strands', () => {
       // Simple test that replication works correctly
       const simpleSequence = 'ATGAAAGCCTTTGTGAACCAACACCTTCTGGTGGAGCGGCTCTACCTGGTGTGCGGCTCGCTGTAG';
-      const dna = new DNA(simpleSequence);
+      const dna = parseDNA(simpleSequence).unwrap();
+      const parent = doubleStrandedDNA(dna);
 
-      const replicationResult = replicateDNA(dna);
-      expect(isSuccess(replicationResult)).toBe(true);
+      const replicationResult = replicate(parent);
+      expect(replicationResult.success).toBe(true);
 
-      if (isSuccess(replicationResult)) {
-        const { replicatedStrands } = replicationResult.data;
-        const [strand1, strand2] = replicatedStrands;
+      if (replicationResult.success) {
+        const { daughters } = replicationResult.data;
+        const [duplex1, duplex2] = daughters;
 
-        // Both strands should be identical to original
-        expect(strand1.getSequence()).toBe(simpleSequence);
-        expect(strand2.getSequence()).toBe(simpleSequence);
-        expect(strand1.length()).toBe(dna.length());
-        expect(strand2.length()).toBe(dna.length());
+        // Both daughter duplexes should be sequence-equal to the parent
+        expect(duplex1.forward.sequence).toBe(simpleSequence);
+        expect(duplex2.forward.sequence).toBe(simpleSequence);
+        expect(duplex1.reverse.sequence).toBe(parent.reverse.sequence);
+        expect(duplex2.reverse.sequence).toBe(parent.reverse.sequence);
+        expect(duplex1.length()).toBe(dna.length());
+        expect(duplex2.length()).toBe(dna.length());
       }
     });
   });
@@ -96,27 +103,27 @@ describe('Cross-System Integration Tests', () => {
         'ATGAAAGCCTTTGTGAACCAACACCTTCTGGTGGAGCGGCTCTACCTGGTGTGCGGCTCGCTGTAG'; // Single exon
 
       const exons = [{ start: 29, end: 92, name: 'test-exon' }];
-      const gene = new Gene(geneSequence, exons, 'integration-test');
+      const gene = parseGene(geneSequence, exons, 'integration-test').unwrap();
 
       // Test transcription works
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         // Transcript should contain the exact expected length (just the exon)
-        expect(preMRNA.getSequence().length).toBe(66);
-        expect(preMRNA.getSequence().startsWith('AUG')).toBe(true);
+        expect(preMRNA.sequence.sequence.length).toBe(66);
+        expect(preMRNA.sequence.sequence.startsWith('AUG')).toBe(true);
 
         // Test that the system doesn't crash on processing attempts
         const processingResult = processRNA(preMRNA);
         // Processing might succeed or fail, but shouldn't crash
-        expect(isSuccess(processingResult) || isFailure(processingResult)).toBe(true);
+        expect(processingResult.success || !processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
-          expect(mRNA.getCodingSequence().length).toBe(66); // Should preserve exact coding sequence length
-          expect(mRNA.getCodingSequence().startsWith('AUG')).toBe(true);
+          expect(requireCodingSequence(mRNA).sequence.length).toBe(66); // Should preserve exact coding sequence length
+          expect(requireCodingSequence(mRNA).sequence.startsWith('AUG')).toBe(true);
         }
       }
     });
@@ -141,40 +148,39 @@ describe('Cross-System Integration Tests', () => {
         { start: 135, end: 158, name: 'exon3' }, // Missing stop codon
       ];
 
-      const gene = new Gene(problematicSequence, exons, 'error-test');
+      const gene = parseGene(problematicSequence, exons, 'error-test').unwrap();
 
       // Transcription should succeed
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
 
         // RNA processing might succeed even without stop codon
         const processingResult = processRNA(preMRNA);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           // Translation should either fail or produce truncated protein
           const mRNA = processingResult.data;
 
-          try {
-            const polypeptide = new Polypeptide(mRNA);
+          const translateResult = translate(mRNA);
+          if (translateResult.success) {
             // If it succeeds, it should have detected the missing stop codon issue
-            const sequence = polypeptide.aminoAcidSequence.map(aa => aa.singleLetterCode).join('');
+            const sequence = translateResult.data.getSequence();
             // Should start with Met and have reasonable length - specific validation
             expect(sequence.startsWith('M')).toBe(true);
             expect(sequence.length).toBeGreaterThanOrEqual(15); // Reasonable minimum protein length
-          } catch (error) {
-            // Or it should throw a meaningful error about missing stop codon
-            expect(error).toBeInstanceOf(Error);
-            if (error instanceof Error) {
-              expect(error.message.toLowerCase()).toContain('stop');
-            }
+          } else {
+            // Or it should fail with a structured TranslationError naming the frame issue
+            expect(translateResult.error.kind).toBe('translation/invalid-reading-frame');
           }
         } else {
-          // Processing failed - should have meaningful error
-          expect(typeof processingResult.error).toBe('string');
-          expect(processingResult.error).toMatch(/stop|codon|processing|frame|splice|splicing/i);
+          // Processing failed - should have meaningful structured error
+          expect(typeof processingResult.error.kind).toBe('string');
+          expect(processingResult.error.kind).toMatch(
+            /splicing-failed|no-start-codon|no-in-frame-stop|invalid-/i,
+          );
         }
       }
     });
@@ -193,11 +199,7 @@ describe('Cross-System Integration Tests', () => {
       ];
 
       // Gene construction should fail with validation error
-      expect(() => new Gene(validSequence, invalidExons, 'invalid-gene')).toThrow(); // Should throw during construction
-
-      // Alternatively, if using ValidationResult pattern:
-      // const geneResult = Gene.create(validSequence, invalidExons, 'invalid-gene');
-      // expect(isFailure(geneResult)).toBe(true);
+      expect(!parseGene(validSequence, invalidExons, 'invalid-gene').success).toBe(true); // parseGene must reject overlapping exons
     });
   });
 });

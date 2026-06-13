@@ -1,220 +1,178 @@
 /**
  * Integration tests for NucleotidePattern functionality with real biological scenarios.
- * Tests the new getReverseComplement method and its integration with existing features.
+ * Exercises pattern matching, reverse complement, and either-strand matching against
+ * representative DNA inputs.
  */
 
-import { NucleotidePattern } from '../../src/model/nucleic-acids/NucleotidePattern.js';
-import { DNA } from '../../src/model/nucleic-acids/DNA.js';
-import { RNA } from '../../src/model/nucleic-acids/RNA.js';
+import { NucleotidePattern, parseNucleotidePattern } from '../../src/pattern';
+import { DNA, RNA, parseDNA, parseRNA } from '../../src/sequence';
+import { at } from '../utils/test-utils';
+
+function pattern(source: string): NucleotidePattern {
+  return parseNucleotidePattern(source).unwrap();
+}
+
+function dna(sequence: string): DNA {
+  return parseDNA(sequence).unwrap();
+}
+
+function rna(sequence: string): RNA {
+  return parseRNA(sequence).unwrap();
+}
 
 describe('NucleotidePattern Integration Tests', () => {
   describe('Restriction Enzyme Site Recognition', () => {
     test('EcoRI site recognition with reverse complement', () => {
-      // EcoRI recognizes GAATTC on either strand
-      const ecoRISite = new NucleotidePattern('GAATTC');
-      const dna = new DNA('ATCGAATTCGTA'); // Contains EcoRI site
-      const reverseDNA = new DNA('TACGAATTCGAT'); // Reverse complement contains site
+      const ecoRISite = pattern('GAATTC');
+      const forward = dna('ATCGAATTCGTA');
+      const reverseDNA = dna('TACGAATTCGAT');
 
-      expect(ecoRISite.matches(dna)).toBe(true);
-      expect(ecoRISite.getReverseComplement().matches(reverseDNA)).toBe(true);
+      expect(ecoRISite.matches(forward)).toBe(true);
+      expect(ecoRISite.reverseComplement().matches(reverseDNA)).toBe(true);
 
-      // Verify the reverse complement pattern is correct
-      const reverseComplement = ecoRISite.getReverseComplement();
-      expect(reverseComplement.pattern).toBe('GAATTC'); // EcoRI is palindromic
+      expect(ecoRISite.reverseComplement().pattern).toBe('GAATTC');
     });
 
-    test('BamHI site recognition (asymmetric site)', () => {
-      // BamHI recognizes GGATCC
-      const bamHISite = new NucleotidePattern('GGATCC');
-      const dna = new DNA('ATCGGATCCGTA'); // Contains BamHI site
+    test('BamHI site recognition (palindromic site)', () => {
+      const bamHISite = pattern('GGATCC');
+      const sequence = dna('ATCGGATCCGTA');
 
-      expect(bamHISite.matches(dna)).toBe(true);
+      expect(bamHISite.matches(sequence)).toBe(true);
 
-      // Test reverse complement functionality
-      const reverseComplement = bamHISite.getReverseComplement();
-      expect(reverseComplement.pattern).toBe('GGATCC'); // BamHI is also palindromic
+      const reverseComplement = bamHISite.reverseComplement();
+      expect(reverseComplement.pattern).toBe('GGATCC');
 
-      // Should match on either strand
-      expect(bamHISite.matchesEitherStrand(dna)).toBe(true);
+      expect(bamHISite.matchesEitherStrand(sequence)).toBe(true);
     });
 
-    test('HindIII site with IUPAC symbols', () => {
-      // HindIII recognizes AAGCTT, use pattern with ambiguity
-      const hindIIIPattern = new NucleotidePattern('AAGCTT');
-      const dna = new DNA('GCAAAGCTTCGTA');
+    test('HindIII site location reporting', () => {
+      const hindIIIPattern = pattern('AAGCTT');
+      const sequence = dna('GCAAAGCTTCGTA');
 
-      expect(hindIIIPattern.matches(dna)).toBe(true);
+      expect(hindIIIPattern.matches(sequence)).toBe(true);
 
-      // Test finding all matches
-      const matches = hindIIIPattern.findMatches(dna);
+      const matches = hindIIIPattern.findAll(sequence);
       expect(matches).toHaveLength(1);
-      expect(matches[0].start).toBe(3);
-      expect(matches[0].match).toBe('AAGCTT');
+      expect(at(matches, 0).start).toBe(3);
+      expect(at(matches, 0).matched).toBe('AAGCTT');
     });
   });
 
   describe('Promoter Element Detection', () => {
     test('TATA box detection across both DNA strands', () => {
-      // TATA box should be found on either strand
-      const tataPattern = new NucleotidePattern('TATAAA');
-      const promoterDNA = new DNA('ATGAAATATAAACGCGATCGTAGC');
+      const tataPattern = pattern('TATAAA');
+      const promoterDNA = dna('ATGAAATATAAACGCGATCGTAGC');
 
       expect(tataPattern.matches(promoterDNA)).toBe(true);
       expect(tataPattern.matchesEitherStrand(promoterDNA)).toBe(true);
 
-      // Test reverse complement recognition
-      const reverseComplement = tataPattern.getReverseComplement();
+      const reverseComplement = tataPattern.reverseComplement();
       expect(reverseComplement.pattern).toBe('TTTATA');
 
-      // DNA with reverse complement TATA sequence
-      const reverseTATADNA = new DNA('ATGAAATTTATAACGCGATCGTAGC');
+      const reverseTATADNA = dna('ATGAAATTTATAACGCGATCGTAGC');
       expect(tataPattern.matchesEitherStrand(reverseTATADNA)).toBe(true);
     });
 
-    test('CAAT box with ambiguous nucleotides', () => {
-      // CAAT box with some variability
-      const caatPattern = new NucleotidePattern('CAAT');
-      const promoterRegion = new DNA('GCCCAATGGGTATAAAACGCGTACAAT');
+    test('CAAT box finds multiple occurrences', () => {
+      const caatPattern = pattern('CAAT');
+      const promoterRegion = dna('GCCCAATGGGTATAAAACGCGTACAAT');
 
-      const matches = caatPattern.findMatches(promoterRegion);
-      expect(matches).toHaveLength(2); // Should find both CAAT occurrences
-      expect(matches[0].start).toBe(3);
-      expect(matches[1].start).toBe(23);
+      const matches = caatPattern.findAll(promoterRegion);
+      expect(matches).toHaveLength(2);
+      expect(at(matches, 0).start).toBe(3);
+      expect(at(matches, 1).start).toBe(23);
     });
 
     test('GC box recognition with reverse complement', () => {
-      // GC box (GGGCGG)
-      const gcBoxPattern = new NucleotidePattern('GGGCGG');
-      const promoterDNA = new DNA('ATCGGGCGGCTATGCCCGCCCTAG');
+      const gcBoxPattern = pattern('GGGCGG');
+      const promoterDNA = dna('ATCGGGCGGCTATGCCCGCCCTAG');
 
       expect(gcBoxPattern.matches(promoterDNA)).toBe(true);
 
-      // Test reverse complement
-      const reverseComplement = gcBoxPattern.getReverseComplement();
+      const reverseComplement = gcBoxPattern.reverseComplement();
       expect(reverseComplement.pattern).toBe('CCGCCC');
-
-      // Should find the reverse complement in the sequence
       expect(reverseComplement.matches(promoterDNA)).toBe(true);
     });
   });
 
   describe('Splice Site Recognition', () => {
-    test('GT-AG splice sites with reverse complement', () => {
-      // 5' splice site (donor)
-      const donorSite = new NucleotidePattern('GT');
-      const acceptorSite = new NucleotidePattern('AG');
+    test('GT / AG splice sites with reverse complement', () => {
+      const donorSite = pattern('GT');
+      const acceptorSite = pattern('AG');
 
-      const geneSequence = new DNA('ATGAAACCCGTAAGTATATATTAGCCCAAATAA');
+      const geneSequence = dna('ATGAAACCCGTAAGTATATATTAGCCCAAATAA');
 
-      // Find donor and acceptor sites
-      const donorMatches = donorSite.findMatches(geneSequence);
-      const acceptorMatches = acceptorSite.findMatches(geneSequence);
+      expect(donorSite.findAll(geneSequence).length).toBeGreaterThan(0);
+      expect(acceptorSite.findAll(geneSequence).length).toBeGreaterThan(0);
 
-      expect(donorMatches.length).toBeGreaterThan(0);
-      expect(acceptorMatches.length).toBeGreaterThan(0);
-
-      // Test reverse complement functionality
-      const donorRC = donorSite.getReverseComplement();
-      const acceptorRC = acceptorSite.getReverseComplement();
-
-      expect(donorRC.pattern).toBe('AC');
-      expect(acceptorRC.pattern).toBe('CT');
+      expect(donorSite.reverseComplement().pattern).toBe('AC');
+      expect(acceptorSite.reverseComplement().pattern).toBe('CT');
     });
 
-    test('complex splice site patterns', () => {
-      // More complex splice site with context (R = A or G)
-      const exonJunction = new NucleotidePattern('AGGTAAGT');
-      const testSequence = new DNA('ATGAAACCCAGGTAAGTTATATATCCCAAATAA');
+    test('exon junction pattern matches DNA but not RNA (literal T vs U)', () => {
+      const exonJunction = pattern('AGGTAAGT');
+      const dnaSequence = dna('ATGAAACCCAGGTAAGTTATATATCCCAAATAA');
+      expect(exonJunction.matches(dnaSequence)).toBe(true);
 
-      expect(exonJunction.testString(testSequence.getSequence())).toBe(true);
-
-      // Test with RNA as well - DNA pattern won't match RNA with U nucleotides
-      const rnaSequence = new RNA('AUGAAACCCAGGUAAGUUAUAUAUCCCAAAUAA');
-      // DNA-based pattern with T won't match RNA sequence with U
-      expect(exonJunction.testString(rnaSequence.getSequence())).toBe(false);
+      const rnaSequence = rna('AUGAAACCCAGGUAAGUUAUAUAUCCCAAAUAA');
+      expect(exonJunction.matches(rnaSequence)).toBe(false);
     });
   });
 
   describe('Regulatory Element Detection', () => {
-    test('polyadenylation signal recognition', () => {
-      // AAUAAA signal (in RNA context, but testing with DNA pattern)
-      const polyASignal = new NucleotidePattern('AATAAA');
-      const geneEnd = new DNA('ATGAAACCCAATAAACCCGGGAAATAA');
+    test('canonical poly-A DNA signal', () => {
+      const polyASignal = pattern('AATAAA');
+      const geneEnd = dna('ATGAAACCCAATAAACCCGGGAAATAA');
 
       expect(polyASignal.matches(geneEnd)).toBe(true);
 
-      // Find the signal position
       const match = polyASignal.findFirst(geneEnd);
-      expect(match).not.toBeNull();
+      expect(match).toBeDefined();
       expect(match?.start).toBe(9);
-      expect(match?.match).toBe('AATAAA');
+      expect(match?.matched).toBe('AATAAA');
     });
 
-    test('enhancer sequence recognition with ambiguity', () => {
-      // Enhancer with some degeneracy
-      const enhancerPattern = new NucleotidePattern('CANNTG'); // E-box motif
-      const enhancerRegion = new DNA('GCCCACGTGGGTATAAACAATTGCGTA');
+    test('E-box with degenerate center', () => {
+      const enhancerPattern = pattern('CANNTG');
+      const enhancerRegion = dna('GCCCACGTGGGTATAAACAATTGCGTA');
 
-      const matches = enhancerPattern.findMatches(enhancerRegion);
-      expect(matches.length).toBeGreaterThan(0);
-
-      // Should find CACGTG and CAATTG
+      const matches = enhancerPattern.findAll(enhancerRegion);
       expect(matches).toHaveLength(2);
     });
   });
 
   describe('Cross-Pattern Integration', () => {
     test('multiple patterns in gene regulatory region', () => {
-      const tataBox = new NucleotidePattern('TATAAA');
-      const caatBox = new NucleotidePattern('CAAT');
-      const gcBox = new NucleotidePattern('GGGCGG');
+      const tataBox = pattern('TATAAA');
+      const caatBox = pattern('CAAT');
+      const gcBox = pattern('GGGCGG');
 
-      const promoterRegion = new DNA('GGGCGGCCCAATGGGTATAAAACGCGTA');
+      const promoterRegion = dna('GGGCGGCCCAATGGGTATAAAACGCGTA');
 
-      // All patterns should be found
       expect(tataBox.matches(promoterRegion)).toBe(true);
       expect(caatBox.matches(promoterRegion)).toBe(true);
       expect(gcBox.matches(promoterRegion)).toBe(true);
 
-      // Test relative positions
-      const tataMatch = tataBox.findFirst(promoterRegion);
-      const caatMatch = caatBox.findFirst(promoterRegion);
-      const gcMatch = gcBox.findFirst(promoterRegion);
-
-      expect(gcMatch?.start).toBe(0);
-      expect(caatMatch?.start).toBe(8);
-      expect(tataMatch?.start).toBe(15);
-    });
-
-    test('pattern replacement and modification', () => {
-      const restrictionSite = new NucleotidePattern('GAATTC');
-      const originalSequence = new DNA('ATCGAATTCGTA');
-
-      // Replace restriction site
-      const modifiedSequence = restrictionSite.replace(originalSequence, 'GGCCCC');
-      expect(modifiedSequence).toBe('ATCGGCCCCGTA');
-
-      // Verify site is removed
-      expect(restrictionSite.testString(modifiedSequence)).toBe(false);
+      expect(gcBox.findFirst(promoterRegion)?.start).toBe(0);
+      expect(caatBox.findFirst(promoterRegion)?.start).toBe(8);
+      expect(tataBox.findFirst(promoterRegion)?.start).toBe(15);
     });
   });
 
   describe('Performance and Edge Cases', () => {
     test('large sequence pattern searching', () => {
-      const targetPattern = new NucleotidePattern('ATGCGATCG');
-      const largeSequence = new DNA('ATGCGATCG'.repeat(1000) + 'AAATGCGATCGAAA');
+      const targetPattern = pattern('ATGCGATCG');
+      const largeSequence = dna('ATGCGATCG'.repeat(1000) + 'AAATGCGATCGAAA');
 
-      const matches = targetPattern.findMatches(largeSequence);
+      const matches = targetPattern.findAll(largeSequence);
       expect(matches.length).toBeGreaterThan(1000);
 
-      // Performance check - should complete quickly
       const startTime = Date.now();
-      targetPattern.findMatches(largeSequence);
-      const endTime = Date.now();
-      expect(endTime - startTime).toBeLessThan(100); // Should be very fast
+      targetPattern.findAll(largeSequence);
+      expect(Date.now() - startTime).toBeLessThan(100);
     });
 
-    test('reverse complement consistency across pattern types', () => {
+    test('reverse-complement is involutive for IUPAC-only patterns', () => {
       const patterns = [
         'A',
         'T',
@@ -239,17 +197,11 @@ describe('NucleotidePattern Integration Tests', () => {
         'NNNN',
       ];
 
-      patterns.forEach(patternStr => {
-        const pattern = new NucleotidePattern(patternStr);
-        const reverseComplement = pattern.getReverseComplement();
-        const doubleRC = reverseComplement.getReverseComplement();
-
-        // Double reverse complement should equal original for simple patterns
-        // (Note: This might not hold for complex regex patterns)
-        if (!/[^ATCGRYWSMK]/.test(patternStr)) {
-          expect(doubleRC.pattern).toBe(pattern.pattern);
-        }
-      });
+      for (const source of patterns) {
+        const compiled = pattern(source);
+        const doubleRC = compiled.reverseComplement().reverseComplement();
+        expect(doubleRC.pattern).toBe(compiled.pattern);
+      }
     });
   });
 });

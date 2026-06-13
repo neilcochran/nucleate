@@ -16,9 +16,20 @@
     "plugins": [
         "@typescript-eslint",
         "eslint-plugin-tsdoc",
+        "import",
         "prettier"
     ],
     "ignorePatterns": ["scripts/**", "dist/**", "docs/**", "*.js", "*.cjs"],
+    "settings": {
+        "import/parsers": {
+            "@typescript-eslint/parser": [".ts"]
+        },
+        "import/resolver": {
+            "typescript": {
+                "project": "./tsconfig.eslint.json"
+            }
+        }
+    },
     "overrides": [
         {
             "files": ["test/**/*.ts", "**/*.test.ts"],
@@ -45,7 +56,7 @@
         }
     ],
     "rules": {
-        "no-unused-vars": "warn",
+        "no-unused-vars": "off",
         "@typescript-eslint/no-unused-vars": [
             "error",
             {
@@ -81,6 +92,8 @@
         "@typescript-eslint/prefer-optional-chain": "error",
 
         "prettier/prettier": "error",
-        "tsdoc/syntax": "error"
+        "tsdoc/syntax": "error",
+
+        "import/no-cycle": ["error", { "ignoreExternal": true }]
     }
 }

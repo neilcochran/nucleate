@@ -5,35 +5,29 @@
  * integration issues between different parts of the system.
  */
 
-import { Gene } from '../../src/model/nucleic-acids/Gene';
-import { DNA } from '../../src/model/nucleic-acids/DNA';
-import { RNA } from '../../src/model/nucleic-acids/RNA';
-import { MRNA } from '../../src/model/nucleic-acids/MRNA';
-import { Polypeptide } from '../../src/model/Polypeptide';
-import { PreMRNA } from '../../src/model/nucleic-acids/PreMRNA';
-import { transcribe } from '../../src/utils/transcription';
-import { processRNA } from '../../src/utils/mrna-processing';
-import { replicateDNA } from '../../src/utils/replication/simple-replication';
-import {
-  generateAllSpliceVariants,
-  spliceRNAWithVariant,
-} from '../../src/utils/alternative-splicing';
-// Removed convertToRNA, convertToDNA imports - using direct constructors instead
-import { RNAtoAminoAcids } from '../../src/utils/amino-acids';
-import { isSuccess, isFailure } from '../../src/types/validation-result';
+import { parseGene } from '../../src/gene';
+import { parseDNA, parseRNA } from '../../src/sequence';
+import { at, requireCodingSequence } from '../utils/test-utils';
+import { parseMRNA } from '../../src/modifications';
+import { processRNA, enumerateSpliceVariants, processSpliceVariant } from '../../src/processing';
+import { translate } from '../../src/translation';
+import { parsePreMRNA } from '../../src/transcription';
+import { transcribe } from '../../src/transcription';
+import { replicate } from '../../src/replication';
+import { doubleStrandedDNA } from '../../src/sequence';
 
 describe('Comprehensive Pipeline Integration Tests', () => {
-  describe('DNA → RNA → Protein Pipeline', () => {
+  describe('DNA -> RNA -> Protein Pipeline', () => {
     test('complete conversion pipeline maintains biological accuracy', () => {
-      // Test the full conversion chain: DNA → RNA → back to DNA
-      const originalDNA = new DNA('ATGAAAGCCTTTGTGAACCAACACCTTGTAAGTAG');
+      // Test the full conversion chain: DNA -> RNA -> back to DNA
+      const originalDNA = parseDNA('ATGAAAGCCTTTGTGAACCAACACCTTGTAAGTAG').unwrap();
 
-      // Step 1: DNA → RNA
-      const rna = new RNA(originalDNA.getSequence().replace(/T/g, 'U'));
+      // Step 1: DNA -> RNA
+      const rna = parseRNA(originalDNA.getSequence().replace(/T/g, 'U')).unwrap();
       expect(rna.getSequence()).toBe('AUGAAAGCCUUUGUGAACCAACACCUUGUAAGUAG');
 
-      // Step 2: RNA → DNA
-      const backToDNA = new DNA(rna.getSequence().replace(/U/g, 'T'));
+      // Step 2: RNA -> DNA
+      const backToDNA = parseDNA(rna.getSequence().replace(/U/g, 'T')).unwrap();
       expect(backToDNA.getSequence()).toBe(originalDNA.getSequence());
 
       // Step 3: Validate complement operations work consistently
@@ -41,43 +35,38 @@ describe('Comprehensive Pipeline Integration Tests', () => {
       const rnaComplement = rna.getComplement();
 
       // DNA complement converted to RNA should equal RNA complement
-      const convertedDNAComplement = new RNA(dnaComplement.getSequence().replace(/T/g, 'U'));
+      const convertedDNAComplement = parseRNA(
+        dnaComplement.getSequence().replace(/T/g, 'U'),
+      ).unwrap();
       expect(convertedDNAComplement.getSequence()).toBe(rnaComplement.getSequence());
     });
 
     test('amino acid translation preserves reading frame across conversions', () => {
       // Test that translation works correctly after DNA/RNA conversions
       const codingSequence = 'ATGAAAGCCTTTGTGAACCAACACCTTCTGGTGGAGTAG';
-      const dna = new DNA(codingSequence);
-      const rna = new RNA(dna.getSequence().replace(/T/g, 'U'));
+      const dna = parseDNA(codingSequence).unwrap();
+      const rna = parseRNA(dna.getSequence().replace(/T/g, 'U')).unwrap();
 
       // Create mRNA for translation (using the RNA as both sequence and coding sequence)
       const rnaSeq = rna.getSequence();
-      const mRNA = new MRNA(
-        rnaSeq, // sequence
-        rnaSeq, // coding sequence
-        0, // coding start
-        rnaSeq.length, // coding end
-        true, // has 5' cap
-        '', // poly-A tail
-      );
+      const mRNA = parseMRNA(rnaSeq, 0, rnaSeq.length, true, 0).unwrap();
 
-      // Translate to amino acids
-      const aminoAcids = RNAtoAminoAcids(mRNA);
+      // Translate the mature mRNA to a polypeptide
+      const aminoAcids = translate(mRNA).unwrap().aminoAcids;
 
       // MEANINGFUL: Verify exact amino acid count matches expected from sequence
       const expectedAminoAcids = codingSequence.length / 3 - 1; // -1 for stop codon
       expect(aminoAcids.length).toBe(expectedAminoAcids);
 
       // MEANINGFUL: Verify reading frame maintenance
-      expect(mRNA.getCodingSequence().length % 3).toBe(0);
+      expect(requireCodingSequence(mRNA).sequence.length % 3).toBe(0);
 
       // MEANINGFUL: Verify specific start and stop codons (can catch conversion bugs)
-      expect(mRNA.getCodingSequence().startsWith('AUG')).toBe(true);
-      expect(mRNA.getCodingSequence().endsWith('UAG')).toBe(true);
+      expect(requireCodingSequence(mRNA).sequence.startsWith('AUG')).toBe(true);
+      expect(requireCodingSequence(mRNA).sequence.endsWith('UAG')).toBe(true);
 
       // MEANINGFUL: Verify first amino acid is methionine (can catch translation bugs)
-      expect(aminoAcids[0]?.singleLetterCode).toBe('M');
+      expect(aminoAcids[0]?.data.singleLetterCode).toBe('M');
     });
   });
 
@@ -111,21 +100,21 @@ describe('Comprehensive Pipeline Integration Tests', () => {
       ];
 
       // Test gene construction (transcription requires fixing utility functions)
-      const constitutiveGene = new Gene(geneSequence, constitutiveExons, 'constitutive');
-      expect(constitutiveGene.getExons().length).toBe(4);
-      expect(constitutiveGene.getSequence().length).toBe(200);
+      const constitutiveGene = parseGene(geneSequence, constitutiveExons, 'constitutive').unwrap();
+      expect(constitutiveGene.exons.length).toBe(4);
+      expect(constitutiveGene.sequence.getSequence().length).toBe(200);
 
-      const alternativeGene = new Gene(geneSequence, skippedExonVariant, 'alternative');
-      expect(alternativeGene.getExons().length).toBe(3);
+      const alternativeGene = parseGene(geneSequence, skippedExonVariant, 'alternative').unwrap();
+      expect(alternativeGene.exons.length).toBe(3);
 
       // Verify genes have different exon structures (constitutive: 4 exons, alternative: 3 exons)
-      expect(constitutiveGene.getExons().length - alternativeGene.getExons().length).toBe(1);
+      expect(constitutiveGene.exons.length - alternativeGene.exons.length).toBe(1);
 
       // Verify gene coordinate validation works
-      expect(constitutiveGene.getExons()[0].start).toBe(29);
-      expect(alternativeGene.getExons()[0].start).toBe(29);
-      expect(constitutiveGene.getExons()[1].start).toBe(83);
-      expect(alternativeGene.getExons()[1].start).toBe(137); // Skipped exon 2
+      expect(at(constitutiveGene.exons, 0).start).toBe(29);
+      expect(at(alternativeGene.exons, 0).start).toBe(29);
+      expect(at(constitutiveGene.exons, 1).start).toBe(83);
+      expect(at(alternativeGene.exons, 1).start).toBe(137); // Skipped exon 2
 
       // Test validates gene construction and coordinate validation
       // Full transcription pipeline testing would require fixing utility function imports
@@ -138,7 +127,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
       // Test that errors propagate correctly through the pipeline without crashing
 
       // Invalid sequence should fail early
-      expect(() => new DNA('INVALID')).toThrow();
+      expect(!parseDNA('INVALID').success).toBe(true);
 
       // Invalid gene structure should fail gracefully
       const validSequence = 'ATGAAAGCCTTTGTGAACCAACACCTTGTAAGTAG';
@@ -146,7 +135,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
         { start: 100, end: 150, name: 'invalid' }, // Beyond sequence length
       ];
 
-      expect(() => new Gene(validSequence, invalidExons, 'invalid-gene')).toThrow();
+      expect(!parseGene(validSequence, invalidExons, 'invalid-gene').success).toBe(true);
     });
 
     test('TSS validation prevents downstream failures', () => {
@@ -161,13 +150,13 @@ describe('Comprehensive Pipeline Integration Tests', () => {
         { start: 10, end: 50, name: 'conflicting-exon' }, // Starts at position 10, TSS likely ~29
       ];
 
-      const gene = new Gene(geneSequence, conflictingExons, 'conflict-gene');
+      const gene = parseGene(geneSequence, conflictingExons, 'conflict-gene').unwrap();
       const transcriptionResult = transcribe(gene);
 
       // Should fail due to TSS/exon conflict
-      expect(isFailure(transcriptionResult)).toBe(true);
-      if (isFailure(transcriptionResult)) {
-        expect(transcriptionResult.error).toContain('conflicts with gene exon structure');
+      expect(!transcriptionResult.success).toBe(true);
+      if (!transcriptionResult.success) {
+        expect(transcriptionResult.error.kind).toBe('transcription/tss-conflicts-with-exons');
       }
     });
   });
@@ -188,43 +177,43 @@ describe('Comprehensive Pipeline Integration Tests', () => {
         { start: 83, end: 110, name: 'exon2' },
       ];
 
-      const gene = new Gene(geneSequence, exons, 'coord-test');
+      const gene = parseGene(geneSequence, exons, 'coord-test').unwrap();
 
       // Step 1: Transcription
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
-        const tss = preMRNA.getTranscriptionStartSite();
+        const tss = preMRNA.transcriptionStartSite;
 
         // Verify TSS detection
         expect(tss).toBe(29);
 
         // Verify coordinate transformation
-        const transcriptExons = preMRNA.getExonRegions();
+        const transcriptExons = preMRNA.exonRegions;
         expect(transcriptExons).toHaveLength(2);
 
-        // Exon 1: 29-56 in gene → 0-27 in transcript
+        // Exon 1: 29-56 in gene -> 0-27 in transcript
         expect(transcriptExons[0]?.start).toBe(0);
         expect(transcriptExons[0]?.end).toBe(27);
 
-        // Exon 2: 83-110 in gene → 54-81 in transcript
+        // Exon 2: 83-110 in gene -> 54-81 in transcript
         expect(transcriptExons[1]?.start).toBe(54);
         expect(transcriptExons[1]?.end).toBe(81);
 
         // Step 2: RNA Processing
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
 
           // Verify splicing removed introns
-          expect(mRNA.getSequence().length).toBe(27 + 27 + 200); // exons + poly-A tail
+          expect(mRNA.sequence.sequence.length).toBe(27 + 27 + 200); // exons + poly-A tail
 
           // Verify coding sequence extraction
-          const codingSeq = mRNA.getCodingSequence();
+          const codingSeq = requireCodingSequence(mRNA).sequence;
           expect(codingSeq.startsWith('AUG')).toBe(true);
           expect(codingSeq.endsWith('UAG')).toBe(true);
         }
@@ -232,7 +221,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
     });
 
     test('polypeptide creation integrates correctly with mRNA processing', () => {
-      // Test complete gene → protein pipeline
+      // Test complete gene -> protein pipeline
       const geneSequence =
         'GCGCTATAAAAGGCGC' + // Promoter
         'GGGGGGGGGGGG' + // Spacer
@@ -243,35 +232,37 @@ describe('Comprehensive Pipeline Integration Tests', () => {
         { start: 29, end: 110, name: 'single-exon' }, // One large exon
       ];
 
-      const gene = new Gene(geneSequence, exons, 'protein-test');
+      const gene = parseGene(geneSequence, exons, 'protein-test').unwrap();
 
       // Full pipeline
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
 
           // Create polypeptide
-          const polypeptide = new Polypeptide(mRNA);
+          const polypeptide = translate(mRNA).unwrap();
 
           // First amino acid should be Methionine (start codon)
-          expect(polypeptide.aminoAcidSequence[0]?.singleLetterCode).toBe('M');
+          expect(polypeptide.aminoAcids[0]?.data.singleLetterCode).toBe('M');
 
           // MEANINGFUL: Verify exact protein length matches coding sequence
-          const expectedProteinLength = Math.floor((mRNA.getCodingSequence().length - 3) / 3); // -3 for stop codon
-          expect(polypeptide.aminoAcidSequence.length).toBe(expectedProteinLength);
+          const expectedProteinLength = Math.floor(
+            (requireCodingSequence(mRNA).sequence.length - 3) / 3,
+          ); // -3 for stop codon
+          expect(polypeptide.aminoAcids.length).toBe(expectedProteinLength);
 
           // MEANINGFUL: Verify specific amino acid properties
-          const firstAA = polypeptide.aminoAcidSequence[0];
-          expect(firstAA?.name).toBe('Methionine');
-          expect(firstAA?.singleLetterCode).toBe('M');
-          expect(firstAA?.polarity).toBe('nonpolar');
+          const firstAA = polypeptide.aminoAcids[0];
+          expect(firstAA?.data.name).toBe('Methionine');
+          expect(firstAA?.data.singleLetterCode).toBe('M');
+          expect(firstAA?.data.polarity).toBe('nonpolar');
         }
       }
     });
@@ -293,24 +284,24 @@ describe('Comprehensive Pipeline Integration Tests', () => {
 
       const startTime = Date.now();
 
-      const gene = new Gene(largeGeneSequence, exons, 'large-gene');
+      const gene = parseGene(largeGeneSequence, exons, 'large-gene').unwrap();
       const transcriptionResult = transcribe(gene);
 
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
-          const polypeptide = new Polypeptide(mRNA);
+          const polypeptide = translate(mRNA).unwrap();
 
           // MEANINGFUL: Verify expected protein size from sequence length
-          const codingLength = mRNA.getCodingSequence().length;
+          const codingLength = requireCodingSequence(mRNA).sequence.length;
           const expectedLength = Math.floor((codingLength - 3) / 3); // -3 for stop codon
-          expect(polypeptide.aminoAcidSequence.length).toBe(expectedLength);
+          expect(polypeptide.aminoAcids.length).toBe(expectedLength);
         }
       }
 
@@ -331,30 +322,30 @@ describe('Comprehensive Pipeline Integration Tests', () => {
 
       const exons = [{ start: 29, end: 35, name: 'minimal-exon' }];
 
-      const gene = new Gene(minimalGene, exons, 'minimal-gene');
+      const gene = parseGene(minimalGene, exons, 'minimal-gene').unwrap();
       const transcriptionResult = transcribe(gene);
 
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.hasIntrons()).toBe(false);
 
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
 
           // MEANINGFUL: Verify exact minimal coding sequence
-          expect(mRNA.getCodingSequence()).toBe('AUGUAG');
+          expect(requireCodingSequence(mRNA).sequence).toBe('AUGUAG');
 
-          const polypeptide = new Polypeptide(mRNA);
+          const polypeptide = translate(mRNA).unwrap();
 
           // MEANINGFUL: Minimal protein should have exactly 1 amino acid
-          expect(polypeptide.aminoAcidSequence).toHaveLength(1);
-          expect(polypeptide.aminoAcidSequence[0]?.singleLetterCode).toBe('M');
-          expect(polypeptide.aminoAcidSequence[0]?.name).toBe('Methionine');
+          expect(polypeptide.aminoAcids).toHaveLength(1);
+          expect(polypeptide.aminoAcids[0]?.data.singleLetterCode).toBe('M');
+          expect(polypeptide.aminoAcids[0]?.data.name).toBe('Methionine');
         }
       }
     });
@@ -383,12 +374,12 @@ describe('Comprehensive Pipeline Integration Tests', () => {
 
       const startTime = Date.now();
 
-      const gene = new Gene(largeGeneSequence, exons, 'large-gene-10kb');
+      const gene = parseGene(largeGeneSequence, exons, 'large-gene-10kb').unwrap();
       const transcriptionResult = transcribe(gene);
 
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.hasIntrons()).toBe(true);
 
@@ -396,20 +387,20 @@ describe('Comprehensive Pipeline Integration Tests', () => {
         const processingResult = processRNA(preMRNA);
 
         // Processing might fail on large sequences due to various issues
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
 
           // Verify splicing worked correctly - should have removed introns
-          const codingSequence = mRNA.getCodingSequence();
+          const codingSequence = requireCodingSequence(mRNA).sequence;
           expect(codingSequence.length).toBe(304 + 303 + 303); // Sum of exon lengths
 
           // Test translation of large mRNA
-          const polypeptide = new Polypeptide(mRNA);
+          const polypeptide = translate(mRNA).unwrap();
           const expectedProteinLength = Math.floor((codingSequence.length - 3) / 3);
-          expect(polypeptide.aminoAcidSequence.length).toBe(expectedProteinLength);
+          expect(polypeptide.aminoAcids.length).toBe(expectedProteinLength);
         } else {
           // If processing fails on large sequences, that's understandable
-          expect(isFailure(processingResult)).toBe(true);
+          expect(!processingResult.success).toBe(true);
           expect(processingResult.error).toBeTruthy();
         }
       }
@@ -424,7 +415,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
     test('memory efficiency with repeated sequences', () => {
       // Test that the library handles repetitive sequences efficiently
       const repeatedSequence = 'ATGAAACCCAAATAA'.repeat(500); // ~7.5kb
-      const dna = new DNA(repeatedSequence);
+      const dna = parseDNA(repeatedSequence).unwrap();
 
       // Should handle large sequences without memory issues
       expect(dna.length()).toBe(repeatedSequence.length);
@@ -437,16 +428,22 @@ describe('Comprehensive Pipeline Integration Tests', () => {
       expect(reverseComplement.length()).toBe(dna.length());
 
       // Test replication of large sequence
-      const replicationResult = replicateDNA(dna);
-      expect(isSuccess(replicationResult)).toBe(true);
+      const parent = doubleStrandedDNA(dna);
+      const replicationResult = replicate(parent);
+      expect(replicationResult.success).toBe(true);
 
-      if (isSuccess(replicationResult)) {
-        const [strand1, strand2] = replicationResult.data.replicatedStrands;
-        expect(strand1.getSequence().length).toBe(dna.getSequence().length);
-        expect(strand2.getSequence().length).toBe(dna.getSequence().length);
+      if (replicationResult.success) {
+        const [duplex1, duplex2] = replicationResult.data.daughters;
+        expect(duplex1.forward.sequence.length).toBe(dna.getSequence().length);
+        expect(duplex2.forward.sequence.length).toBe(dna.getSequence().length);
 
-        // Verify step count is accurate for large sequences
-        expect(replicationResult.data.steps).toBe(100); // stepSize = floor(2000/100) = 20, steps = ceil(2000/20) = 100
+        // Daughter duplexes should be sequence-equal to the parent
+        expect(duplex1.forward.sequence).toBe(parent.forward.sequence);
+        expect(duplex2.forward.sequence).toBe(parent.forward.sequence);
+
+        // Should have produced Okazaki fragments and a full event log
+        expect(replicationResult.data.statistics.okazakiFragmentCount).toBeGreaterThan(0);
+        expect(replicationResult.data.events.length).toBeGreaterThan(0);
       }
     });
   });
@@ -467,7 +464,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
         { start: 78, end: 84, name: 'exon4' }, // TAGTAG
       ];
 
-      const gene = new Gene(fullSequence, exons, 'multi-exon-test');
+      const gene = parseGene(fullSequence, exons, 'multi-exon-test').unwrap();
 
       // Step 1: Generate all possible splice variants
       const variantOptions = {
@@ -478,58 +475,65 @@ describe('Comprehensive Pipeline Integration Tests', () => {
         allowSkipLastExon: true,
       };
 
-      const variantResult = generateAllSpliceVariants(gene, variantOptions);
-      expect(isSuccess(variantResult)).toBe(true);
+      const allVariants = [...enumerateSpliceVariants(gene, variantOptions)];
 
-      if (isSuccess(variantResult)) {
-        // Should generate 2^4 - 1 = 15 variants
-        expect(variantResult.data).toHaveLength(15);
+      // Should generate 2^4 - 1 = 15 variants
+      expect(allVariants).toHaveLength(15);
 
-        // Verify specific key variants exist
-        const variantNames = variantResult.data.map(v => v.name);
-        expect(variantNames).toContain('generated-variant-0-1-2-3'); // full-length
-        expect(variantNames).toContain('generated-variant-0-3'); // skip middle exons
-        expect(variantNames).toContain('generated-variant-1-2'); // skip first and last
+      // Verify specific key variants exist
+      const variantNames = allVariants.map(v => v.name);
+      expect(variantNames).toContain('generated-variant-0-1-2-3'); // full-length
+      expect(variantNames).toContain('generated-variant-0-3'); // skip middle exons
+      expect(variantNames).toContain('generated-variant-1-2'); // skip first and last
 
-        // Step 2: Process each variant through the complete pipeline
-        let processedVariants = 0;
+      // Step 2: Process each variant through the complete pipeline
+      let processedVariants = 0;
 
-        // Test a subset of variants through complete processing
-        const keyVariants = variantResult.data.filter(v =>
-          ['generated-variant-0-1-2-3', 'generated-variant-0-3', 'generated-variant-1-2'].includes(
-            v.name,
-          ),
-        );
+      // Test a subset of variants through complete processing
+      const keyVariants = allVariants.filter(v =>
+        ['generated-variant-0-1-2-3', 'generated-variant-0-3', 'generated-variant-1-2'].includes(
+          v.name,
+        ),
+      );
 
-        keyVariants.forEach(variant => {
-          // Create PreMRNA for processing
-          const preMRNA = new PreMRNA(gene.getSequence().replace(/T/g, 'U'), gene, 0);
+      keyVariants.forEach(variant => {
+        // Create PreMRNA for processing
+        const preMRNA = parsePreMRNA(
+          gene.sequence.getSequence().replace(/T/g, 'U'),
+          gene,
+          0,
+        ).unwrap();
 
-          // Process variant to mRNA
-          const splicingResult = spliceRNAWithVariant(preMRNA, variant);
-          if (isSuccess(splicingResult)) {
-            const mRNA = splicingResult.data;
+        // Process variant through the full splicing + maturation pipeline
+        const processResult = processSpliceVariant(preMRNA, variant);
+        if (processResult.success) {
+          const mRNA = processResult.data;
 
-            // Verify mRNA sequence matches expected variant sequence
-            const expectedSequence = gene.getVariantSequence(variant).replace(/T/g, 'U');
-            expect(mRNA.getSequence()).toBe(expectedSequence);
+          // Verify the mature mRNA carries the variant's spliced exons as its transcript
+          // body (the poly-A tail is appended after); the coding region is the AUG-to-stop
+          // prefix of that transcript, which may be shorter than the full spliced sequence
+          // if an in-frame stop occurs before the last exon ends.
+          const expectedSpliced = gene
+            .getVariantSequence(variant)
+            .unwrap()
+            .sequence.replace(/T/g, 'U');
+          expect(mRNA.sequence.sequence.startsWith(expectedSpliced)).toBe(true);
+          expect(expectedSpliced.startsWith(requireCodingSequence(mRNA).sequence)).toBe(true);
+          expect(requireCodingSequence(mRNA).sequence.startsWith('AUG')).toBe(true);
 
-            // Step 3: Translate to amino acids if possible
-            if (mRNA.getSequence().length >= 3 && mRNA.getSequence().length % 3 === 0) {
-              const aminoAcidResult = RNAtoAminoAcids(mRNA);
-              expect(aminoAcidResult).toBeDefined();
+          // Step 3: Translate the mature mRNA
+          const translateResult = translate(mRNA);
+          expect(translateResult.success).toBe(true);
 
-              if (aminoAcidResult) {
-                expect(aminoAcidResult.length).toBeGreaterThan(0);
-                processedVariants++;
-              }
-            }
+          if (translateResult.success) {
+            expect(translateResult.data.aminoAcids.length).toBeGreaterThan(0);
+            processedVariants++;
           }
-        });
+        }
+      });
 
-        // Verify we successfully processed multiple variants through the complete pipeline
-        expect(processedVariants).toBeGreaterThan(0);
-      }
+      // Verify we successfully processed multiple variants through the complete pipeline
+      expect(processedVariants).toBeGreaterThan(0);
     });
 
     test('splice variant generation integrates with biological validation', () => {
@@ -542,7 +546,7 @@ describe('Comprehensive Pipeline Integration Tests', () => {
         { start: 58, end: 67, name: 'exon3' }, // TTTAAAAAG (9bp, divisible by 3)
       ];
 
-      const biologyGene = new Gene(biologySequence, biologyExons);
+      const biologyGene = parseGene(biologySequence, biologyExons).unwrap();
 
       // Generate variants with strict biological validation
       const strictOptions = {
@@ -554,22 +558,19 @@ describe('Comprehensive Pipeline Integration Tests', () => {
         allowSkipLastExon: false,
       };
 
-      const strictResult = generateAllSpliceVariants(biologyGene, strictOptions);
-      expect(isSuccess(strictResult)).toBe(true);
+      const strictVariants = [...enumerateSpliceVariants(biologyGene, strictOptions)];
 
-      if (isSuccess(strictResult)) {
-        // Should get fewer variants due to biological constraints
-        // With 3 exons, first/last required, minimum 2 exons: [0,2], [0,1,2]
-        expect(strictResult.data).toHaveLength(2);
+      // Should get fewer variants due to biological constraints
+      // With 3 exons, first/last required, minimum 2 exons: [0,2], [0,1,2]
+      expect(strictVariants).toHaveLength(2);
 
-        // All variants should maintain reading frame
-        strictResult.data.forEach(variant => {
-          const sequence = biologyGene.getVariantSequence(variant);
-          expect(sequence.length % 3).toBe(0);
-          expect(variant.includedExons).toContain(0); // first exon
-          expect(variant.includedExons).toContain(2); // last exon
-        });
-      }
+      // All variants should maintain reading frame
+      strictVariants.forEach(variant => {
+        const sequence = biologyGene.getVariantSequence(variant).unwrap();
+        expect(sequence.sequence.length % 3).toBe(0);
+        expect(variant.includedExons).toContain(0); // first exon
+        expect(variant.includedExons).toContain(2); // last exon
+      });
     });
   });
 });

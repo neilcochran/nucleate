@@ -77,7 +77,7 @@
     "strict": true,                                      /* Enable all strict type-checking options. */
     "noImplicitReturns": true,                           /* Enable error reporting for codepaths that do not explicitly return in a function. */
     "noFallthroughCasesInSwitch": true,                  /* Enable error reporting for fallthrough cases in switch statements. */
-    // "noUncheckedIndexedAccess": true,                 /* Include 'undefined' in index signature results */
+    "noUncheckedIndexedAccess": true,                    /* Include 'undefined' in index signature results */
     // "exactOptionalPropertyTypes": true,               /* Interpret optional property types as written */
     "noImplicitOverride": true,                          /* Ensure overriding members in derived classes are marked with an override modifier. */
     "useUnknownInCatchVariables": true,                  /* Type catch clause variables as 'unknown' instead of 'any'. */

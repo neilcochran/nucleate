@@ -1,4 +1,29 @@
-import { RNA, DNA, MRNA, AminoAcid } from '../../src/model';
+import { parseDNA, parseRNA } from '../../src/sequence';
+import type { RNA } from '../../src/sequence';
+import { AminoAcid } from '../../src/translation';
+import { parseMRNA } from '../../src/modifications';
+import type { MRNA } from '../../src/modifications';
+import { at } from '../../src/result';
+
+// Re-export the production `at` indexed-access helper so test modules can keep importing it from
+// this single test-utility entry point.
+export { at };
+
+/**
+ * Returns an mRNA's coding sequence, throwing when the mRNA has no CDS. For tests that build
+ * CDS-bearing mRNAs (the default `processRNA` path) and want a non-optional handle to assert on,
+ * now that {@link MRNA.codingSequence} is `RNA | undefined`.
+ *
+ * @param mRNA - The mRNA expected to carry a coding sequence
+ * @returns The coding sequence as RNA
+ * @throws If the mRNA has no coding sequence
+ */
+export function requireCodingSequence(mRNA: MRNA): RNA {
+  if (mRNA.codingSequence === undefined) {
+    throw new Error('Test expected mRNA to carry a coding sequence, but it has none');
+  }
+  return mRNA.codingSequence;
+}
 
 //ensure RNA and DNA sequences are the same (excluding base differences) since some tests rely it
 export const RNA_SEQ = 'AUCGGCUA';
@@ -6,39 +31,37 @@ export const RNA_SEQ_COMP = 'UAGCCGAU';
 export const DNA_SEQ = 'ATCGGCTA';
 export const DNA_SEQ_COMP = 'TAGCCGAT';
 
-export const ALANINE_RNA_CODON_1 = new RNA('GCU');
-export const ALANINE_RNA_CODON_2 = new RNA('GCG');
-export const ALANINE_DNA_CODON_1 = new DNA('GCT');
-export const ALANINE_DNA_CODON_2 = new DNA('GCG');
+export const ALANINE_RNA_CODON_1 = parseRNA('GCU').unwrap();
+export const ALANINE_RNA_CODON_2 = parseRNA('GCG').unwrap();
+export const ALANINE_DNA_CODON_1 = parseDNA('GCT').unwrap();
+export const ALANINE_DNA_CODON_2 = parseDNA('GCG').unwrap();
 
 //ALL_AMINO_ACIDS_1 vs ALL_AMINO_ACIDS_2 use alternate codons but will code for the same amino acid sequence
-export const RNA_ALL_AMINO_ACIDS_1 = new RNA(
+export const RNA_ALL_AMINO_ACIDS_1 = parseRNA(
   'GCAUGCGACGAAUUCGGACACAUAAAAUUAAUGAACCCACAAAGAAGCACAGUAUGGUAC',
-);
-export const RNA_ALL_AMINO_ACIDS_2 = new RNA(
+).unwrap();
+export const RNA_ALL_AMINO_ACIDS_2 = parseRNA(
   'GCCUGUGAUGAGUUUGGCCAUAUCAAGUUGAUGAAUCCCCAGAGGAGUACCGUCUGGUAU',
-);
+).unwrap();
 
 // MRNA versions for Polypeptide tests - use the coding sequences directly
-export const MRNA_ALL_AMINO_ACIDS_1 = new MRNA(
-  'GCAUGCGACGAAUUCGGACACAUAAAAUUAAUGAACCCACAAAGAAGCACAGUAUGGUAC',
+export const MRNA_ALL_AMINO_ACIDS_1 = parseMRNA(
   'GCAUGCGACGAAUUCGGACACAUAAAAUUAAUGAACCCACAAAGAAGCACAGUAUGGUAC',
   0,
   60,
-);
+).unwrap();
 
-export const MRNA_ALL_AMINO_ACIDS_2 = new MRNA(
-  'GCCUGUGAUGAGUUUGGCCAUAUCAAGUUGAUGAAUCCCCAGAGGAGUACCGUCUGGUAU',
+export const MRNA_ALL_AMINO_ACIDS_2 = parseMRNA(
   'GCCUGUGAUGAGUUUGGCCAUAUCAAGUUGAUGAAUCCCCAGAGGAGUACCGUCUGGUAU',
   0,
   60,
-);
-export const DNA_ALL_AMINO_ACIDS_1 = new DNA(
+).unwrap();
+export const DNA_ALL_AMINO_ACIDS_1 = parseDNA(
   'GCATGCGACGAATTCGGACACATAAAATTAATGAACCCACAAAGAAGCACAGTATGGTAC',
-);
-export const DNA_ALL_AMINO_ACIDS_2 = new DNA(
+).unwrap();
+export const DNA_ALL_AMINO_ACIDS_2 = parseDNA(
   'GCCTGTGATGAGTTTGGCCATATCAAGTTGATGAATCCCCAGAGGAGTACCGTCTGGTAT',
-);
+).unwrap();
 
 //the sequence of amino acid SINGLE_LETTER_CODEs produced by the above codons (all amino acids in alphabetic order by SINGLE_LETTER_CODE)
 export const ALL_AMINO_ACIDS_SINGLE_LETTER_CODE_SEQ = 'ACDEFGHIKLMNPQRSTVWY';
@@ -68,30 +91,24 @@ export const NUCLEOTIDE_PATTERN_PASSING_SEQS = [
 
 export const isCorrectAminoAcid = (
   aminoAcid: AminoAcid,
-  correctAminoAcidData: { name: string; abbrv: string; singleLetterCode: string },
+  correctAminoAcidData: { name: string; threeLetterCode: string; singleLetterCode: string },
 ): boolean => {
-  const keysToCheck: (keyof { name: string; abbrv: string; singleLetterCode: string })[] = [
-    'name',
-    'abbrv',
-    'singleLetterCode',
-  ];
-  for (const k of keysToCheck) {
-    if (aminoAcid[k as keyof AminoAcid] !== correctAminoAcidData[k]) {
-      return false;
-    }
-  }
-  return true;
+  return (
+    aminoAcid.data.name === correctAminoAcidData.name &&
+    aminoAcid.data.threeLetterCode === correctAminoAcidData.threeLetterCode &&
+    aminoAcid.data.singleLetterCode === correctAminoAcidData.singleLetterCode
+  );
 };
 
 export const isCorrectAminoAcidSequence = (
-  aminoAcidSequence: AminoAcid[],
+  aminoAcidSequence: readonly AminoAcid[],
   correctSingleLetterCodeSequence: string,
 ): boolean => {
   if (aminoAcidSequence.length !== correctSingleLetterCodeSequence.length) {
     return false;
   }
   for (let i = 0; i < correctSingleLetterCodeSequence.length; i++) {
-    if (aminoAcidSequence[i].singleLetterCode !== correctSingleLetterCodeSequence[i]) {
+    if (at(aminoAcidSequence, i).data.singleLetterCode !== correctSingleLetterCodeSequence[i]) {
       return false;
     }
   }

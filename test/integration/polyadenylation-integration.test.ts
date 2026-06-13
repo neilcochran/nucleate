@@ -4,11 +4,11 @@
  * These tests validate basic polyadenylation integration with RNA processing.
  */
 
-import { Gene } from '../../src/model/nucleic-acids/Gene';
-import { transcribe } from '../../src/utils/transcription';
-import { processRNA } from '../../src/utils/mrna-processing';
-import { findPolyadenylationSites } from '../../src/utils/polyadenylation';
-import { isSuccess } from '../../src/types/validation-result';
+import { parseGene } from '../../src/gene';
+import { transcribe } from '../../src/transcription';
+import { processRNA } from '../../src/processing';
+import { findPolyadenylationSites } from '../../src/polyadenylation';
+import { at, requireCodingSequence } from '../utils/test-utils';
 
 describe('Polyadenylation Integration Tests', () => {
   test('basic polyadenylation integration with RNA processing', () => {
@@ -21,29 +21,29 @@ describe('Polyadenylation Integration Tests', () => {
     const geneSequence = promoter + exon;
     const exons = [{ start: 29, end: 120, name: 'main-exon' }];
 
-    const gene = new Gene(geneSequence, exons, 'polya-test-gene');
+    const gene = parseGene(geneSequence, exons, 'polya-test-gene').unwrap();
     const transcriptionResult = transcribe(gene);
-    expect(isSuccess(transcriptionResult)).toBe(true);
+    expect(transcriptionResult.success).toBe(true);
 
-    if (isSuccess(transcriptionResult)) {
+    if (transcriptionResult.success) {
       const preMRNA = transcriptionResult.data;
 
       // Check that polyadenylation site detection works
-      const sites = findPolyadenylationSites(preMRNA);
+      const sites = findPolyadenylationSites(preMRNA.sequence);
       expect(sites.length).toBeGreaterThanOrEqual(0); // May or may not find sites
 
       // Process RNA - should succeed
       const processingResult = processRNA(preMRNA);
-      if (isSuccess(processingResult)) {
+      if (processingResult.success) {
         const mRNA = processingResult.data;
 
         // Verify basic mRNA structure
         expect(mRNA.isFullyProcessed()).toBe(true);
-        expect(mRNA.hasFivePrimeCap()).toBe(true);
-        expect(mRNA.getPolyATailLength()).toBeGreaterThanOrEqual(0); // Allow for any poly-A tail length
+        expect(mRNA.fivePrimeCap).toBe(true);
+        expect(mRNA.polyATailLength).toBeGreaterThanOrEqual(0); // Allow for any poly-A tail length
 
         // Verify coding sequence is intact
-        const codingSeq = mRNA.getCodingSequence();
+        const codingSeq = requireCodingSequence(mRNA).sequence;
         expect(codingSeq.startsWith('AUG')).toBe(true);
         expect(codingSeq.endsWith('UAG')).toBe(true);
       }
@@ -60,22 +60,23 @@ describe('Polyadenylation Integration Tests', () => {
     const geneSequence = promoter + exon;
     const exons = [{ start: 29, end: 120, name: 'main-exon' }];
 
-    const gene = new Gene(geneSequence, exons, 'site-detection-test');
+    const gene = parseGene(geneSequence, exons, 'site-detection-test').unwrap();
     const transcriptionResult = transcribe(gene);
-    expect(isSuccess(transcriptionResult)).toBe(true);
+    expect(transcriptionResult.success).toBe(true);
 
-    if (isSuccess(transcriptionResult)) {
+    if (transcriptionResult.success) {
       const preMRNA = transcriptionResult.data;
 
       // This should not throw an error
-      const sites = findPolyadenylationSites(preMRNA);
+      const sites = findPolyadenylationSites(preMRNA.sequence);
       expect(Array.isArray(sites)).toBe(true);
 
       // If sites are found, they should have basic structure
       if (sites.length > 0) {
-        expect(typeof sites[0].position).toBe('number');
-        expect(typeof sites[0].signal).toBe('string');
-        expect(typeof sites[0].strength).toBe('number');
+        const first = at(sites, 0);
+        expect(typeof first.position).toBe('number');
+        expect(typeof first.signal).toBe('string');
+        expect(typeof first.strength).toBe('number');
       }
     }
   });
@@ -106,22 +107,22 @@ describe('Polyadenylation Integration Tests', () => {
       const geneSequence = promoter + testCase.sequence;
       const exons = [{ start: 29, end: 29 + testCase.sequence.length, name: testCase.name }];
 
-      const gene = new Gene(geneSequence, exons, testCase.name);
+      const gene = parseGene(geneSequence, exons, testCase.name).unwrap();
       const transcriptionResult = transcribe(gene);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
 
         // Should either succeed or fail gracefully
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
           expect(mRNA.isFullyProcessed()).toBe(true);
         } else {
-          expect(typeof processingResult.error).toBe('string');
-          expect(processingResult.error).toMatch(
-            /processing|splice|polyadenylation|coding|bounds|exon/i,
+          expect(typeof processingResult.error.kind).toBe('string');
+          expect(processingResult.error.kind).toMatch(
+            /splicing-failed|no-start-codon|no-in-frame-stop|invalid-/i,
           );
         }
       }

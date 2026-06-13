@@ -5,14 +5,14 @@
  * correctly with real-world input and maintains biological accuracy.
  */
 
-import { Gene } from '../../src/model/nucleic-acids/Gene';
-import { DNA } from '../../src/model/nucleic-acids/DNA';
-import { MRNA } from '../../src/model/nucleic-acids/MRNA';
-import { transcribe } from '../../src/utils/transcription';
-import { processRNA } from '../../src/utils/mrna-processing';
-import { Polypeptide } from '../../src/model/Polypeptide';
-import { convertToRNA } from '../../src/utils/nucleic-acids';
-import { isSuccess, isFailure } from '../../src/types/validation-result';
+import { parseGene } from '../../src/gene';
+import { parseDNA } from '../../src/sequence';
+import { parseMRNA } from '../../src/modifications';
+import { processRNA } from '../../src/processing';
+import { transcribe } from '../../src/transcription';
+import { translate } from '../../src/translation';
+import { transcribeSequence } from '../../src/sequence';
+import { requireCodingSequence } from '../utils/test-utils';
 
 describe('Biological Scenarios Integration Tests', () => {
   describe('Human Gene Models', () => {
@@ -43,22 +43,22 @@ describe('Biological Scenarios Integration Tests', () => {
         { start: 181, end: 223, name: 'exon3' }, // 42bp: 181-222
       ];
 
-      const betaGlobin = new Gene(betaGlobinLike, exons, 'beta-globin-like');
+      const betaGlobin = parseGene(betaGlobinLike, exons, 'beta-globin-like').unwrap();
 
       // Test full processing pipeline
       const transcriptionResult = transcribe(betaGlobin);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.hasIntrons()).toBe(true);
 
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
-          const codingSeq = mRNA.getCodingSequence();
+          const codingSeq = requireCodingSequence(mRNA).sequence;
 
           // Verify exact biological properties
           expect(codingSeq.startsWith('AUG')).toBe(true);
@@ -74,14 +74,14 @@ describe('Biological Scenarios Integration Tests', () => {
           expect(codingSeq.endsWith('UAG')).toBe(true);
 
           // Create protein
-          const polypeptide = new Polypeptide(mRNA);
+          const polypeptide = translate(mRNA).unwrap();
 
           // Exact protein length: (72-3)/3 = 23 amino acids
-          expect(polypeptide.aminoAcidSequence.length).toBe(23);
-          expect(polypeptide.aminoAcidSequence[0]?.singleLetterCode).toBe('M');
+          expect(polypeptide.aminoAcids.length).toBe(23);
+          expect(polypeptide.aminoAcids[0]?.data.singleLetterCode).toBe('M');
 
           // Verify protein sequence properties
-          const proteinSeq = polypeptide.aminoAcidSequence.map(aa => aa.singleLetterCode).join('');
+          const proteinSeq = polypeptide.aminoAcids.map(aa => aa.data.singleLetterCode).join('');
           expect(proteinSeq.startsWith('M')).toBe(true);
           expect(proteinSeq.length).toBe(23);
         }
@@ -113,22 +113,22 @@ describe('Biological Scenarios Integration Tests', () => {
         { start: 181, end: 223, name: 'a-chain-exon' }, // 42bp: 181-222
       ];
 
-      const insulin = new Gene(insulinLike, exons, 'insulin-like');
+      const insulin = parseGene(insulinLike, exons, 'insulin-like').unwrap();
 
       const transcriptionResult = transcribe(insulin);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
-          const polypeptide = new Polypeptide(mRNA);
+          const polypeptide = translate(mRNA).unwrap();
 
           // Get actual coding sequence to verify
-          const codingSeq = mRNA.getCodingSequence();
+          const codingSeq = requireCodingSequence(mRNA).sequence;
 
           // Verify coding sequence properties
           expect(codingSeq.startsWith('AUG')).toBe(true);
@@ -137,15 +137,15 @@ describe('Biological Scenarios Integration Tests', () => {
 
           // Calculate protein length from actual coding sequence
           const expectedProteinLength = Math.floor((codingSeq.length - 3) / 3);
-          expect(polypeptide.aminoAcidSequence.length).toBe(expectedProteinLength);
-          expect(polypeptide.aminoAcidSequence[0]?.singleLetterCode).toBe('M');
+          expect(polypeptide.aminoAcids.length).toBe(expectedProteinLength);
+          expect(polypeptide.aminoAcids[0]?.data.singleLetterCode).toBe('M');
 
           // Signal peptide should be at beginning
-          const sequence = polypeptide.aminoAcidSequence.map(aa => aa.singleLetterCode).join('');
+          const sequence = polypeptide.aminoAcids.map(aa => aa.data.singleLetterCode).join('');
           expect(sequence.startsWith('M')).toBe(true); // Signal peptide starts with Met
 
           // Verify protein properties from actual translation (includes UTR regions that get translated)
-          expect(polypeptide.aminoAcidSequence.length).toBe(23); // Actual length from complete exon translation
+          expect(polypeptide.aminoAcids.length).toBe(23); // Actual length from complete exon translation
         }
       }
     });
@@ -166,32 +166,32 @@ describe('Biological Scenarios Integration Tests', () => {
         { start: 35, end: 98, name: 'bacterial-exon' }, // ATG starts at position 35
       ];
 
-      const bacterialGeneObj = new Gene(bacterialGene, exons, 'bacterial');
+      const bacterialGeneObj = parseGene(bacterialGene, exons, 'bacterial').unwrap();
 
       // Use forced TSS at the start of ATG codon
       const transcriptionResult = transcribe(bacterialGeneObj, {
         forceTranscriptionStartSite: 35, // ATG starts at position 35
       });
 
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.hasIntrons()).toBe(false);
 
         const processingResult = processRNA(preMRNA);
-        if (isFailure(processingResult)) {
+        if (!processingResult.success) {
           // For prokaryotic genes, processing might fail but pre-mRNA should be usable
 
           // Verify pre-mRNA has correct properties
-          const preMRNASeq = preMRNA.getSequence();
+          const preMRNASeq = preMRNA.sequence.sequence;
           expect(preMRNASeq.startsWith('AUG')).toBe(true);
           expect(preMRNASeq.endsWith('UAG')).toBe(true);
           expect(preMRNASeq.length % 3).toBe(0);
           expect(preMRNASeq.length).toBe(66);
         } else {
           const mRNA = processingResult.data;
-          const codingSeq = mRNA.getCodingSequence();
+          const codingSeq = requireCodingSequence(mRNA).sequence;
 
           expect(codingSeq.startsWith('AUG')).toBe(true);
           expect(codingSeq.endsWith('UAG')).toBe(true);
@@ -227,20 +227,20 @@ describe('Biological Scenarios Integration Tests', () => {
         { start: promoterLength + 108, end: promoterLength + 135, name: 'euk-exon3' },
       ];
 
-      const eukGene = new Gene(eukaryoticGene, exons, 'eukaryotic');
+      const eukGene = parseGene(eukaryoticGene, exons, 'eukaryotic').unwrap();
 
       const transcriptionResult = transcribe(eukGene);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         expect(preMRNA.hasIntrons()).toBe(true);
 
         const processingResult = processRNA(preMRNA);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
-          const polypeptide = new Polypeptide(mRNA);
-          expect(polypeptide.aminoAcidSequence.length).toBe(26); // (81bp - 3bp stop) / 3 = 26 amino acids
+          const polypeptide = translate(mRNA).unwrap();
+          expect(polypeptide.aminoAcids.length).toBe(26); // (81bp - 3bp stop) / 3 = 26 amino acids
         }
       }
     });
@@ -274,25 +274,25 @@ describe('Biological Scenarios Integration Tests', () => {
       ];
 
       // Test normal splicing
-      const normalGene = new Gene(alternativeSplicingGene, normalExons, 'normal');
+      const normalGene = parseGene(alternativeSplicingGene, normalExons, 'normal').unwrap();
       const normalResult = transcribe(normalGene);
 
-      expect(isSuccess(normalResult)).toBe(true);
+      expect(normalResult.success).toBe(true);
 
       // Test alternative splicing
-      const altGene = new Gene(alternativeSplicingGene, skippedExons, 'alternative');
+      const altGene = parseGene(alternativeSplicingGene, skippedExons, 'alternative').unwrap();
       const altResult = transcribe(altGene);
 
-      expect(isSuccess(altResult)).toBe(true);
+      expect(altResult.success).toBe(true);
 
       // Compare results
-      if (isSuccess(normalResult) && isSuccess(altResult)) {
+      if (normalResult.success && altResult.success) {
         const normalProcessed = processRNA(normalResult.data);
         const altProcessed = processRNA(altResult.data);
 
-        if (isSuccess(normalProcessed) && isSuccess(altProcessed)) {
-          const normalCoding = normalProcessed.data.getCodingSequence();
-          const altCoding = altProcessed.data.getCodingSequence();
+        if (normalProcessed.success && altProcessed.success) {
+          const normalCoding = requireCodingSequence(normalProcessed.data).sequence;
+          const altCoding = requireCodingSequence(altProcessed.data).sequence;
 
           // Alternative should be exactly 27bp shorter (skipped exon 2)
           expect(normalCoding.length - altCoding.length).toBe(27);
@@ -305,14 +305,12 @@ describe('Biological Scenarios Integration Tests', () => {
           expect(altCoding.substring(27)).toBe(normalCoding.substring(54)); // Exon 3 follows exon 1
 
           // Test protein length difference - normal has 26 AAs, alternative has 17 AAs
-          const normalPolypeptide = new Polypeptide(normalProcessed.data);
-          const altPolypeptide = new Polypeptide(altProcessed.data);
+          const normalPolypeptide = translate(normalProcessed.data).unwrap();
+          const altPolypeptide = translate(altProcessed.data).unwrap();
 
-          expect(normalPolypeptide.aminoAcidSequence.length).toBe(26); // (81-3)/3
-          expect(altPolypeptide.aminoAcidSequence.length).toBe(17); // (54-3)/3
-          expect(
-            normalPolypeptide.aminoAcidSequence.length - altPolypeptide.aminoAcidSequence.length,
-          ).toBe(9); // Lost 9 amino acids
+          expect(normalPolypeptide.aminoAcids.length).toBe(26); // (81-3)/3
+          expect(altPolypeptide.aminoAcids.length).toBe(17); // (54-3)/3
+          expect(normalPolypeptide.aminoAcids.length - altPolypeptide.aminoAcids.length).toBe(9); // Lost 9 amino acids
         }
       }
     });
@@ -344,32 +342,32 @@ describe('Biological Scenarios Integration Tests', () => {
         { start: 181, end: 223, name: 'c-terminal' }, // 42bp: 181-222
       ];
 
-      const multiDomain = new Gene(multiDomainGene, exons, 'multi-domain');
+      const multiDomain = parseGene(multiDomainGene, exons, 'multi-domain').unwrap();
 
       const transcriptionResult = transcribe(multiDomain);
-      expect(isSuccess(transcriptionResult)).toBe(true);
+      expect(transcriptionResult.success).toBe(true);
 
-      if (isSuccess(transcriptionResult)) {
+      if (transcriptionResult.success) {
         const preMRNA = transcriptionResult.data;
         const processingResult = processRNA(preMRNA);
-        expect(isSuccess(processingResult)).toBe(true);
+        expect(processingResult.success).toBe(true);
 
-        if (isSuccess(processingResult)) {
+        if (processingResult.success) {
           const mRNA = processingResult.data;
-          const polypeptide = new Polypeptide(mRNA);
+          const polypeptide = translate(mRNA).unwrap();
 
           // Multi-domain protein with corrected structure
-          const codingSeq = mRNA.getCodingSequence();
+          const codingSeq = requireCodingSequence(mRNA).sequence;
           expect(codingSeq.length).toBe(72); // Actual length from splicing
           expect(codingSeq.startsWith('AUG')).toBe(true);
           expect(codingSeq.endsWith('UAG')).toBe(true);
           expect(codingSeq.length % 3).toBe(0);
 
           // Calculate protein length: (72-3)/3 = 23 amino acids
-          expect(polypeptide.aminoAcidSequence.length).toBe(23);
+          expect(polypeptide.aminoAcids.length).toBe(23);
 
           // Verify domain structure in protein sequence
-          const proteinSeq = polypeptide.aminoAcidSequence.map(aa => aa.singleLetterCode).join('');
+          const proteinSeq = polypeptide.aminoAcids.map(aa => aa.data.singleLetterCode).join('');
           expect(proteinSeq.startsWith('M')).toBe(true); // Starts with methionine
           // Verify protein has expected length from multi-domain structure
           expect(proteinSeq.length).toBe(23);
@@ -384,13 +382,13 @@ describe('Biological Scenarios Integration Tests', () => {
 
       // High GC content (common in some organisms)
       const highGCSequence = 'ATGGGCGGCGGCCTGCCGCTGTAG';
-      const highGCDNA = new DNA(highGCSequence);
-      const highGCRNA = convertToRNA(highGCDNA);
+      const highGCDNA = parseDNA(highGCSequence).unwrap();
+      const highGCRNA = transcribeSequence(highGCDNA);
 
       // Low GC content
       const lowGCSequence = 'ATGAAAAATAAATTTAATTTATAG';
-      const lowGCDNA = new DNA(lowGCSequence);
-      const lowGCRNA = convertToRNA(lowGCDNA);
+      const lowGCDNA = parseDNA(lowGCSequence).unwrap();
+      const lowGCRNA = transcribeSequence(lowGCDNA);
 
       // Test exact GC content differences
       const highGCContent = (highGCSequence.match(/[GC]/g) ?? []).length / highGCSequence.length;
@@ -411,28 +409,14 @@ describe('Biological Scenarios Integration Tests', () => {
       const highGCSeq = highGCRNA.getSequence(); // 'AUGGGCGGCGGCCUGCCGCUGUAG'
       const lowGCSeq = lowGCRNA.getSequence(); // 'AUGAAAAAUAAAUUUAAUUUAUAG'
 
-      const highGCMRNA = new MRNA(
-        highGCSeq,
-        highGCSeq, // coding sequence is the entire sequence
-        0, // coding starts at position 0
-        highGCSeq.length, // coding ends at sequence end
-        true, // has 5' cap
-        '', // no poly-A tail for this test
-      );
-      const lowGCMRNA = new MRNA(
-        lowGCSeq,
-        lowGCSeq, // coding sequence is the entire sequence
-        0, // coding starts at position 0
-        lowGCSeq.length, // coding ends at sequence end
-        true, // has 5' cap
-        '', // no poly-A tail for this test
-      );
+      const highGCMRNA = parseMRNA(highGCSeq, 0, highGCSeq.length, true, 0).unwrap();
+      const lowGCMRNA = parseMRNA(lowGCSeq, 0, lowGCSeq.length, true, 0).unwrap();
 
-      const highGCPolypeptide = new Polypeptide(highGCMRNA);
-      const lowGCPolypeptide = new Polypeptide(lowGCMRNA);
+      const highGCPolypeptide = translate(highGCMRNA).unwrap();
+      const lowGCPolypeptide = translate(lowGCMRNA).unwrap();
 
-      expect(highGCPolypeptide.aminoAcidSequence.length).toBe(7); // (24-3)/3 = 7 amino acids
-      expect(lowGCPolypeptide.aminoAcidSequence.length).toBe(7); // Same length despite different codon usage
+      expect(highGCPolypeptide.aminoAcids.length).toBe(7); // (24-3)/3 = 7 amino acids
+      expect(lowGCPolypeptide.aminoAcids.length).toBe(7); // Same length despite different codon usage
     });
   });
 });

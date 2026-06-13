@@ -15,20 +15,73 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./result": {
+      "types": "./dist/result/index.d.ts",
+      "import": "./dist/result/index.js"
+    },
+    "./coordinates": {
+      "types": "./dist/coordinates/index.d.ts",
+      "import": "./dist/coordinates/index.js"
+    },
+    "./sequence": {
+      "types": "./dist/sequence/index.d.ts",
+      "import": "./dist/sequence/index.js"
+    },
+    "./pattern": {
+      "types": "./dist/pattern/index.d.ts",
+      "import": "./dist/pattern/index.js"
+    },
+    "./gene": {
+      "types": "./dist/gene/index.d.ts",
+      "import": "./dist/gene/index.js"
+    },
+    "./variants": {
+      "types": "./dist/variants/index.d.ts",
+      "import": "./dist/variants/index.js"
+    },
+    "./transcription": {
+      "types": "./dist/transcription/index.d.ts",
+      "import": "./dist/transcription/index.js"
+    },
+    "./splicing": {
+      "types": "./dist/splicing/index.d.ts",
+      "import": "./dist/splicing/index.js"
+    },
+    "./polyadenylation": {
+      "types": "./dist/polyadenylation/index.d.ts",
+      "import": "./dist/polyadenylation/index.js"
+    },
+    "./modifications": {
+      "types": "./dist/modifications/index.d.ts",
+      "import": "./dist/modifications/index.js"
+    },
+    "./processing": {
+      "types": "./dist/processing/index.d.ts",
+      "import": "./dist/processing/index.js"
+    },
+    "./translation": {
+      "types": "./dist/translation/index.d.ts",
+      "import": "./dist/translation/index.js"
+    },
+    "./replication": {
+      "types": "./dist/replication/index.d.ts",
+      "import": "./dist/replication/index.js"
     }
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "lint": "eslint --ext .ts --fix . && cspell lint --unique --words-only \"src/**/*\"",
     "lint:fix": "eslint --ext .ts --fix .",
+    "typecheck": "tsc -p tsconfig.eslint.json",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "doc": "rimraf doc/ && typedoc --includeVersion --readme none --out docs src/",
-    "build": "node scripts/build.js",
-    "clean": "rimraf dist/ dist-cjs/ doc/",
+    "doc": "rimraf doc/ && typedoc --includeVersion --out docs src/",
+    "build": "npm run lint && rimraf dist/ && tsc",
+    "clean": "rimraf dist/ doc/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\""
   },
@@ -38,22 +91,24 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
-    "@types/node": "^20.11.24",
+    "@types/node": "^22.19.21",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "cspell": "^8.6.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "eslint-plugin-tsdoc": "^0.2.17",
+    "eslint-import-resolver-typescript": "^3.5.5",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.6",
+    "eslint-plugin-tsdoc": "^0.5.2",
     "jest": "^29.7.0",
-    "prettier": "^3.6.2",
+    "prettier": "^3.8.3",
     "rimraf": "^5.0.5",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "tsc-watch": "^6.0.4",
-    "typedoc": "^0.25.12",
-    "typescript": "^5.4.2"
+    "typedoc": "^0.28.19",
+    "typescript": "^5.9.3"
   },
   "keywords": [
     "dna",
