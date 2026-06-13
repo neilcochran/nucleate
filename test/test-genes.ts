@@ -84,17 +84,6 @@ export const COMPLEX_GENE = buildGeneFixture({
   intronLength: 20, // positions 12-32
 });
 
-// Short gene that meets minimum constraints
-export const MINIMAL_GENE = buildGeneFixture({
-  dnaSequence: 'ATGAAAGGGGGGGGGGGGGGGGGAGCCC',
-  rnaSequence: 'AUGAAAGGGGGGGGGGGGGGGGGAGCCC',
-  exons: [
-    { start: 0, end: 6, name: 'exon1' }, // ATGAAA (6bp)
-    { start: 26, end: 29, name: 'exon2' }, // CCC (3bp - minimum)
-  ] as GenomicRegion[],
-  intronLength: 20, // positions 6-26 = exactly 20bp
-});
-
 // Four-exon gene for alternative splicing tests
 export const FOUR_EXON_GENE = buildGeneFixture({
   dnaSequence: 'ATGAAAGTAAGGGGGGGGGGGGGGAGCCCGGGGTAAGGGGGGGGGGGGGGAGGGGTTTGTAAGGGGGGGGGGGGGGAGTAG', // 80bp

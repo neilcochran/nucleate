@@ -234,7 +234,7 @@ export function compilePatternRegexSource(pattern: string): Result<string, Patte
  *
  * @internal
  */
-export function unsafeCompilePattern(pattern: string): NucleotidePattern {
+function unsafeCompilePattern(pattern: string): NucleotidePattern {
   const outcome = compilePatternRegexSource(pattern);
   if (!outcome.success) {
     throw new Error(`unsafeCompilePattern called on invalid pattern '${pattern}'`);
