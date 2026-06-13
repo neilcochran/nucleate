@@ -79,7 +79,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "doc": "rimraf doc/ && typedoc --includeVersion --readme none --out docs src/",
+    "doc": "rimraf doc/ && typedoc --includeVersion --out docs src/",
     "build": "npm run lint && rimraf dist/ && tsc",
     "clean": "rimraf dist/ doc/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
