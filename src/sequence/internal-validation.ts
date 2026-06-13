@@ -5,6 +5,30 @@ const VALID_DNA_BASES = new Set(['A', 'C', 'G', 'T']);
 const VALID_RNA_BASES = new Set(['A', 'C', 'G', 'U']);
 
 /**
+ * Shared validation logic for nucleic acid sequence strings.
+ * Normalizes to upper-case, then checks against the provided valid base set.
+ * Returns a structured error on failure using the provided prefix and error kind.
+ *
+ * @internal
+ */
+function validateNucleicAcidString<ErrorKind extends string>(
+  input: string,
+  validBases: ReadonlySet<string>,
+  emptyKind: ErrorKind,
+  invalidKind: ErrorKind,
+): Result<string, { kind: ErrorKind; chars?: readonly string[]; firstAt?: number }> {
+  if (input.length === 0) {
+    return failure({ kind: emptyKind } as { kind: ErrorKind; chars?: readonly string[]; firstAt?: number });
+  }
+  const normalized = input.toUpperCase();
+  const issue = findInvalidBases(normalized, validBases);
+  if (issue !== undefined) {
+    return failure({ kind: invalidKind, chars: issue.chars, firstAt: issue.firstAt } as { kind: ErrorKind; chars?: readonly string[]; firstAt?: number });
+  }
+  return success(normalized);
+}
+
+/**
  * Validates and normalizes a candidate DNA string. On success the `Result` carries the
  * upper-cased sequence; on failure it carries the structured {@link DNAError} naming the
  * offending characters and the index of the first one.
@@ -15,15 +39,7 @@ const VALID_RNA_BASES = new Set(['A', 'C', 'G', 'U']);
  * @returns `Result<string, DNAError>` carrying the normalized sequence on success
  */
 export function validateDNAString(input: string): Result<string, DNAError> {
-  if (input.length === 0) {
-    return failure({ kind: 'dna/empty-sequence' });
-  }
-  const normalized = input.toUpperCase();
-  const issue = findInvalidBases(normalized, VALID_DNA_BASES);
-  if (issue !== undefined) {
-    return failure({ kind: 'dna/invalid-characters', chars: issue.chars, firstAt: issue.firstAt });
-  }
-  return success(normalized);
+  return validateNucleicAcidString(input, VALID_DNA_BASES, 'dna/empty-sequence', 'dna/invalid-characters') as Result<string, DNAError>;
 }
 
 /**
@@ -37,15 +53,7 @@ export function validateDNAString(input: string): Result<string, DNAError> {
  * @returns `Result<string, RNAError>` carrying the normalized sequence on success
  */
 export function validateRNAString(input: string): Result<string, RNAError> {
-  if (input.length === 0) {
-    return failure({ kind: 'rna/empty-sequence' });
-  }
-  const normalized = input.toUpperCase();
-  const issue = findInvalidBases(normalized, VALID_RNA_BASES);
-  if (issue !== undefined) {
-    return failure({ kind: 'rna/invalid-characters', chars: issue.chars, firstAt: issue.firstAt });
-  }
-  return success(normalized);
+  return validateNucleicAcidString(input, VALID_RNA_BASES, 'rna/empty-sequence', 'rna/invalid-characters') as Result<string, RNAError>;
 }
 
 function findInvalidBases(

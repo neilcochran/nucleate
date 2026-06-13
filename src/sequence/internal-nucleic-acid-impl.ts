@@ -163,6 +163,15 @@ export abstract class NucleicAcidImpl<Self extends NucleicAcidImpl<Self>> {
   }
 }
 
+/**
+ * Computes the complement of each base in a sequence string using the provided map.
+ * Iterates forward (5' to 3') and replaces each base with its Watson-Crick complement.
+ *
+ * @param sequence - Validated nucleic acid sequence string
+ * @param complementMap - Alphabet-specific base-to-complement mapping
+ * @returns The complemented sequence string
+ * @throws Error if an unmapped base is encountered (should never happen with validated input)
+ */
 function complementString(
   sequence: string,
   complementMap: Readonly<Record<string, string>>,
@@ -179,18 +188,23 @@ function complementString(
   return result;
 }
 
+/**
+ * Computes the reverse complement of a sequence string.
+ * The reverse complement is obtained by first computing the complement of each base,
+ * then reversing the resulting string. This is equivalent to reading the opposite
+ * strand from 5' to 3'.
+ *
+ * Implemented by complementing then reversing, which is clearer and avoids
+ * duplicating the complement lookup logic.
+ *
+ * @param sequence - Validated nucleic acid sequence string
+ * @param complementMap - Alphabet-specific base-to-complement mapping
+ * @returns The reverse-complemented sequence string
+ */
 function reverseComplementString(
   sequence: string,
   complementMap: Readonly<Record<string, string>>,
 ): string {
-  let result = '';
-  for (let i = sequence.length - 1; i >= 0; i--) {
-    const base = sequence.charAt(i);
-    const complement = complementMap[base];
-    if (complement === undefined) {
-      throw new Error(`Complement encountered invalid base '${base}' at index ${i}`);
-    }
-    result += complement;
-  }
-  return result;
+  const complemented = complementString(sequence, complementMap);
+  return complemented.split('').reverse().join('');
 }

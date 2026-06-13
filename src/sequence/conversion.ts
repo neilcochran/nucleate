@@ -2,6 +2,20 @@ import { DNA, unsafeDNA } from './DNA.js';
 import { RNA, unsafeRNA } from './RNA.js';
 
 /**
+ * Replaces all occurrences of one nucleotide character with another in a sequence string.
+ * Shared helper for sequence-level transcription and reverse transcription, avoiding
+ * duplication between the two conversion functions.
+ *
+ * @param sequence - Source sequence string
+ * @param from - Nucleotide character to replace
+ * @param to - Nucleotide character to replace with
+ * @returns The sequence with all occurrences replaced
+ */
+function replaceBase(sequence: string, from: string, to: string): string {
+  return sequence.replaceAll(from, to);
+}
+
+/**
  * Converts a {@link DNA} sequence to its {@link RNA} equivalent at the sequence level
  * (T replaced by U, all other bases preserved).
  *
@@ -21,7 +35,7 @@ import { RNA, unsafeRNA } from './RNA.js';
  * ```
  */
 export function transcribeSequence(dna: DNA): RNA {
-  return unsafeRNA(dna.sequence.replaceAll('T', 'U'));
+  return unsafeRNA(replaceBase(dna.sequence, 'T', 'U'));
 }
 
 /**
@@ -42,5 +56,5 @@ export function transcribeSequence(dna: DNA): RNA {
  * ```
  */
 export function reverseTranscribeSequence(rna: RNA): DNA {
-  return unsafeDNA(rna.sequence.replaceAll('U', 'T'));
+  return unsafeDNA(replaceBase(rna.sequence, 'U', 'T'));
 }
