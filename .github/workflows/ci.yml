@@ -57,3 +57,16 @@ jobs:
       - run: npm ci --ignore-scripts
 
       - run: npm test
+
+  # Single required status check: passes only if every CI job above succeeds.
+  # Lets branch protection require one context ("CI") instead of each job and
+  # matrix leg, so changing the Node matrix never breaks the required checks.
+  ci:
+    name: CI
+    needs: [checks, test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify CI jobs succeeded
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
