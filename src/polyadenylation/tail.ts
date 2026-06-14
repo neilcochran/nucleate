@@ -7,9 +7,26 @@ import {
   DEFAULT_POLY_A_TAIL_LENGTH,
   MAX_POLY_A_TAIL_LENGTH,
   MIN_POLY_A_DETECTION_LENGTH,
-  POLY_A_TAIL_PATTERN,
 } from './biology.js';
 import { DEFAULT_CLEAVAGE_OFFSET } from './tuning.js';
+
+/**
+ * Counts the trailing poly-A run at the 3' end of a raw sequence string.
+ *
+ * Linear backward scan equivalent to matching `/A+$/`, but without the polynomial
+ * backtracking an anchored regex incurs on adversarial input (a long A run followed by a
+ * non-A base), so it is safe to apply to uncontrolled sequence data.
+ *
+ * @param sequence - The raw RNA sequence to scan
+ * @returns The number of consecutive trailing `A` bases (`0` when none)
+ */
+function trailingPolyALength(sequence: string): number {
+  let length = 0;
+  for (let i = sequence.length - 1; i >= 0 && sequence[i] === 'A'; i--) {
+    length += 1;
+  }
+  return length;
+}
 
 /**
  * Cleaves the supplied {@link RNA} at `cleavageSite` (clamped to the sequence length) and
@@ -82,11 +99,11 @@ export function add3PrimePolyATailAtSite(
  */
 export function remove3PrimePolyATail(rna: RNA): Result<RNA, PolyadenylationError> {
   const sequence = rna.sequence;
-  const trimmed = sequence.replace(POLY_A_TAIL_PATTERN, '');
-  if (trimmed.length === sequence.length) {
+  const tailLength = trailingPolyALength(sequence);
+  if (tailLength === 0) {
     return failure({ kind: 'polyadenylation/no-poly-a-tail' });
   }
-  return success(unsafeRNA(trimmed));
+  return success(unsafeRNA(sequence.substring(0, sequence.length - tailLength)));
 }
 
 /**
@@ -106,9 +123,7 @@ export function has3PrimePolyATail(
   rna: RNA,
   minLength: number = MIN_POLY_A_DETECTION_LENGTH,
 ): boolean {
-  const sequence = rna.sequence;
-  const pattern = new RegExp(`A{${minLength},}$`);
-  return pattern.test(sequence);
+  return trailingPolyALength(rna.sequence) >= minLength;
 }
 
 /**
@@ -120,8 +135,7 @@ export function has3PrimePolyATail(
  * @returns Length of the trailing A run, or `0` if none
  */
 export function get3PrimePolyATailLength(rna: RNA): number {
-  const match = rna.sequence.match(/A+$/);
-  return match ? match[0].length : 0;
+  return trailingPolyALength(rna.sequence);
 }
 
 /**
@@ -136,7 +150,8 @@ export function get3PrimePolyATailLength(rna: RNA): number {
  * @returns The tail-free sequence as RNA, or `undefined` when the input is entirely poly-A
  */
 export function getCoreSequence(rna: RNA): RNA | undefined {
-  const trimmed = rna.sequence.replace(POLY_A_TAIL_PATTERN, '');
+  const sequence = rna.sequence;
+  const trimmed = sequence.substring(0, sequence.length - trailingPolyALength(sequence));
   if (trimmed.length === 0) {
     return undefined;
   }

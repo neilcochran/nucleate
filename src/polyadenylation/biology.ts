@@ -16,9 +16,6 @@ export const MIN_POLY_A_DETECTION_LENGTH = 10;
 /** Maximum allowed poly-A tail length. */
 export const MAX_POLY_A_TAIL_LENGTH = 1000;
 
-/** Regex pattern matching a trailing poly-A run. */
-export const POLY_A_TAIL_PATTERN = /A+$/;
-
 /** Offset (bp) from the AATAAA/AAUAAA hexamer to the typical cleavage site. */
 export const POLYA_SIGNAL_OFFSET = 6;
 
