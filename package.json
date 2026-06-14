@@ -83,9 +83,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "doc": "rimraf doc/ && typedoc --includeVersion --out docs src/",
+    "doc": "rimraf docs/ && typedoc --includeVersion --out docs src/",
     "build": "npm run lint && rimraf dist/ && tsc",
-    "clean": "rimraf dist/ doc/",
+    "clean": "rimraf dist/ docs/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\""
   },
@@ -96,7 +96,7 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.3",
     "@types/jest": "^29.5.12",
-    "@types/node": "^22.19.21",
+    "@types/node": "^25.9.2",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "cspell": "^10.0.1",
