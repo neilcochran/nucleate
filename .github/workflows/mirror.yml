@@ -30,4 +30,9 @@ jobs:
         working-directory: repo.git
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-        run: git push --mirror "https://oauth2:${GITLAB_TOKEN}@gitlab.com/neilcochran/nucleate.git"
+        # Push branches and tags only (not --mirror): GitHub exposes refs/pull/*
+        # PR refs that GitLab refuses. --prune deletes branches/tags on GitLab
+        # that no longer exist on GitHub, keeping it an exact branch + tag mirror.
+        run: |
+          git push --prune "https://oauth2:${GITLAB_TOKEN}@gitlab.com/neilcochran/nucleate.git" \
+            "+refs/heads/*:refs/heads/*" "+refs/tags/*:refs/tags/*"
