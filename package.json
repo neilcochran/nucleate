@@ -99,7 +99,7 @@
     "@types/node": "^25.9.2",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
-    "cspell": "^8.6.0",
+    "cspell": "^10.0.1",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^3.5.5",
