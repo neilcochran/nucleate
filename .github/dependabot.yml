@@ -1,0 +1,30 @@
+version: 2
+
+# Cooldown holds off updates to releases younger than 7 days, so a freshly
+# poisoned package version is not pulled the moment it lands (Shai-Hulud-class
+# supply-chain defense). Patch and minor updates are batched per group; majors
+# arrive as individual PRs for deliberate review.
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+      development-dependencies:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
