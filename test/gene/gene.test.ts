@@ -7,7 +7,6 @@ function unwrapGene(
   sequence: string,
   exons: GenomicRegion[],
   name?: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   splicingProfile?: any,
 ): Gene {
   const result = parseGene(sequence, exons, name, splicingProfile);
@@ -160,7 +159,6 @@ describe('Gene', () => {
       expect(arr[0]).toEqual({ start: 0, end: 12, name: 'exon1' });
       expect(arr[1]).toEqual({ start: 32, end: 40, name: 'exon2' });
       expect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (arr as any).push({ start: 20, end: 25 });
       }).toThrow();
     });

@@ -62,7 +62,6 @@ describe('Promoter', () => {
     test('elements array is frozen', () => {
       const p = promoter(1000, [tataElement]);
       expect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (p.elements as any).push(inrElement);
       }).toThrow();
     });
